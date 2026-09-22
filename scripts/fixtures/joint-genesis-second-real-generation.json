@@ -1,0 +1,63 @@
+{
+  "kind": "TEST_LAB_FIXTURE",
+  "id": "joint-genesis-second-real-generation",
+  "notLiveImport": true,
+  "strategyType": "BUYER_GUIDE",
+  "expectedGates": {
+    "GROUNDING": "UNGROUNDED",
+    "CONTENT_GATE": "BLOCKED"
+  },
+  "facts": {
+    "productName": "Joint Genesis",
+    "sourceUrl": "https://jointgenesisofficial.com/",
+    "origin": "IMPORTED",
+    "description": "Joint Genesis is a carefully crafted supplement designed to support joint comfort, flexibility, and mobility.",
+    "features": [
+      "Nourishes and hydrates cartilage – Joint Genesis delivers essential nutrients that help keep cartilage healthy and well-hydrated, creating a protective cushion against daily wear and tear.",
+      "Enhances bone strength and density – The formula supports stronger bones by improving mineral absorption and density, promoting long-term skeletal support.",
+      "Promotes smooth, friction-free movement – By improving joint lubrication, Joint Genesis reduces stiffness and friction, allowing for easier, more comfortable movement.",
+      "Improves flexibility and range of motion – Regular use helps increase joint flexibility, making everyday movements and physical activities feel more natural and less restricted.",
+      "Supports a healthy inflammatory response – Joint Genesis helps maintain balanced inflammation levels, reducing swelling and discomfort in joints."
+    ],
+    "ingredientsOrComponents": [
+      "Pycnogenol®",
+      "Boswellia Serrata",
+      "BioPerine®"
+    ],
+    "usageInformation": [
+      "Take one capsule per day with water, preferably in the morning. Each bottle comes with enough capsules for a 30-day supply."
+    ],
+    "cautions": [
+      "However, if you have any medical conditions or are taking medication, it is best to consult your healthcare provider before use."
+    ],
+    "guaranteeInformation": "Joint Genesis comes with a risk-free 60-day money-back guarantee, giving you complete confidence in your purchase.",
+    "sourceSnippets": [],
+    "importWarnings": [
+      "TEST_LAB_FIXTURE — reconstructed from the second-real-generation audit eligible snapshot. Not a new live import."
+    ],
+    "confidence": {
+      "productName": "DIRECT_SOURCE",
+      "description": "DIRECT_SOURCE",
+      "features": "DIRECT_SOURCE",
+      "ingredientsOrComponents": "DIRECT_SOURCE",
+      "usageInformation": "DIRECT_SOURCE",
+      "cautions": "DIRECT_SOURCE",
+      "pricingInformation": "NOT_FOUND",
+      "guaranteeInformation": "DIRECT_SOURCE",
+      "manufacturer": "NOT_FOUND"
+    },
+    "importQuality": "SUFFICIENT",
+    "productImageProvenance": "NOT_FOUND"
+  },
+  "variant": {
+    "approach": "BUYER_GUIDE",
+    "headline": "Joint Genesis: What to Know Before You Decide",
+    "body": "Joint discomfort and stiffness are common concerns for many people, whether due to age-related changes or the demands of an active lifestyle. When evaluating support options, it helps to understand what a product is designed to do and what information is available about it.\n\nJoint Genesis is a daily supplement formulated to support joint comfort, flexibility, and mobility. According to the product information, it focuses on nourishing cartilage, improving joint lubrication, and supporting the body's production of hyaluronan—a compound involved in cushioning and lubricating joints. The formula is described as addressing factors that contribute to joint stiffness and reduced range of motion.\n\nThis guide walks through the key details available about Joint Genesis to help you make an informed decision.\n\n## What Is Joint Genesis?\n\nJoint Genesis is a capsule-based supplement designed to support joint health through a blend of natural ingredients. According to the product website, the formula targets the underlying factors that can lead to joint discomfort, such as declining hyaluronan levels and reduced synovial fluid quality. The product is positioned as a daily support option for people looking to maintain or improve joint function and comfort.\n\nThe supplement is manufactured in the USA in a GMP-certified facility, which indicates adherence to quality and safety standards during production.\n\n## Key Features\n\nAccording to the product information, Joint Genesis is formulated to provide several types of support:\n\n- Nourishes and hydrates cartilage with essential nutrients to help maintain a protective cushion against daily wear and tear\n- Enhances bone strength and density by supporting mineral absorption\n- Promotes smooth, friction-free movement by improving joint lubrication\n- Improves flexibility and range of motion for more natural movement\n- Supports a healthy inflammatory response to help reduce swelling and discomfort\n- Boosts hyaluronan production, which is essential for joint lubrication, cushioning, and elasticity\n- Protects against oxidative stress with antioxidants that help fight free radicals\n- Supports long-term joint durability by strengthening cartilage and improving joint function\n- Encourages an active lifestyle by reducing discomfort and improving mobility\n- Helps joints move smoothly without rubbing, according to the Biodynamix description\n- Provides nutrients that feed the tissue around the joints\n\n## How It Works\n\nAccording to the product website, Joint Genesis works by supporting the body's natural ability to maintain healthy joints through proper lubrication, cushioning, and flexibility. The formula focuses on restoring hyaluronan levels, which the product information describes as a key component for keeping joints smooth, nourished, and comfortable.\n\nThe product materials explain that as we age, the body produces less hyaluronan, which can lead to dry, stiff joints. Joint Genesis is designed to help replenish these levels, improving the quality of synovial fluid so joints stay well-lubricated and move more freely.\n\nThe formula is also described as enhancing the production and function of synovial fluid, which cushions and protects cartilage. This is intended to reduce friction between joints and support long-term joint comfort.\n\n## Ingredients\n\nJoint Genesis contains three primary components:\n\n- Pycnogenol®\n- Boswellia Serrata\n- BioPerine®\n\nThese ingredients are described as carefully selected natural compounds known for joint-supporting properties. The product information emphasizes a focus on natural ingredients without harsh chemicals.\n\n## Who May Consider It?\n\nJoint Genesis is positioned for individuals who:\n\n- Experience age-related joint discomfort or stiffness\n- Want to maintain an active lifestyle and support joint mobility\n- Are looking for daily joint support to improve flexibility and range of motion\n- Seek a natural supplement approach to joint health\n- Want to support long-term joint durability and function\n\nThe product information notes that if you have any medical conditions or are taking medication, it is best to consult your healthcare provider before use.\n\n## How to Use\n\nThe recommended usage is straightforward: take one capsule per day with water, preferably in the morning. Each bottle provides a 30-day supply.\n\n## Pros and Cons\n\n- Focuses on hyaluronan production, a key factor in joint lubrication\n- Manufactured in a GMP-certified facility in the USA\n- Simple once-daily dosing\n- 60-day money-back guarantee provides a trial period\n- Natural ingredient blend\n- Pricing information is not publicly available, making cost comparison difficult\n- Individual results may vary based on personal health factors\n- Consultation with a healthcare provider is recommended if you have medical conditions or take medications\n- Limited ingredient detail provided beyond the three primary components\n\n## Things to Consider\n\nWhen evaluating Joint Genesis, several factors may influence your decision:\n\nThe product emphasizes supporting hyaluronan levels and synovial fluid quality, which are relevant factors in joint health. However, individual responses to supplements can vary widely based on personal health status, age, activity level, and other factors.\n\nPricing details are not readily available through standard product information, which means you'll need to visit the product website or contact the seller directly to understand the cost and any available package options.\n\nThe 60-day money-back guarantee provides a window to evaluate whether the product works for your individual needs. This return policy allows you to try the supplement with reduced financial risk.\n\nSince the product is a dietary supplement, it is not intended to diagnose, treat, cure, or prevent any disease. If you have existing joint conditions, are under medical care, or take prescription medications, discussing this supplement with your healthcare provider before starting is advisable.\n\n## FAQ\n\n- What is the recommended daily dosage? Take one capsule per day with water, preferably in the morning. Each bottle contains a 30-day supply.\n- Is there a money-back guarantee? Yes, Joint Genesis comes with a 60-day money-back guarantee, allowing you to try the product with reduced financial risk.\n- Where is Joint Genesis manufactured? According to the product information, it is manufactured in the USA in a GMP-certified facility.\n- Should I consult a doctor before using this? If you have any medical conditions or are taking medication, the product information recommends consulting your healthcare provider before use.\n\n## Final Thoughts\n\nJoint Genesis is positioned as a daily supplement designed to support joint comfort, flexibility, and mobility through natural ingredients focused on hyaluronan production and synovial fluid quality. The product provides straightforward usage instructions, is manufactured in a certified facility, and offers a 60-day guarantee.\n\nWhen considering any joint support supplement, it's important to evaluate your individual needs, consult with healthcare professionals if you have underlying conditions, and understand that results can vary from person to person. The availability of a money-back guarantee provides an opportunity to assess whether this product aligns with your joint health goals.",
+    "ctaLabel": "View Product Details"
+  },
+  "inputGates": {
+    "GROUNDING_GATE": "UNGROUNDED",
+    "POLICY_GATE": "BLOCKED",
+    "CONTENT_GATE": "BLOCKED"
+  }
+}

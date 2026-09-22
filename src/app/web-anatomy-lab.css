@@ -1,0 +1,270 @@
+/* WEB_ANATOMY_LAB_V1 — WA_VISUAL_STRUCTURAL_A
+   Isolated experimental presentation. Does not modify Premium Visual System V1.
+   Applies only under [data-wa-lab="v1"]. No factual copy. */
+
+[data-wa-lab="v1"] .ps-hero-title {
+  max-width: 18ch;
+}
+
+[data-wa-lab="v1"] .ps-hero-summary {
+  color: var(--ps-text);
+  font-size: clamp(1.18rem, 1.75vw, 1.42rem);
+  line-height: 1.42;
+  max-width: 32rem;
+  margin-top: 1.05rem;
+  padding-left: 0.95rem;
+  border-left: 2px solid color-mix(in srgb, var(--ps-accent) 58%, var(--ps-border));
+}
+
+[data-wa-lab="v1"] .ps-hero-cta {
+  margin-top: 1.4rem;
+}
+
+[data-wa-lab="v1"] .presell-canvas a[data-cta-position="hero"] {
+  min-width: 14rem;
+  min-height: 54px;
+  padding-inline: 1.85rem !important;
+  font-size: 1.06rem !important;
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--ps-accent) 20%, transparent);
+}
+
+[data-wa-lab="v1"] .presell-canvas a[data-cta-position="middle"] {
+  min-height: 40px;
+  opacity: 0.86;
+}
+
+[data-wa-lab="v1"] .presell-canvas a[data-cta-position="final"] {
+  min-width: min(100%, 22rem);
+  min-height: 56px;
+  padding-inline: 2rem !important;
+  font-size: 1.08rem !important;
+  box-shadow: 0 14px 32px color-mix(in srgb, var(--ps-accent) 24%, transparent);
+}
+
+[data-wa-lab="v1"] .ps-scene-overview-bridge {
+  padding-block: clamp(1.55rem, 3vw, 2.35rem);
+  background: color-mix(in srgb, var(--ps-surface) 78%, transparent);
+  border-block: 1px solid color-mix(in srgb, var(--ps-border) 72%, transparent);
+}
+
+[data-wa-lab="v1"] .ps-overview-transition {
+  max-width: 48rem;
+}
+
+[data-wa-lab="v1"] .ps-scene-product_characteristics_scene {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ps-surface) 94%, transparent),
+      color-mix(in srgb, var(--ps-surface-alt) 42%, var(--ps-bg))
+    );
+  padding-block: clamp(2.3rem, 5vw, 4.1rem);
+}
+
+[data-wa-lab="v1"] .ps-feature-module {
+  min-height: 0;
+  padding: 1.2rem 1.15rem 1.25rem;
+  border-top: 0;
+  border-radius: var(--ps-radius-md);
+  background: color-mix(in srgb, var(--ps-surface) 92%, transparent);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--ps-border) 80%, transparent);
+}
+
+[data-wa-lab="v1"] .ps-feature-module-1,
+[data-wa-lab="v1"] .ps-feature-module-4 {
+  background: color-mix(in srgb, var(--ps-surface) 96%, var(--ps-surface-alt));
+}
+
+[data-wa-lab="v1"] .ps-feature-module-2,
+[data-wa-lab="v1"] .ps-feature-module-3 {
+  background: color-mix(in srgb, var(--ps-bg) 40%, var(--ps-surface));
+}
+
+[data-wa-lab="v1"] .ps-feature-copy {
+  font-size: 1.04rem;
+  line-height: 1.55;
+  color: var(--ps-text);
+}
+
+[data-wa-lab="v1"] .ps-scene-closing-product {
+  padding-block: clamp(2.6rem, 5.8vw, 4.8rem);
+}
+
+[data-wa-lab="v1"] .ps-closing-scene {
+  gap: 0.8rem;
+}
+
+[data-wa-lab="v1"] .ps-closing-visual {
+  max-width: 20rem;
+}
+
+[data-wa-lab="v1"] .ps-closing-visual .ps-product-stage-img {
+  max-height: 16.5rem;
+}
+
+[data-wa-lab="v1"] .ps-rhythm-trust {
+  background: color-mix(in srgb, var(--ps-surface) 86%, var(--ps-bg));
+  padding-block: clamp(2.5rem, 5vw, 3.8rem) 1.7rem;
+}
+
+[data-wa-lab="v1"] .ps-faq-band {
+  padding: 1.45rem 1.3rem 1.7rem;
+  background: color-mix(in srgb, var(--ps-surface) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ps-border) 82%, transparent);
+  border-radius: var(--ps-radius-lg);
+}
+
+[data-wa-lab="v1"] .ps-faq-band .ps-h2 {
+  max-width: none;
+}
+
+[data-wa-lab="v1"] [data-trust-disclosure] details summary {
+  padding-block: 0.95rem;
+  font-size: 0.98rem;
+}
+
+[data-wa-lab="v1"] .ps-trust-editorial {
+  margin-top: 1.35rem;
+  max-width: none;
+  padding: 1.35rem 1.3rem 1.2rem;
+  border-top: 0;
+  border-radius: var(--ps-radius-md);
+  background: color-mix(in srgb, var(--ps-bg) 48%, var(--ps-surface-alt));
+}
+
+[data-wa-lab="v1"] .ps-trust-cta {
+  margin-top: 1.7rem;
+}
+
+[data-wa-lab="v1"] .ps-footer,
+[data-wa-lab="v1"] .presell-canvas .ps-footer {
+  background: color-mix(in srgb, var(--ps-surface-alt) 42%, var(--ps-bg)) !important;
+  border-top: 1px solid color-mix(in srgb, var(--ps-border) 90%, var(--ps-accent)) !important;
+}
+
+[data-wa-lab="v1"] .ps-footer > div {
+  padding-block: 3.15rem 2.6rem;
+  max-width: 78rem;
+}
+
+@media (min-width: 768px) {
+  [data-wa-lab="v1"] .ps-feature-grid,
+  [data-wa-lab="v1"] .ps-feature-system .ps-fact-canvas-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 1.15rem 1.35rem;
+  }
+
+  [data-wa-lab="v1"] .ps-feature-module {
+    min-height: 12.5rem;
+    padding: 1.35rem 1.2rem 1.4rem;
+  }
+}
+
+/* WA_CRO_DECISION_B — inherits Experiment A via data-wa-lab="v1".
+   Presentation-only CRO / decision architecture. No factual copy. */
+[data-wa-exp="b"] .ps-hero::before {
+  opacity: 0.4;
+}
+[data-wa-exp="b"] .ps-hero .ps-geo {
+  opacity: 0.5;
+}
+[data-wa-exp="b"] .ps-hero-cta {
+  margin-top: 1.15rem;
+}
+[data-wa-exp="b"] .presell-canvas a[data-cta-position="hero"] {
+  min-height: 56px;
+  min-width: 15rem;
+}
+[data-wa-exp="b"] .ps-hero-disclosure {
+  margin-top: 0.85rem;
+  max-width: 28rem;
+}
+[data-wa-exp="b"] .ps-scene-overview-bridge {
+  padding-block: clamp(1.15rem, 2.2vw, 1.7rem);
+  background: transparent;
+  border-block: 0;
+  border-top: 1px solid color-mix(in srgb, var(--ps-border) 70%, transparent);
+}
+[data-wa-exp="b"] .ps-closing-scene {
+  max-width: 34rem;
+  width: 100%;
+  margin-inline: auto;
+  padding: 2.05rem 1.55rem 2.2rem;
+  gap: 0.7rem;
+  background: color-mix(in srgb, var(--ps-surface) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ps-border) 82%, transparent);
+  border-radius: var(--ps-radius-lg);
+}
+[data-wa-exp="b"] .ps-scene-closing-product {
+  padding-block: clamp(3.1rem, 6.4vw, 5.4rem) clamp(2.6rem, 5vw, 4.1rem);
+}
+[data-wa-exp="b"] .ps-closing-visual {
+  max-width: 18.5rem;
+}
+[data-wa-exp="b"] .presell-canvas a[data-cta-position="final"] {
+  min-width: min(100%, 22rem);
+  min-height: 58px;
+}
+[data-wa-exp="b"] .ps-rhythm-trust {
+  padding-top: clamp(1.7rem, 3.4vw, 2.6rem);
+}
+
+@media (min-width: 901px) {
+  [data-wa-exp="b"] .ps-hero-magazine,
+  [data-wa-exp="b"] .ps-hero-luxury,
+  [data-wa-exp="b"] .ps-hero-stage,
+  [data-wa-exp="b"] .ps-hero-canvas {
+    padding-bottom: 4.35rem;
+  }
+  [data-wa-exp="b"] .ps-hero-v3 .ps-hero-visual {
+    align-self: end;
+  }
+  [data-wa-exp="b"] .ps-hero-v3 .ps-product-stage,
+  [data-wa-exp="b"] .ps-hero-v3 .ps-product-stage-lg {
+    min-height: 0;
+  }
+  [data-wa-exp="b"] .ps-hero-v3 .ps-product-hero .ps-product-stage-img {
+    max-height: 22.5rem;
+  }
+}
+
+@media (max-width: 900px) {
+  [data-wa-exp="b"] .ps-hero-magazine,
+  [data-wa-exp="b"] .ps-hero-luxury,
+  [data-wa-exp="b"] .ps-hero-stage,
+  [data-wa-exp="b"] .ps-hero-canvas {
+    padding-bottom: 2.35rem;
+  }
+  [data-wa-exp="b"] .ps-hero-v3 .ps-product-hero .ps-product-stage-img {
+    max-height: 13.5rem;
+    min-height: 9.5rem;
+  }
+  [data-wa-exp="b"] .ps-closing-scene {
+    padding: 1.55rem 1.1rem 1.7rem;
+  }
+}
+
+@media (max-width: 767px) {
+  [data-wa-lab="v1"] .ps-hero-summary {
+    max-width: none;
+    padding-left: 0.8rem;
+  }
+
+  [data-wa-lab="v1"] .presell-canvas a[data-cta-position="hero"] {
+    width: 100%;
+    min-width: 0;
+  }
+
+  [data-wa-lab="v1"] .ps-feature-module {
+    padding: 1.15rem 1rem 1.2rem;
+  }
+
+  [data-wa-lab="v1"] .ps-faq-band,
+  [data-wa-lab="v1"] .ps-trust-editorial {
+    padding-inline: 1rem;
+  }
+
+  [data-wa-lab="v1"] .ps-closing-visual .ps-product-stage-img {
+    max-height: 13rem;
+  }
+}

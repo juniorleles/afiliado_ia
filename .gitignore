@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+.env*.local
+*.log
+.DS_Store
+Thumbs.db
+
+# Local SQLite (Phase 2) — do not version campaign data
+data/

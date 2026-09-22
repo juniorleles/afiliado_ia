@@ -1,0 +1,13 @@
+{
+  "cta": { "label": "View Product Details" },
+  "slots": [
+    { "slotId": "S001", "content": "Joint Genesis" },
+    { "slotId": "S002", "content": "Joint Genesis supports lubrication, flexibility and comfortable movement with five targeted ingredients and daily use." },
+    { "slotId": "S003", "content": "See how Joint Genesis supports lubrication, flexibility and comfortable movement with five targeted ingredients and daily use." },
+    { "slotId": "S004", "content": "Joint Genesis is designed for steady joint wellness rather than dramatic overnight promises." },
+    { "slotId": "S005", "content": "The ingredients also give the formula broader support through antioxidants. The feature description references once each morning." },
+    { "slotId": "S006", "content": "Together, those features create a multi-angle daily formula." },
+    { "slotId": "FAQ001", "question": "Does Joint Genesis support lubrication, flexibility and comfortable movement?", "answer": "The listing describes lubrication, flexibility and comfortable movement with five targeted ingredients." },
+    { "slotId": "FAQ002", "question": "Is Joint Genesis designed for steady joint wellness rather than dramatic overnight promises?", "answer": "The source connects synovial-fluid quality with practical goals such as bending and walking." }
+  ]
+}

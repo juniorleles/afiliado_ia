@@ -1,0 +1,15 @@
+---
+description: Afiliado IA — fases, inglês, sem cloaking
+alwaysApply: true
+---
+
+# Afiliado IA
+
+Siga `docs/ROADMAP.md` (roadmap canônico) e `docs/ROADMAP_FASES.md`. Uma fase por vez; não adiante escopo.
+
+Published presells are English-only. The ad final URL is this app's
+presell route. The affiliate hop is the CTA click, never a hidden
+redirect and never a different page for ad reviewers.
+
+Do not clone Flow Pages branding or templates. Do not add cloaking.
+Keep this repo separate from mercados-autonomos and affiliate-ai-platform.

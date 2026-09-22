@@ -1,0 +1,58 @@
+{
+  "variants": [
+    {
+      "approach": "BUYER_GUIDE",
+      "headline": {
+        "text": "Joint Genesis: A Buyer's Guide to This Daily Joint Formula",
+        "evidenceIds": ["F001", "F002"]
+      },
+      "summary": {
+        "text": "Joint Genesis is a daily formula designed to support joint wellness through five targeted ingredients. This guide examines what the product offers for lubrication, flexibility and comfortable movement.",
+        "evidenceIds": ["F001", "F002"]
+      },
+      "blocks": [
+        {
+          "id": "overview",
+          "type": "OVERVIEW",
+          "evidenceIds": ["F001", "F002", "F003"],
+          "content": "Joint Genesis positions itself as a steady approach to joint wellness rather than promising rapid transformation. According to the product website, the formula supports synovial-fluid quality and targets practical goals such as bending, walking, exercising and managing daily tasks with greater confidence. The product is designed for daily use with five targeted ingredients working together to support lubrication, flexibility and comfortable movement."
+        },
+        {
+          "id": "features",
+          "type": "FEATURES",
+          "evidenceIds": ["F003", "F004"],
+          "content": "The formula offers a multi-angle approach to joint support. According to the product description, Joint Genesis connects its mechanism—supporting synovial-fluid quality—with everyday movement goals. The ingredients provide broader support through antioxidants, botanical inflammatory-response compounds and enhanced nutrient absorption. The product is designed as a simple once-each-morning formula, emphasizing consistent daily use over immediate dramatic results."
+        },
+        {
+          "id": "faq",
+          "type": "FAQ",
+          "evidenceIds": ["F002", "F003"],
+          "content": "",
+          "items": [
+            {
+              "question": "What does Joint Genesis aim to support?",
+              "answer": "According to the product website, Joint Genesis is designed to support lubrication, flexibility and comfortable movement. The formula focuses on synovial-fluid quality and aims to help with practical activities such as bending, walking, exercising and handling daily tasks.",
+              "topic": "Product Purpose",
+              "evidenceIds": ["F002", "F003"]
+            },
+            {
+              "question": "What type of results does Joint Genesis describe?",
+              "answer": "The product is designed for steady joint wellness rather than dramatic overnight promises. According to the product description, it emphasizes consistent daily support and a clearly defined mechanism focused on synovial-fluid quality rather than rapid transformation.",
+              "topic": "Approach",
+              "evidenceIds": ["F003"]
+            }
+          ]
+        },
+        {
+          "id": "final-thoughts",
+          "type": "FINAL_THOUGHTS",
+          "evidenceIds": ["F002", "F003", "F004"],
+          "content": "Joint Genesis presents itself as a daily joint formula with five targeted ingredients and a focus on steady, practical support. The product emphasizes a multi-angle approach through antioxidants, botanical inflammatory-response compounds and nutrient absorption while maintaining a simple once-morning routine. Buyers considering this product should evaluate whether its steady-wellness positioning aligns with their expectations."
+        }
+      ],
+      "cta": {
+        "label": "View Product Details"
+      }
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "approach": "BUYER_GUIDE",
+  "headline": {
+    "text": "Joint Genesis Notes",
+    "evidenceIds": ["F001"]
+  },
+  "summary": {
+    "text": "Joint Genesis is described as supporting lubrication, flexibility and comfortable movement.",
+    "evidenceIds": ["F001", "F002"]
+  },
+  "blocks": [
+    {
+      "id": "OVERVIEW",
+      "type": "OVERVIEW",
+      "evidenceIds": ["F002"],
+      "content": "Joint Genesis supports lubrication, flexibility and comfortable movement with five targeted ingredients and daily use."
+    },
+    {
+      "id": "FEATURES",
+      "type": "FEATURES",
+      "evidenceIds": ["F003", "F004"],
+      "content": "Joint Genesis is designed for steady joint wellness rather than dramatic overnight promises. The ingredients also give the formula broader support through antioxidants, botanical inflammatory-response compounds and enhanced nutrient absorption. Together, those features create a multi-angle daily formula. The feature description references once each morning."
+    },
+    {
+      "id": "FAQ",
+      "type": "FAQ",
+      "evidenceIds": [],
+      "content": "",
+      "items": [
+        {
+          "question": "What is Joint Genesis described as supporting?",
+          "answer": "The listing describes lubrication, flexibility and comfortable movement with five targeted ingredients.",
+          "topic": "description",
+          "evidenceIds": ["F002"]
+        },
+        {
+          "question": "What wellness story is described?",
+          "answer": "It is designed for steady joint wellness rather than dramatic overnight promises.",
+          "topic": "features",
+          "evidenceIds": ["F003"]
+        }
+      ]
+    },
+    {
+      "id": "FINAL_THOUGHTS",
+      "type": "FINAL_THOUGHTS",
+      "evidenceIds": ["F002"],
+      "content": "See how Joint Genesis supports lubrication, flexibility and comfortable movement with five targeted ingredients and daily use."
+    }
+  ],
+  "cta": {
+    "label": "View Product Details"
+  }
+}
