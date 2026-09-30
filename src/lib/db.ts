@@ -18,9 +18,9 @@ export function getDbPath(): string {
  * Idempotent schema. CREATE TABLE stays the original shape so existing
  * files are untouched; new columns are added with PRAGMA + ALTER.
  *
- * Phase 2.5: existing rows get publicationStatus='published' so live
- * /p/[slug] URLs are not taken offline. New INSERTs always set 'draft'
- * explicitly in campaigns.ts (do not rely on the column default).
+ * Phase 2.5 added publicationStatus. A later pass demotes any published
+ * row that has no source facts, so publication status and the public route
+ * describe the same record. New INSERTs always set 'draft'.
  */
 export function migrate(db: Database.Database) {
   db.exec(`
@@ -128,6 +128,49 @@ export function migrate(db: Database.Database) {
     db.exec("ALTER TABLE campaigns ADD COLUMN creativeCompositionVersion INTEGER");
     names.add("creativeCompositionVersion");
   }
+  if (!names.has("productionPageComposition")) {
+    db.exec("ALTER TABLE campaigns ADD COLUMN productionPageComposition TEXT");
+    names.add("productionPageComposition");
+  }
+  if (!names.has("productionCreativeCompositionJson")) {
+    db.exec("ALTER TABLE campaigns ADD COLUMN productionCreativeCompositionJson TEXT");
+    names.add("productionCreativeCompositionJson");
+  }
+  if (!names.has("productionPresentation")) {
+    db.exec("ALTER TABLE campaigns ADD COLUMN productionPresentation TEXT");
+    names.add("productionPresentation");
+  }
+
+  // Published means the public route. Rows backfilled to published before
+  // source facts existed are drafts. The predicate is structural and names
+  // no campaign.
+  db.exec(`
+    UPDATE campaigns
+    SET publicationStatus = 'draft',
+        publishedAt = NULL
+    WHERE publicationStatus = 'published'
+      AND (
+        sourceFactsJson IS NULL
+        OR trim(sourceFactsJson) = ''
+        OR json_valid(sourceFactsJson) = 0
+        OR json_type(sourceFactsJson) != 'object'
+        OR affiliateUrl IS NULL
+        OR trim(affiliateUrl) = ''
+        OR headline IS NULL
+        OR trim(headline) = ''
+        OR ctaLabel IS NULL
+        OR trim(ctaLabel) = ''
+        OR slug IS NULL
+        OR trim(slug) = ''
+        OR name IS NULL
+        OR trim(name) = ''
+        OR (
+          (pageComposition IS NULL OR trim(pageComposition) = '')
+          AND (productionPageComposition IS NULL OR trim(productionPageComposition) = '')
+          AND (body IS NULL OR trim(body) = '')
+        )
+      )
+  `);
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS presell_visits (
@@ -280,6 +323,336 @@ export function migrate(db: Database.Database) {
   const market = db.prepare("SELECT version FROM schema_migrations WHERE version = 3").get() as { version: number } | undefined;
   if (!market) {
     db.prepare("INSERT INTO schema_migrations (version, name, appliedAt) VALUES (3, 'market-aware-strategy', ?)").run(
+      new Date().toISOString(),
+    );
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS campaign_manual_overrides (
+      campaignId INTEGER NOT NULL,
+      field TEXT NOT NULL,
+      value TEXT NOT NULL,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      PRIMARY KEY (campaignId, field)
+    );
+  `);
+  const overrides = db.prepare("SELECT version FROM schema_migrations WHERE version = 4").get() as { version: number } | undefined;
+  if (!overrides) {
+    db.prepare("INSERT INTO schema_migrations (version, name, appliedAt) VALUES (4, 'campaign-manual-overrides', ?)").run(
+      new Date().toISOString(),
+    );
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS campaign_completeness_analyses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campaignId INTEGER NOT NULL,
+      analyzedAt TEXT NOT NULL,
+      totalScore INTEGER NOT NULL,
+      importerScore INTEGER NOT NULL,
+      manualScore INTEGER NOT NULL,
+      status TEXT NOT NULL,
+      reportJson TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_completeness_campaign
+      ON campaign_completeness_analyses(campaignId, analyzedAt);
+  `);
+  const completeness = db.prepare("SELECT version FROM schema_migrations WHERE version = 5").get() as { version: number } | undefined;
+  if (!completeness) {
+    db.prepare("INSERT INTO schema_migrations (version, name, appliedAt) VALUES (5, 'campaign-completeness-analyses', ?)").run(
+      new Date().toISOString(),
+    );
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS fact_revisions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campaignId INTEGER NOT NULL,
+      field TEXT NOT NULL,
+      revision INTEGER NOT NULL,
+      origin TEXT NOT NULL,
+      confidence TEXT NOT NULL,
+      status TEXT NOT NULL,
+      valueJson TEXT NOT NULL,
+      sourceUrl TEXT,
+      sourceSection TEXT,
+      sourceDomPath TEXT,
+      evidenceSnippet TEXT,
+      screenshotRef TEXT,
+      importSession TEXT,
+      capturedAt TEXT NOT NULL,
+      capturedBy TEXT NOT NULL,
+      lastModified TEXT NOT NULL,
+      reason TEXT,
+      operation TEXT NOT NULL,
+      operatorName TEXT NOT NULL,
+      UNIQUE (campaignId, field, revision)
+    );
+    CREATE INDEX IF NOT EXISTS idx_fact_revisions_campaign ON fact_revisions(campaignId, field, revision);
+
+    CREATE TABLE IF NOT EXISTS fact_audit_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campaignId INTEGER NOT NULL,
+      field TEXT NOT NULL,
+      at TEXT NOT NULL,
+      userName TEXT NOT NULL,
+      operation TEXT NOT NULL,
+      oldValue TEXT,
+      newValue TEXT,
+      reason TEXT,
+      revision INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_fact_audit_campaign ON fact_audit_log(campaignId, at);
+  `);
+  const evidence = db.prepare("SELECT version FROM schema_migrations WHERE version = 6").get() as { version: number } | undefined;
+  if (!evidence) {
+    db.prepare("INSERT INTO schema_migrations (version, name, appliedAt) VALUES (6, 'fact-evidence', ?)").run(
+      new Date().toISOString(),
+    );
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS lp_builder_overrides (
+      campaignId INTEGER NOT NULL,
+      fieldId TEXT NOT NULL,
+      sectionId TEXT NOT NULL,
+      value TEXT NOT NULL,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      createdBy TEXT NOT NULL,
+      updatedBy TEXT NOT NULL,
+      version INTEGER NOT NULL,
+      PRIMARY KEY (campaignId, fieldId)
+    );
+    CREATE INDEX IF NOT EXISTS idx_lp_builder_overrides_campaign ON lp_builder_overrides(campaignId);
+
+    CREATE TABLE IF NOT EXISTS lp_builder_audit (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campaignId INTEGER NOT NULL,
+      fieldId TEXT NOT NULL,
+      sectionId TEXT NOT NULL,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      createdBy TEXT NOT NULL,
+      updatedBy TEXT NOT NULL,
+      version INTEGER NOT NULL,
+      previousValue TEXT,
+      newValue TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_lp_builder_audit_campaign ON lp_builder_audit(campaignId, id);
+  `);
+  const builder = db.prepare("SELECT version FROM schema_migrations WHERE version = 7").get() as { version: number } | undefined;
+  if (!builder) {
+    db.prepare("INSERT INTO schema_migrations (version, name, appliedAt) VALUES (7, 'lp-builder-overrides', ?)").run(
+      new Date().toISOString(),
+    );
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS lp_theme_overrides (
+      campaignId INTEGER NOT NULL,
+      scope TEXT NOT NULL,
+      targetId TEXT NOT NULL,
+      token TEXT NOT NULL,
+      value TEXT NOT NULL,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      createdBy TEXT NOT NULL,
+      updatedBy TEXT NOT NULL,
+      version INTEGER NOT NULL,
+      PRIMARY KEY (campaignId, scope, targetId, token)
+    );
+    CREATE INDEX IF NOT EXISTS idx_lp_theme_overrides_campaign ON lp_theme_overrides(campaignId);
+
+    CREATE TABLE IF NOT EXISTS lp_theme_audit (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campaignId INTEGER NOT NULL,
+      scope TEXT NOT NULL,
+      targetId TEXT NOT NULL,
+      token TEXT NOT NULL,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      createdBy TEXT NOT NULL,
+      updatedBy TEXT NOT NULL,
+      version INTEGER NOT NULL,
+      previousValue TEXT,
+      newValue TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_lp_theme_audit_campaign ON lp_theme_audit(campaignId, id);
+  `);
+  const theme = db.prepare("SELECT version FROM schema_migrations WHERE version = 8").get() as { version: number } | undefined;
+  if (!theme) {
+    db.prepare("INSERT INTO schema_migrations (version, name, appliedAt) VALUES (8, 'lp-theme-overrides', ?)").run(
+      new Date().toISOString(),
+    );
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS lp_media_library (
+      campaignId INTEGER NOT NULL,
+      libraryId TEXT NOT NULL,
+      name TEXT NOT NULL,
+      src TEXT NOT NULL,
+      alt TEXT NOT NULL,
+      caption TEXT NOT NULL,
+      decorative INTEGER NOT NULL,
+      role TEXT NOT NULL,
+      origin TEXT NOT NULL,
+      source TEXT NOT NULL,
+      width INTEGER,
+      height INTEGER,
+      bytes INTEGER,
+      format TEXT NOT NULL,
+      crop TEXT NOT NULL,
+      rotation INTEGER NOT NULL,
+      sortOrder INTEGER NOT NULL,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      createdBy TEXT NOT NULL,
+      updatedBy TEXT NOT NULL,
+      version INTEGER NOT NULL,
+      PRIMARY KEY (campaignId, libraryId)
+    );
+    CREATE INDEX IF NOT EXISTS idx_lp_media_library_campaign ON lp_media_library(campaignId);
+
+    CREATE TABLE IF NOT EXISTS lp_media_overrides (
+      campaignId INTEGER NOT NULL,
+      slotId TEXT NOT NULL,
+      libraryId TEXT,
+      removed INTEGER NOT NULL,
+      reason TEXT NOT NULL,
+      name TEXT NOT NULL,
+      src TEXT NOT NULL,
+      alt TEXT NOT NULL,
+      caption TEXT NOT NULL,
+      decorative INTEGER NOT NULL,
+      role TEXT NOT NULL,
+      origin TEXT NOT NULL,
+      source TEXT NOT NULL,
+      width INTEGER,
+      height INTEGER,
+      bytes INTEGER,
+      format TEXT NOT NULL,
+      crop TEXT NOT NULL,
+      rotation INTEGER NOT NULL,
+      sortOrder INTEGER NOT NULL,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      createdBy TEXT NOT NULL,
+      updatedBy TEXT NOT NULL,
+      version INTEGER NOT NULL,
+      PRIMARY KEY (campaignId, slotId)
+    );
+    CREATE INDEX IF NOT EXISTS idx_lp_media_overrides_campaign ON lp_media_overrides(campaignId);
+
+    CREATE TABLE IF NOT EXISTS lp_media_audit (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campaignId INTEGER NOT NULL,
+      slotId TEXT NOT NULL,
+      libraryId TEXT,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      createdBy TEXT NOT NULL,
+      updatedBy TEXT NOT NULL,
+      version INTEGER NOT NULL,
+      originalAsset TEXT,
+      replacementAsset TEXT,
+      reason TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_lp_media_audit_campaign ON lp_media_audit(campaignId, id);
+  `);
+  const media = db.prepare("SELECT version FROM schema_migrations WHERE version = 9").get() as { version: number } | undefined;
+  if (!media) {
+    db.prepare("INSERT INTO schema_migrations (version, name, appliedAt) VALUES (9, 'lp-media-overrides', ?)").run(
+      new Date().toISOString(),
+    );
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS lp_layout_overrides (
+      campaignId INTEGER NOT NULL,
+      sectionKey TEXT NOT NULL,
+      sectionId TEXT NOT NULL,
+      visible INTEGER NOT NULL,
+      collapsed INTEGER NOT NULL,
+      sortOrder INTEGER NOT NULL,
+      priority INTEGER NOT NULL,
+      pinned INTEGER NOT NULL,
+      locked INTEGER NOT NULL,
+      futureCompatible INTEGER NOT NULL,
+      duplicated INTEGER NOT NULL,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      createdBy TEXT NOT NULL,
+      updatedBy TEXT NOT NULL,
+      version INTEGER NOT NULL,
+      PRIMARY KEY (campaignId, sectionKey)
+    );
+    CREATE INDEX IF NOT EXISTS idx_lp_layout_overrides_campaign ON lp_layout_overrides(campaignId);
+
+    CREATE TABLE IF NOT EXISTS lp_layout_audit (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campaignId INTEGER NOT NULL,
+      sectionKey TEXT NOT NULL,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      createdBy TEXT NOT NULL,
+      updatedBy TEXT NOT NULL,
+      version INTEGER NOT NULL,
+      previousPosition INTEGER,
+      newPosition INTEGER,
+      visibilityChange TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_lp_layout_audit_campaign ON lp_layout_audit(campaignId, id);
+  `);
+  const layout = db.prepare("SELECT version FROM schema_migrations WHERE version = 10").get() as { version: number } | undefined;
+  if (!layout) {
+    db.prepare("INSERT INTO schema_migrations (version, name, appliedAt) VALUES (10, 'lp-layout-overrides', ?)").run(
+      new Date().toISOString(),
+    );
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS lp_page_versions (
+      id TEXT PRIMARY KEY,
+      campaignId INTEGER NOT NULL,
+      versionNumber INTEGER NOT NULL,
+      createdAt TEXT NOT NULL,
+      createdBy TEXT NOT NULL,
+      comment TEXT NOT NULL,
+      parentId TEXT,
+      status TEXT NOT NULL CHECK (status IN ('current', 'published', 'draft', 'archived')),
+      action TEXT NOT NULL,
+      affectedSections TEXT NOT NULL,
+      overrideCount INTEGER NOT NULL,
+      snapshotJson TEXT NOT NULL,
+      changesJson TEXT NOT NULL,
+      UNIQUE (campaignId, versionNumber)
+    );
+    CREATE INDEX IF NOT EXISTS idx_lp_page_versions_campaign ON lp_page_versions(campaignId, versionNumber);
+
+    CREATE TABLE IF NOT EXISTS lp_page_version_changes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      versionId TEXT NOT NULL,
+      campaignId INTEGER NOT NULL,
+      overrideType TEXT NOT NULL,
+      section TEXT NOT NULL,
+      field TEXT NOT NULL,
+      oldValue TEXT,
+      newValue TEXT,
+      changeKind TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_lp_page_version_changes_version ON lp_page_version_changes(versionId);
+
+    CREATE TABLE IF NOT EXISTS lp_page_version_settings (
+      campaignId INTEGER PRIMARY KEY,
+      autosave INTEGER NOT NULL
+    );
+  `);
+  const versions = db.prepare("SELECT version FROM schema_migrations WHERE version = 11").get() as { version: number } | undefined;
+  if (!versions) {
+    db.prepare("INSERT INTO schema_migrations (version, name, appliedAt) VALUES (11, 'lp-page-versions', ?)").run(
       new Date().toISOString(),
     );
   }
