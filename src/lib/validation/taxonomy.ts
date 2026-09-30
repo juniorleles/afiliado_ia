@@ -54,7 +54,7 @@ export function collectCandidateFailures(candidate: Pick<ValidationCandidate, "s
       message: "Grounding status UNGROUNDED",
     });
   }
-  if (candidate.contentQa.policyGate === "BLOCKED" || candidate.contentQa.finalGate === "BLOCKED") {
+  if (candidate.contentQa.policyGate === "BLOCKED") {
     pushUnique(failures, {
       type: "POLICY_BLOCK",
       stage: "POLICY_LINTER",

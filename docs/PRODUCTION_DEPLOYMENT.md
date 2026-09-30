@@ -43,23 +43,35 @@ npx next start
 curl -sS https://YOUR_DOMAIN/api/health
 ```
 
-`next build` does not require production secrets. `next start` with
-`NODE_ENV=production` **does**.
+`next build` does not require production secrets. Production protections and
+fatal env validation run only when `AIA_ENV=production`. `NODE_ENV=production`
+alone does not set that mode.
+
+`next build` **does** need the production `PUBLIC_SITE_URL`, `PUBLIC_SITE_NAME`
+and `PUBLIC_CONTACT_EMAIL`: the legal pages (`/about`, `/contact`, `/privacy`,
+`/terms`, `/affiliate-disclosure`) are prerendered and bake their canonical URL
+and contact text at build time. `/p/[slug]`, `/sitemap.xml` and `/robots.txt`
+are rendered per request.
+
+Required when `AIA_ENV=production`: `AIA_ENV`, `PUBLIC_SITE_URL`,
+`CLICKBANK_INS_SECRET`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`,
+`INTERNAL_FRAME_SECRET`. Optional: `PUBLIC_CONTACT_EMAIL`, `PUBLIC_SITE_NAME`.
 
 ## Deploy checklist
 
 1. Provision a single Node 20+ host with persistent disk and HTTPS proxy.
 2. Set `AIA_ENV=production` and every required SECRET/PUBLIC variable.
-3. Point `PRESELL_OS_DB` and `PRESELL_OS_MEDIA` at the persistent volume (or enable `OBJECT_STORAGE`).
+3. Mount the persistent volume at `<app>/data` and leave `PRESELL_OS_DB` / `PRESELL_OS_MEDIA` unset. `data/visual-design/` is always read relative to the app directory, so pointing the overrides elsewhere splits the state.
 4. Restore a backup if this is not a greenfield disk.
-5. `npx next build` then `npx next start` (or your process manager).
-6. Confirm `/api/health` returns `{ "status": "ok" }`.
-7. Log in at `/admin/login`. Open `/admin/system/readiness`.
-8. Create a **safe fixture** campaign (not ProDentim). Preview. Publish only if gates allow.
-9. Confirm `/p/fixture` is 200, `/p/prodentim-page-builder-v2` is 404.
-10. CTA click on the fixture (tracking). Do **not** register live ClickBank INS until the domain is approved.
-11. `robots.txt` and `sitemap.xml` include only published URLs.
-12. Keep a copy of `data/backups/`.
+5. `npx tsx scripts/predeploy-media-check.ts --campaign <id>` for every publication candidate; it exits 1 if any required media is missing.
+6. `npx next build` then `npx next start` (or your process manager).
+7. Gate traffic on `/api/health` returning 200 `{ "status": "ok" }`. With an incomplete production env the process stays up but answers 500 everywhere; a process-exit watchdog alone will not catch it.
+8. Log in at `/admin/login`. Open `/admin/system/readiness`.
+9. Create a **safe fixture** campaign (not ProDentim). Preview. Publish only if gates allow.
+10. Confirm `/p/fixture` is 200, `/p/prodentim-page-builder-v2` is 404.
+11. CTA click on the fixture (tracking). Do **not** register live ClickBank INS until the domain is approved.
+12. `robots.txt` and `sitemap.xml` include only published URLs.
+13. Keep a copy of `data/backups/`.
 
 ## DNS / TLS (manual)
 
@@ -69,10 +81,10 @@ curl -sS https://YOUR_DOMAIN/api/health
 
 ## Backup / restore
 
-- **Method:** `npx tsx scripts/backup-presell-os.ts` copies SQLite (+ WAL/SHM) and `data/product-images/` into `data/backups/<timestamp>/`.
+- **Method:** `npx tsx scripts/backup-presell-os.ts` writes `data/backups/<timestamp>/` with a single-file SQLite snapshot (`VACUUM INTO`, includes rows still in `-wal`, `integrity_check` recorded in `MANIFEST.json`), `product-images/` and `visual-design/`. Safe while the app runs. Never copy the live `presell-os.db` file by hand.
 - **Frequency:** at least daily, and before every deploy/migration.
-- **Retention:** keep 14 daily + 1 monthly for 6 months (operator policy).
-- **Restore:** stop the app, copy `presell-os.db` (and media) back, start, confirm `/api/health` and an admin campaign list.
+- **Retention:** keep 14 daily + 1 monthly for 6 months (operator policy). Store copies off the host.
+- **Restore:** stop the app, run `npx tsx scripts/backup-presell-os.ts restore data/backups/<timestamp> --confirm-restore`, start, confirm `/api/health` and an admin campaign list. Restore verifies integrity, removes stale `-wal/-shm/-journal` at the destination and replaces the DB atomically; media directories are merged back.
 - Covers campaigns, compositions, ProductFacts snapshots, DesignPlan, CreativeCompositionPlan, Visual QA JSON, tracking, ClickBank rows.
 
 ## Cache

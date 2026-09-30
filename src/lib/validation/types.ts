@@ -85,7 +85,7 @@ export type AiReviewDimensionId = (typeof AI_REVIEW_DIMENSIONS)[number];
 
 export { VALIDATION_SAFE_HREF, VALIDATION_SAFE_AFFILIATE } from "@/lib/validation/constants";
 
-export const PRODENTIM_PERF_BASELINE = {
+export const PERFORMANCE_BUDGET = {
   mobileLighthouse: 95,
   lcpMs: 2430,
   cls: 0,
@@ -114,12 +114,51 @@ export type StructureFingerprint = {
   key: string;
 };
 
+export const GATE_TRACE_VERSION = 1;
+
+export type PersistedGroundingFailure = {
+  proposition: string;
+  reason: string;
+  severity: "hard" | "soft";
+  claimClass: string | null;
+  section: string | null;
+  slotId: string | null;
+  authorizedEvidence: string[];
+};
+
+/** Immutable record of one grounding evaluation. Independent of the composed page. */
+export type GroundingStageSnapshot = {
+  stage: "PRE_COMPOSITION_GROUNDING" | "FINAL_COMPOSITION_GROUNDING";
+  status: GroundingStatus | "UNAVAILABLE";
+  evaluatedHash: string;
+  representation: string;
+  failures: PersistedGroundingFailure[];
+  evaluatedAt: string;
+};
+
+export type GateTrace = {
+  version: typeof GATE_TRACE_VERSION;
+  evaluatedAt: string;
+  preComposition: GroundingStageSnapshot;
+  finalComposition: GroundingStageSnapshot;
+  policy: {
+    stage: "POLICY_LINTER";
+    gate: PublicationGate | "UNAVAILABLE";
+    publicationGate: PublicationGate | "UNAVAILABLE";
+    blockingRules: string[];
+    warnings: string[];
+  };
+  authorityViolations: Array<{ topic: string; text: string; reason: string; requiredField: string }>;
+};
+
 export type ContentQaSnapshot = {
   groundingStatus: GroundingStatus | "UNAVAILABLE";
   policyGate: PublicationGate | "UNAVAILABLE";
   finalGate: PublicationGate | "UNAVAILABLE";
   warnings: string[];
   blockingRules: string[];
+  /** Present for candidates evaluated after gate-trace persistence. Absent on earlier rows. */
+  gateTrace?: GateTrace | null;
 };
 
 export type SourceQaSnapshot = {

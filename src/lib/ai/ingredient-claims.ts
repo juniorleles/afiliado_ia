@@ -128,6 +128,25 @@ const INGREDIENT_COUNT_CLAIM =
 const CONTAINS_NAMED =
   /\b(?:(?:formula\s+)?contains|includes|made with|formulated with)\s+(?:(?:only|just)\s+)?(?!hundreds|details|information|copy|text|sections?|only|five|six|seven|eight|nine|ten|the|these|those|its|their)([A-Za-z][A-Za-z0-9®\-]*)(?:\s+[A-Za-z][A-Za-z0-9®\-]*){0,4}/gi;
 
+/**
+ * "contains <quantity> <unit> [of <object>]" states an amount. It names an
+ * ingredient only through its "of" object ("15 mg of Example Root"); a bare
+ * amount ("approximately 15 drops of liquid", "60 capsules") names none.
+ */
+const QUANTITY_CONTAINS =
+  /\b((?:formula\s+)?(?:contains|includes|made with|formulated with)\s+(?:(?:only|just)\s+)?(?:(?:approximately|about|around|roughly|nearly|almost|up to|at least|over|exactly)\s+)?)\d[\d.,]*(?:\s*(?:-|–|to)\s*\d[\d.,]*)?\s*(?:drops?|ml|mls|milliliters?|millilitres?|fl\.?\s?oz|oz|ounces?|capsules?|caps|tablets?|softgels?|gummies|pills?|servings?|doses?|scoops?|sachets?|packets?|mg|mcg|g|grams?|iu|%)(?![A-Za-z])(?:\s+of\s+([A-Za-z][A-Za-z0-9®\-]*(?:\s+[A-Za-z][A-Za-z0-9®\-]*){0,3}))?/gi;
+const AMOUNT_OBJECT_TOKENS = new Set(["liquid", "fluid", "water", "solution", "product", "formula", "blend", "powder", "gel", "cream"]);
+
+function measuredAmounts(text: string): Array<{ frame: string; named: string | null }> {
+  return [...text.matchAll(new RegExp(QUANTITY_CONTAINS.source, QUANTITY_CONTAINS.flags))].map((match) => {
+    const object = (match[2] || "").trim();
+    const generic =
+      !object ||
+      object.split(/\s+/).every((token) => GENERIC_NAME_TOKENS.has(token.toLowerCase()) || AMOUNT_OBJECT_TOKENS.has(token.toLowerCase()));
+    return { frame: match[1].trim().toLowerCase().replace(/\s+/g, " "), named: generic ? null : `contains ${object}` };
+  });
+}
+
 const COMBINES_NAMED =
   /\b(?:combines|containing)\s+([A-Z][A-Za-z0-9®\-]+)(?:\s+and\s+([A-Za-z][A-Za-z0-9®\-]+))?/g;
 
@@ -319,14 +338,18 @@ export function namedIngredientMentions(text: string, options?: { productName?: 
     out.push(value.trim());
   };
 
+  const amounts = measuredAmounts(text);
+  const amountFrames = new Set(amounts.map((item) => item.frame));
   for (const hit of collect(text, CONTAINS_NAMED)) {
     if (isIngredientCountClaim(hit)) continue;
     const name = hit
       .replace(/^(?:formula\s+)?(?:contains|includes|made with|formulated with)\s+(?:(?:only|just)\s+)?/i, "")
       .trim();
     if (isGenericContainedName(name)) continue;
+    if (amountFrames.has(hit.toLowerCase().replace(/\s+/g, " "))) continue;
     add(hit);
   }
+  for (const item of amounts) if (item.named) add(item.named);
 
   // Same-line ingredient + name. Detect equivalent capitalization of the
   // ingredients word; keep generic continuations ("ingredients also") filtered.

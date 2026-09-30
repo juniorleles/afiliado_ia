@@ -9,12 +9,20 @@
 import type { ClaimClass, ClaimProjection, ClaimUnit } from "@/lib/ai/claim-projection";
 import {
   guaranteeReferenceSpans,
+  RETURNS_PROCEDURE_SOURCE,
+  SHIPPING_TOPIC_SOURCE,
   temporalDescriptionSpans,
   usageInstructionSpans,
   type GenerationTopic,
   GENERATION_TOPICS,
 } from "@/lib/ai/generation-plan";
 import { hasCompositionPromotionLanguage } from "@/lib/ai/ingredient-claims";
+import {
+  OPERATIONAL_EVIDENCE_FIELDS,
+  OPERATIONAL_TOPIC_FAMILY,
+  operationalManufacturerAssertions,
+  operationalPricingAssertions,
+} from "@/lib/ai/operational-context";
 
 export type SlotIsolationView = {
   slotId: string;
@@ -32,7 +40,10 @@ export type SemanticSlotAuthority =
   | "CAUTIONS"
   | "PRICING"
   | "GUARANTEE"
-  | "MANUFACTURER";
+  | "MANUFACTURER"
+  | "PRODUCT_FORMAT"
+  | "RETURNS"
+  | "SHIPPING";
 
 export type SlotProjectionViolation = {
   slotId: string;
@@ -52,6 +63,9 @@ const CLASSES_FOR_AUTHORITY: Record<SemanticSlotAuthority, ClaimClass[]> = {
   PRICING: ["PRICING"],
   GUARANTEE: ["GUARANTEE", "GUARANTEE_REFERENCE"],
   MANUFACTURER: ["MANUFACTURER"],
+  PRODUCT_FORMAT: ["PRODUCT_FORMAT"],
+  RETURNS: ["RETURNS"],
+  SHIPPING: ["SHIPPING"],
 };
 
 export function classesForSlotAuthority(authority: SemanticSlotAuthority): ClaimClass[] {
@@ -98,9 +112,15 @@ const FIELD_FOR_AUTHORITY: Record<SemanticSlotAuthority, string> = {
   PRICING: "pricingInformation",
   GUARANTEE: "guaranteeInformation",
   MANUFACTURER: "manufacturer",
+  PRODUCT_FORMAT: "productFormat",
+  RETURNS: "returnsInformation",
+  SHIPPING: "shippingInformation",
 };
 
 const NATIVE_FIELD_AUTHORITY = new Set([
+  "productFormat",
+  "returnsInformation",
+  "shippingInformation",
   "productName",
   "usageInformation",
   "guaranteeInformation",
@@ -109,6 +129,25 @@ const NATIVE_FIELD_AUTHORITY = new Set([
   "manufacturer",
   "ingredientsOrComponents",
 ]);
+
+/**
+ * A native owner field used to project its raw value once any in-authority
+ * claim existed. Spans already classified under another topic stayed visible.
+ * When those spans exist, the slot receives only the in-authority claim text.
+ * A field with no foreign span keeps its original value.
+ */
+function valueForSlotAuthority(
+  item: { id: string; value: string },
+  projection: ClaimProjection,
+  authority: SemanticSlotAuthority,
+): string {
+  const allowed = new Set(classesForSlotAuthority(authority));
+  const foreign = projection.claims.some(
+    (claim) => claim.evidenceId === item.id && claim.sourceText.trim() && !allowed.has(claim.claimClass),
+  );
+  if (!foreign) return item.value;
+  return authorizedTextForSlot(projection, [item.id], authority);
+}
 
 export function projectedEvidenceForSlot(
   items: Array<{ id: string; field: string; value: string }>,
@@ -121,7 +160,9 @@ export function projectedEvidenceForSlot(
       if (ownerField && item.field === ownerField && NATIVE_FIELD_AUTHORITY.has(item.field)) {
         const native = authorizedClaimsForSlot(projection, [item.id], authority);
         if (native.length === 0) return null;
-        return { id: item.id, field: item.field, value: item.value };
+        const value = valueForSlotAuthority(item, projection, authority).trim();
+        if (!value) return null;
+        return { id: item.id, field: item.field, value };
       }
       const text = authorizedTextForSlot(projection, [item.id], authority);
       if (!text) return null;
@@ -145,16 +186,62 @@ export function visibleSemanticTopics(text: string): GenerationTopic[] {
   if (/\bexpected results\b|\bresults in \d+\s+(?:days?|weeks?)\b/i.test(text)) topics.push("results_timeline");
   if (/\bdietary supplement\b|\bmedical device\b/i.test(text)) topics.push("category_classification");
   if (/\bsynovial fluid is\b|\bnatural lubricant\b|\bcartilage\b/i.test(text)) topics.push("background_science");
+  if (new RegExp(RETURNS_PROCEDURE_SOURCE, "i").test(text)) topics.push("returns");
+  if (new RegExp(SHIPPING_TOPIC_SOURCE, "i").test(text)) topics.push("shipping");
   return topics;
+}
+
+/**
+ * Topics visible in operational evidence: pricing and manufacturer count only
+ * as assertions (see operational-context); every other topic keeps the lexical
+ * detector.
+ */
+function operationalEvidenceTopics(text: string): GenerationTopic[] {
+  const topics: GenerationTopic[] = visibleSemanticTopics(text).filter((topic) => topic !== "pricing" && topic !== "manufacturer");
+  if (operationalPricingAssertions(text).length > 0) topics.push("pricing");
+  if (operationalManufacturerAssertions(text).length > 0) topics.push("manufacturer");
+  return topics;
+}
+
+/**
+ * Operational interpretation applies only to returns/shipping evidence inside a
+ * returns/shipping slot; any other evidence is read by the lexical detector.
+ */
+function slotTopicSources(slot: SlotIsolationView): { operational: Set<GenerationTopic>; other: Set<GenerationTopic> } {
+  const inFamily = OPERATIONAL_TOPIC_FAMILY.has(slot.topic);
+  const isOperational = (item: SlotIsolationView["evidence"][number]) => inFamily && OPERATIONAL_EVIDENCE_FIELDS.has(item.field);
+  const otherText = slot.evidence
+    .filter((item) => !isOperational(item))
+    .map((item) => item.value)
+    .join(" ");
+  const operational = new Set<GenerationTopic>();
+  for (const item of slot.evidence.filter(isOperational)) for (const topic of operationalEvidenceTopics(item.value)) operational.add(topic);
+  return { operational, other: new Set(otherText ? visibleSemanticTopics(otherText) : []) };
+}
+
+export function slotVisibleTopics(slot: SlotIsolationView): GenerationTopic[] {
+  const { operational, other } = slotTopicSources(slot);
+  return [...new Set([...other, ...operational])];
+}
+
+/**
+ * Returns and shipping are one operational family only for topics shown by
+ * evidence already authorized as returns/shipping; the family opens no other topic.
+ */
+function unauthorizedVisibleTopics(slot: SlotIsolationView): GenerationTopic[] {
+  const allowed = new Set(authorizedTopicsForSlot(slot));
+  const { operational, other } = slotTopicSources(slot);
+  const out = new Set<GenerationTopic>([...other].filter((topic) => !allowed.has(topic)));
+  for (const topic of operational) if (!allowed.has(topic) && !OPERATIONAL_TOPIC_FAMILY.has(topic)) out.add(topic);
+  return [...out];
 }
 
 export function collectSlotProjectionViolations(slots: SlotIsolationView[]): SlotProjectionViolation[] {
   const violations: SlotProjectionViolation[] = [];
   for (const slot of slots) {
     const authorized = authorizedTopicsForSlot(slot);
-    const allowed = new Set(authorized);
     const projectedSource = slot.evidence.map((item) => item.value).join(" ");
-    const visible = visibleSemanticTopics(projectedSource).filter((topic) => !allowed.has(topic));
+    const visible = unauthorizedVisibleTopics(slot);
     if (visible.length === 0) continue;
     violations.push({
       slotId: slot.slotId,

@@ -1,4 +1,5 @@
 import { extractJsonText, JsonExtractError } from "@/lib/ai/parse-ai-json";
+import { providerFetch } from "@/lib/ai/resilience";
 import { VISUAL_QA_MODEL } from "@/lib/visual-qa/multimodal";
 import type { ScreenshotPayload } from "@/lib/visual-qa/multimodal";
 import { VISUAL_QA_ACTION_CODES } from "@/lib/visual-qa/types";
@@ -297,15 +298,19 @@ async function callAnthropic(
       format: { type: "json_schema", schema },
     };
   }
-  const response = await fetch(ANTHROPIC_API_URL, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
+  const response = await providerFetch(
+    ANTHROPIC_API_URL,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify(body),
     },
-    body: JSON.stringify(body),
-  });
+    { provider: "anthropic", model: VISUAL_QA_MODEL, promptId: "ai-review" },
+  );
   if (!response.ok) {
     const errorBody = await response.text().catch(() => "");
     if (structured && (response.status === 400 || response.status === 422)) {

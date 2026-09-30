@@ -1,5 +1,6 @@
 node_modules/
 .next/
+.dev-server/
 out/
 .env
 .env.local

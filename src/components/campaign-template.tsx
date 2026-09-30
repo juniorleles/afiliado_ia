@@ -12,6 +12,8 @@ import type { Campaign } from "@/lib/campaigns";
 import { AffiliateCta } from "@/components/affiliate-cta";
 import { parsePresellPage } from "@/lib/presell-page";
 import { PresellPageView } from "@/components/presell/presell-page-view";
+import type { PresellRenderAssets } from "@/lib/presell-render-assets";
+import type { SourceVisual } from "@/lib/visual-identity/types";
 
 /**
  * Template Review — hero + disclosure de afiliado (sempre visível, nunca
@@ -120,6 +122,8 @@ export function CampaignTemplate({
   renderPixel = false,
   trackClicks = false,
   disableAffiliateNavigation = false,
+  renderAssets,
+  sourceVisual = null,
 }: {
   campaign: Campaign;
   /** Query string from the public URL (no leading ?). Serializable across RSC. */
@@ -134,6 +138,9 @@ export function CampaignTemplate({
   trackClicks?: boolean;
   /** Validation lab: CTA stays visible but must not hop to the affiliate URL. */
   disableAffiliateNavigation?: boolean;
+  /** Visual sources resolved on the server; client previews omit them. */
+  renderAssets?: PresellRenderAssets;
+  sourceVisual?: SourceVisual | null;
 }) {
   const incomingParams = new URLSearchParams(incomingQuery);
   const composed = parsePresellPage(campaign.pageComposition);
@@ -146,6 +153,8 @@ export function CampaignTemplate({
         renderPixel={renderPixel}
         trackClicks={trackClicks}
         disableAffiliateNavigation={disableAffiliateNavigation}
+        renderAssets={renderAssets}
+        sourceVisual={sourceVisual}
       />
     );
   }

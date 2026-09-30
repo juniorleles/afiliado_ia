@@ -26,7 +26,8 @@ import {
   relationalLanguageClaims,
   relationshipEntailed,
 } from "@/lib/ai/ingredient-claims";
-import { isInterrogativeSentence, validateFaqQuestion } from "@/lib/ai/faq-question-semantics";
+import { evidenceBackedFaqTopics, isInterrogativeSentence, validateFaqQuestion } from "@/lib/ai/faq-question-semantics";
+import { unsupportedOperationalMerges } from "@/lib/ai/operational-relations";
 
 export type GroundingStatus = "GROUNDED" | "REVIEW_REQUIRED" | "UNGROUNDED";
 
@@ -40,6 +41,31 @@ export type UnsupportedClaim = {
 export type GroundingResult = {
   status: GroundingStatus;
   unsupportedClaims: UnsupportedClaim[];
+};
+
+/**
+ * Authority already assigned to one FAQ item. Page-level grounding looks up
+ * the exact question string. It does not infer authority from wording.
+ */
+export type FaqAuthorityBinding = {
+  question: string;
+  field?: string;
+  topic?: string;
+  semanticAuthority?: string;
+  authorizedTopics?: readonly string[];
+  supportText?: string;
+  closedTopics?: readonly string[];
+  slotId?: string;
+};
+
+export type GroundingOptions = {
+  faqAuthorities?: readonly FaqAuthorityBinding[];
+  /**
+   * Product identity for callers whose facts are scoped to one slot's evidence.
+   * Identity is not slot-scoped evidence, and it never becomes support: it only
+   * tells the ingredient classifier which token names the product itself.
+   */
+  productIdentity?: string;
 };
 
 const STOPWORDS = new Set([
@@ -114,6 +140,11 @@ type EligibleFields = {
   pricing: string;
   guarantee: string;
   manufacturer: string;
+  productFormat: string;
+  returns: string;
+  shipping: string;
+  shippingStatements: string[];
+  operationalEvidence: string;
 };
 
 const NUMBER_WORDS: Record<string, number> = {
@@ -170,6 +201,11 @@ function eligibleFieldsFromFacts(facts: ProductFacts): EligibleFields {
     pricing: eligible.pricingInformation,
     guarantee: eligible.guaranteeInformation,
     manufacturer: eligible.manufacturer,
+    productFormat: eligible.productFormat,
+    returns: eligible.returnsInformation.join(" "),
+    shipping: eligible.shippingInformation.join(" "),
+    shippingStatements: eligible.shippingInformation,
+    operationalEvidence: [...eligible.returnsInformation, ...eligible.shippingInformation].join("\n"),
   };
 }
 
@@ -212,6 +248,52 @@ function moneyAmounts(text: string): string[] {
     normalize(m[0]).replace(/\s+/g, ""),
   );
 }
+
+/** "take 5 to 10 days", "take a while": elapsed time, not an intake instruction. */
+const ELAPSED_TIME_TAKE =
+  /^take\s+(?:a\s+(?:while|moment|minute|few|couple|little|bit|long)\b|(?:one|two|three|four|five|six|seven|eight|nine|ten|a|\d+)(?:\s*(?:-|–|to)\s*\d+)?\s+(?:more\s+)?(?:business\s+|working\s+)?(?:minutes?|hours?|days?|weeks?|months?|years?)\b)/i;
+
+function wordsOf(text: string): string[] {
+  return normalize(text.replace(/\$\s?\d+(?:\.\d{2})?/g, " ")).split(/\s+/).filter(Boolean);
+}
+
+/**
+ * A fee is grounded by a shipping statement only when the copy keeps that
+ * statement's relation around every occurrence of the amount: the words that
+ * precede the fee in the statement (for example the destination) appear just
+ * before it, and the words that follow (for example the delivery window) just
+ * after it. An amount alone, or attached to another destination, is not bound.
+ */
+function feeBoundByShippingStatement(generated: string, amount: string, statements: readonly string[]): boolean {
+  const escaped = amount.replace(/\./g, "\\.");
+  const occurrences = [...generated.matchAll(new RegExp(`\\$\\s?${escaped}(?!\\d)`, "g"))];
+  if (occurrences.length === 0) return false;
+  const candidates = statements
+    .map((statement) => {
+      const at = statement.search(new RegExp(`\\$\\s?${escaped}(?!\\d)`));
+      if (at < 0) return null;
+      const end = statement.slice(at).match(/^\$\s?[\d.]+/)?.[0].length ?? 0;
+      return { before: wordsOf(statement.slice(0, at)), after: wordsOf(statement.slice(at + end)) };
+    })
+    .filter((row): row is { before: string[]; after: string[] } => Boolean(row));
+  return occurrences.every((occurrence) => {
+    const index = occurrence.index ?? 0;
+    const left = wordsOf(generated.slice(Math.max(0, index - 160), index));
+    const right = wordsOf(generated.slice(index + occurrence[0].length, index + occurrence[0].length + 160));
+    return candidates.some(({ before, after }) => {
+      const near = (words: string[], window: string[]) =>
+        words.length === 0 || words.every((word) => window.slice(0, words.length + 4).includes(word));
+      return near(before, [...left].reverse()) && near(after, right);
+    });
+  });
+}
+
+/**
+ * Wording that strengthens an operational fact (delivery, fees, returns)
+ * beyond the source. Blocked unless the eligible evidence says it.
+ */
+const OPERATIONAL_STRENGTHENING =
+  /\bguaranteed (?:delivery|shipping|arrival)\b|\bdelivery (?:is )?guaranteed\b|\b(?:arrives?|delivered) (?:in|within) (?:just|only)\b|\bonly \$\s*\d+(?:\.\d{2})?|\bjust \$\s*\d+(?:\.\d{2})?|\brisk[\s-]?free\b|\bhassle[\s-]?free\b|\bno questions asked\b|\bno[- ]risk\b|\bfree returns?\b|\bwe (?:pay|cover) (?:the )?return shipping\b/gi;
 
 function longestSharedPhrase(claim: string, evidence: string, minWords: number): string | null {
   const claimWords = normalize(claim).split(/\s+/).filter(Boolean);
@@ -268,7 +350,85 @@ function fieldSupportsClaim(claim: string, evidence: string, productName: string
       return true;
     }
   }
-  return false;
+
+  return fieldFullyRestatesClaim(claim, evidence);
+}
+
+/** Distributive quantifiers that state the same frequency. */
+const DISTRIBUTIVE_EQUIVALENTS: Record<string, string> = { each: "every" };
+
+/**
+ * Action/frequency pairs that state the same instruction. Applied only to
+ * dosage-claim support, and only these substitutions.
+ */
+function normalizeDosageFrequency(text: string): string {
+  return text.replace(/\b(?:each|every) day\b/gi, "daily");
+}
+
+const DOSAGE_ACTION = /\b(take|taking|use|using|apply|applying|swallow|swallowing|chew|chewing|dissolve|dissolving)\b/i;
+
+function dosageActionStem(text: string): string | null {
+  const verb = text.match(DOSAGE_ACTION)?.[1]?.toLowerCase() || "";
+  if (!verb) return null;
+  return verb.replace(/ing$/, "");
+}
+
+function usageEvidenceSupportsClaim(claim: string, evidence: string, productName: string, sentence = claim): boolean {
+  if (fieldSupportsClaim(claim, evidence, productName)) return true;
+  const sentenceFrequency = normalize(normalizeDosageFrequency(sentence));
+  const evidenceFrequency = normalize(normalizeDosageFrequency(evidence));
+  if (sentenceFrequency === normalize(sentence) && evidenceFrequency === normalize(evidence)) return false;
+  if (!sentenceFrequency || !evidenceFrequency.includes(sentenceFrequency)) return false;
+  const claimAction = dosageActionStem(sentence);
+  const evidenceAction = dosageActionStem(evidence);
+  if (claimAction && evidenceAction && claimAction !== evidenceAction) return false;
+  return true;
+}
+
+const NEGATION = /\b(?:not|never|avoid|avoids|without|cannot|neither|nor|n't)\b/i;
+
+function keptTokens(words: string[]): string[] {
+  return words.filter((token) => token.length > 1 && !STOPWORDS.has(token) && !/^\d+$/.test(token));
+}
+
+/**
+ * Claim words after meaning-preserving grammatical normalization. "one X"
+ * restates "a X" only when the evidence itself uses the singular determiner for
+ * that same noun, so a counted quantity is never dropped.
+ */
+function canonicalClaimTokens(claim: string, evidence: string): string[] {
+  const words = normalize(claim).split(/\s+/).filter(Boolean);
+  const evidenceNorm = ` ${normalize(evidence)} `;
+  const kept: string[] = [];
+  for (let i = 0; i < words.length; i += 1) {
+    const word = words[i] as string;
+    const next = words[i + 1];
+    if (word === "one" && next && (evidenceNorm.includes(` a ${next} `) || evidenceNorm.includes(` an ${next} `))) continue;
+    kept.push(DISTRIBUTIVE_EQUIVALENTS[word] ?? word);
+  }
+  return keptTokens(kept);
+}
+
+function canonicalEvidenceTokens(evidence: string): Set<string> {
+  const words = normalize(evidence)
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((token) => DISTRIBUTIVE_EQUIVALENTS[token] ?? token);
+  return new Set(keptTokens(words));
+}
+
+/**
+ * Whole-claim restatement of one field: every claim word is already present in
+ * that field after normalization, so the claim adds nothing. Word order may
+ * differ. A field that negates what the claim asserts is not a restatement.
+ */
+function fieldFullyRestatesClaim(claim: string, evidence: string): boolean {
+  if (NEGATION.test(evidence) && !NEGATION.test(claim)) return false;
+  if (!claimNumbersPresent(claim, evidence)) return false;
+  const claimTokens = canonicalClaimTokens(claim, evidence);
+  if (claimTokens.length < 2) return false;
+  const evidenceTokens = canonicalEvidenceTokens(evidence);
+  return claimTokens.every((token) => evidenceTokens.has(token));
 }
 
 function claimNumbersPresent(claim: string, evidence: string): boolean {
@@ -288,6 +448,9 @@ function anyFieldSupportsClaim(claim: string, fields: EligibleFields): boolean {
     fields.pricing,
     fields.guarantee,
     fields.manufacturer,
+    fields.productFormat,
+    fields.returns,
+    fields.shipping,
     fields.productName,
   ];
   return values.some((field) => fieldSupportsClaim(claim, field, fields.productName));
@@ -303,11 +466,12 @@ function isNonFactualFrame(sentence: string): boolean {
   );
 }
 
+/** A line break ends a unit: an unpunctuated list answer never joins the next FAQ question. */
 function splitSentences(text: string): string[] {
   return text
     .replace(/^#{1,6}\s+[^\n]+$/gm, ".")
-    .replace(/\s+/g, " ")
-    .split(/(?<=[.!?])\s+/)
+    .split(/\n+/)
+    .flatMap((line) => line.replace(/\s+/g, " ").split(/(?<=[.!?])\s+/))
     .map((s) => s.trim())
     .filter((s) => s.length > 0 && s !== ".");
 }
@@ -422,7 +586,12 @@ function guaranteeIntroducesUnsupportedExpansion(claim: string, evidence: string
   return !GUARANTEE_EXPANSION.test(evidence);
 }
 
-function scanFieldAwareClaims(generated: string, fields: EligibleFields, facts: ProductFacts): {
+function scanFieldAwareClaims(
+  generated: string,
+  fields: EligibleFields,
+  facts: ProductFacts,
+  productIdentity: string,
+): {
   claims: UnsupportedClaim[];
   matched: boolean;
 } {
@@ -440,14 +609,18 @@ function scanFieldAwareClaims(generated: string, fields: EligibleFields, facts: 
     note();
     const durations = durationTokens(claim);
     const bound =
-      Boolean(fields.guarantee) &&
-      durations.some((duration) =>
-        sameEvidenceBinds(fields.guarantee, [duration, "refund"]) ||
-        sameEvidenceBinds(fields.guarantee, [duration, "guarantee"]) ||
-        sameEvidenceBinds(fields.guarantee, [duration, "money back"]) ||
-        sameEvidenceBinds(fields.guarantee, [duration, "warranty"]) ||
-        sameEvidenceBinds(fields.guarantee, [duration, "return"]),
-      );
+      (Boolean(fields.guarantee) &&
+        durations.some((duration) =>
+          sameEvidenceBinds(fields.guarantee, [duration, "refund"]) ||
+          sameEvidenceBinds(fields.guarantee, [duration, "guarantee"]) ||
+          sameEvidenceBinds(fields.guarantee, [duration, "money back"]) ||
+          sameEvidenceBinds(fields.guarantee, [duration, "warranty"]) ||
+          sameEvidenceBinds(fields.guarantee, [duration, "return"]),
+        )) ||
+      (Boolean(fields.returns) &&
+        /\b(?:refund|return)\b/i.test(claim) &&
+        !/\b(?:guarantee|money[\s-]?back|warranty)\b/i.test(claim) &&
+        durations.some((duration) => sameEvidenceBinds(fields.returns, [duration])));
     const expanded = bound && guaranteeIntroducesUnsupportedExpansion(claim, fields.guarantee);
     if (!bound || expanded) {
       pushUnique(
@@ -492,8 +665,35 @@ function scanFieldAwareClaims(generated: string, fields: EligibleFields, facts: 
       (amounts.some((amount) => normalize(fields.pricing).includes(amount.replace(/\s+/g, ""))) ||
         numbers.some((n) => sameEvidenceBinds(fields.pricing, [n])) ||
         (isDiscount && /discount|%\s*off|on sale|reduced price|special price/i.test(fields.pricing)));
-    if (!supported) {
+    const shippingFee =
+      !isDiscount &&
+      amounts.length > 0 &&
+      fields.shippingStatements.length > 0 &&
+      [...claim.matchAll(/\d+(?:\.\d{2})?/g)].every((match) => feeBoundByShippingStatement(generated, match[0], fields.shippingStatements));
+    if (!supported && !shippingFee) {
       pushUnique(found, claim, "price claim requires copy-eligible pricing evidence", "hard");
+    }
+  }
+
+  const operationalSupport = normalize(
+    [fields.pricing, fields.guarantee, fields.returns, fields.shipping, fields.features, fields.description].join(" "),
+  );
+  for (const claim of collectMatches(generated, OPERATIONAL_STRENGTHENING)) {
+    note();
+    if (!operationalSupport.includes(normalize(claim))) {
+      pushUnique(found, claim, "operational fact strengthened beyond copy-eligible evidence", "hard");
+    }
+  }
+
+  if (fields.operationalEvidence) {
+    for (const merge of unsupportedOperationalMerges(generated, fields.operationalEvidence)) {
+      note();
+      pushUnique(
+        found,
+        merge.sentence,
+        `unsupported semantic merge: "${merge.qualifier}" is not related to ${merge.measure} in any single evidence sentence`,
+        "hard",
+      );
     }
   }
 
@@ -556,7 +756,7 @@ function scanFieldAwareClaims(generated: string, fields: EligibleFields, facts: 
     }
   }
 
-  const ingredientClaims = namedIngredientMentions(generated, { productName: facts.productName });
+  const ingredientClaims = namedIngredientMentions(generated, { productName: productIdentity });
   for (const claim of ingredientClaims) {
     if (isIngredientCountClaim(claim)) continue;
     if (isGenericIngredientAbsence(claim)) continue;
@@ -647,7 +847,8 @@ function scanFieldAwareClaims(generated: string, fields: EligibleFields, facts: 
   for (const claim of usageClaims) {
     note();
     if (/^directions$/i.test(claim.trim()) && !directionsTokenHasUsageSense(generated)) continue;
-    if (!fields.usage || !fieldSupportsClaim(claim, fields.usage, fields.productName)) {
+    if (ELAPSED_TIME_TAKE.test(claim)) continue;
+    if (!fields.usage || !usageEvidenceSupportsClaim(claim, fields.usage, fields.productName, unitsContaining(generated, claim) || claim)) {
       pushUnique(found, claim, "dosage/usage claim requires copy-eligible usage evidence", "hard");
     }
   }
@@ -762,10 +963,61 @@ function scanFieldAwareClaims(generated: string, fields: EligibleFields, facts: 
   return { claims: found, matched };
 }
 
-export function validateGrounding(generated: string, facts: ProductFacts): GroundingResult {
+export function normalizeFaqQuestion(value: string): string {
+  return value
+    .trim()
+    .replace(/^[-*]\s+/, "")
+    .replace(/\s+/g, " ")
+    .replace(/\?+$/, "")
+    .trim()
+    .toLowerCase();
+}
+
+function bindingForQuestion(
+  sentence: string,
+  bindings: readonly FaqAuthorityBinding[] | undefined,
+): FaqAuthorityBinding | undefined {
+  if (!bindings?.length) return undefined;
+  const key = normalizeFaqQuestion(sentence);
+  if (!key) return undefined;
+  const matches = bindings.filter((item) => normalizeFaqQuestion(item.question) === key);
+  if (matches.length !== 1) return undefined;
+  return matches[0];
+}
+
+function faqQuestionContext(
+  sentence: string,
+  supportBag: string,
+  productName: string,
+  bindings: readonly FaqAuthorityBinding[] | undefined,
+) {
+  const bound = bindingForQuestion(sentence, bindings);
+  if (!bound) {
+    return { question: sentence, supportText: supportBag, productName };
+  }
+  return {
+    question: sentence,
+    supportText: bound.supportText ?? "",
+    productName,
+    field: bound.field,
+    topic: bound.topic,
+    semanticAuthority: bound.semanticAuthority,
+    authorizedTopics: bound.authorizedTopics,
+    closedTopics: bound.closedTopics,
+    slotId: bound.slotId,
+  };
+}
+
+export function validateGrounding(
+  generated: string,
+  facts: ProductFacts,
+  options?: GroundingOptions,
+): GroundingResult {
   const fields = eligibleFieldsFromFacts(facts);
-  const fieldAware = scanFieldAwareClaims(generated, fields, facts);
+  const productIdentity = options?.productIdentity?.trim() || facts.productName;
+  const fieldAware = scanFieldAwareClaims(generated, fields, facts, productIdentity);
   const unsupported: UnsupportedClaim[] = [...fieldAware.claims];
+  const faqAuthorities = options?.faqAuthorities;
 
   const supportBag = `${fields.description}\n${fields.features}`;
   for (const knowledge of KNOWLEDGE_PATTERNS) {
@@ -785,11 +1037,15 @@ export function validateGrounding(generated: string, facts: ProductFacts): Groun
     const sentence = raw.replace(/^#{1,6}\s+/, "").replace(/^[-*]\s+/, "").trim();
     if (!sentence || isNonFactualFrame(sentence)) continue;
     if (isInterrogativeSentence(sentence)) {
-      const q = validateFaqQuestion({
-        question: sentence,
-        supportText: supportBag,
-        productName: fields.productName,
-      });
+      const base = faqQuestionContext(sentence, supportBag, fields.productName, faqAuthorities);
+      const bound = bindingForQuestion(sentence, faqAuthorities);
+      const backed =
+        bound || faqAuthorities?.length
+          ? []
+          : evidenceBackedFaqTopics(sentence, { usage: fields.usage, ingredients: fields.ingredients });
+      const q = validateFaqQuestion(
+        backed.length ? { ...base, authorizedTopics: backed } : base,
+      );
       if (q.semanticResult === "PASS") continue;
       pushUnique(unsupported, sentence, q.failCodes[0] || "unsupported question presupposition", "hard");
       continue;
@@ -823,7 +1079,7 @@ export function validateGrounding(generated: string, facts: ProductFacts): Groun
   const generatedWords = generated.split(/\s+/).filter(Boolean).length;
   const generatedIsNeutralQuestion =
     isInterrogativeSentence(generated) &&
-    validateFaqQuestion({ question: generated, supportText: supportBag, productName: fields.productName }).semanticResult ===
+    validateFaqQuestion(faqQuestionContext(generated, supportBag, fields.productName, faqAuthorities)).semanticResult ===
       "PASS";
   if (
     generatedWords > 0 &&
@@ -865,6 +1121,9 @@ function bestFieldTokenHits(claim: string, fields: EligibleFields): number {
     fields.pricing,
     fields.guarantee,
     fields.manufacturer,
+    fields.productFormat,
+    fields.returns,
+    fields.shipping,
     fields.productName,
   ];
   let best = 0;
@@ -884,4 +1143,30 @@ export function composePublicationGate(policyGate: PublicationGate, grounding: G
   if (policyGate === "BLOCKED" || grounding === "UNGROUNDED") return "BLOCKED";
   if (policyGate === "REVIEW_REQUIRED" || grounding === "REVIEW_REQUIRED") return "REVIEW_REQUIRED";
   return "READY";
+}
+
+export const CONTENT_READINESS = ["CONTENT_READY", "CONTENT_BLOCKED"] as const;
+
+export type ContentReadiness = (typeof CONTENT_READINESS)[number];
+
+/**
+ * Whether the copy itself is valid, which is a different question from whether
+ * it may be published. Unsupported copy, a structural or proposition-binding
+ * violation, and a failing policy rule all invalidate the content. A
+ * non-blocking review warning does not: it leaves the copy usable for
+ * downstream construction while composePublicationGate keeps reporting
+ * REVIEW_REQUIRED, so publication still waits for a human. CONTENT_READY is
+ * never an approval to publish.
+ */
+export function composeContentReadiness(input: {
+  grounding: GroundingStatus;
+  policyFindings: ReadonlyArray<{ status: "pass" | "warn" | "fail" }>;
+  structuralViolations?: number;
+  propositionBindingViolations?: number;
+}): ContentReadiness {
+  if (input.grounding !== "GROUNDED") return "CONTENT_BLOCKED";
+  if ((input.structuralViolations ?? 0) > 0) return "CONTENT_BLOCKED";
+  if ((input.propositionBindingViolations ?? 0) > 0) return "CONTENT_BLOCKED";
+  if (input.policyFindings.some((finding) => finding.status === "fail")) return "CONTENT_BLOCKED";
+  return "CONTENT_READY";
 }

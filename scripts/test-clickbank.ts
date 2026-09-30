@@ -5,7 +5,8 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 import Database from "better-sqlite3";
 import { migrate, resetDbForTests, getDb } from "../src/lib/db.ts";
-import { createCampaign, publishCampaign, type CampaignInput } from "../src/lib/campaigns.ts";
+import { createCampaign, publishCampaign } from "../src/lib/campaigns.ts";
+import { readyPublicationInput } from "./fixtures/ready-publication-campaign.ts";
 import { generateClickId, generateSessionId, isValidClickId, parseAttribution } from "../src/lib/analytics.ts";
 import { getCampaignAnalytics, recordClick, recordVisit } from "../src/lib/analytics-store.ts";
 import {
@@ -118,41 +119,13 @@ process.env.PRESELL_OS_DB = tmp;
 process.env.CLICKBANK_INS_SECRET = SECRET;
 resetDbForTests();
 
-const FACTUAL_BODY = `This winter jacket is a mid-weight insulated layer for daily cold weather.
-
-## What Is The XT-200?
-
-A synthetic-fill coat meant for walking.
-
-## Key Features
-
-- Insulated core
-- Washable shell
-
-## FAQ
-
-- Is it a jacket? Yes.
-
-## Final Thoughts
-
-Ordinary winter days.
-`;
-
-function input(overrides: Partial<CampaignInput> = {}): CampaignInput {
-  return {
+const campaign = createCampaign(
+  readyPublicationInput({
     name: "ClickBank fixture",
     slug: "phase5-clickbank-fixture",
-    headline: "Winter Jacket XT-200 Review",
-    body: FACTUAL_BODY,
-    ctaLabel: "Check Current Price",
     affiliateUrl: "https://hop.clickbank.net/?affiliate=nick&vendor=vend",
-    headScript: null,
-    adHeadline: null,
-    ...overrides,
-  };
-}
-
-const campaign = createCampaign(input());
+  }),
+);
 publishCampaign(campaign.id);
 const sessionA = generateSessionId();
 const knownClick = generateClickId();

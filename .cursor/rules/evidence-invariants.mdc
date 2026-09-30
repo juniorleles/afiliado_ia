@@ -1,0 +1,28 @@
+---
+description: Stable evidence, authority and safety invariants for the LP engine
+alwaysApply: true
+---
+
+# Evidence & authority invariants
+
+- ProductFacts / evidence are the only factual authority for copy.
+- A seller claim is not an independently verified fact. DIRECT_SOURCE means "the source said it".
+- Provenance (source URL, page category, unit, location) must survive every pipeline stage.
+- No invented facts, no filler, no model world knowledge presented as product evidence.
+- NOT_FOUND or closed evidence/topics cannot be resurrected downstream.
+- Never weaken grounding, proposition binding, the closed-claim firewall, or health/policy rules.
+- Operational facts (returns, shipping, format, fees) are restated, never strengthened into promises.
+- No product-, slug-, or source-path-specific logic. Test generic rules with fictional products.
+- Low evidence volume may legitimately produce a short LP. Maximize supported information, not word count.
+
+# Process
+
+- Deterministic generic defects: TRACE → CLASSIFY → FIX → TEST → REPLAY.
+- New replay/evidence runs write to a new versioned directory; never overwrite earlier artifacts.
+- Joint Genesis content and reference are frozen; its regression must pass after changes.
+
+# Safety gates
+
+- Public pages require publication approval; CONTENT_READY is not publication approval.
+- No publish, deploy, live traffic, ads, or commit unless explicitly ordered.
+- Paid model/API calls (Anthropic, OpenAI text/image, others) require explicit task authorization and a stated call budget.

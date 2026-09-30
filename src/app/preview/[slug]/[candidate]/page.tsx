@@ -4,10 +4,14 @@ import Link from "next/link";
 import { CampaignTemplate } from "@/components/campaign-template";
 import { PublicFooter } from "@/components/public-footer";
 import { PresellThemeRoot } from "@/components/presell/presell-theme";
+import { resolvePresellRenderAssets } from "@/lib/presell-render-assets-server";
 import { candidateToSyntheticCampaign } from "@/lib/validation/candidate-campaign";
 import { getValidationCandidate } from "@/lib/validation/store";
 import { VALIDATION_ISOLATION } from "@/lib/validation/types";
 import { slugify } from "@/lib/slug";
+import type { ProductFacts } from "@/lib/product-facts";
+import { sourceVisualForUrl } from "@/lib/visual-identity/persist";
+import type { SourceVisual } from "@/lib/visual-identity/types";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -28,9 +32,16 @@ export default async function RecommendedPreviewPage({
   const expected = slugify(candidate.productName) || "product";
   if (slug !== expected) notFound();
   const campaign = candidateToSyntheticCampaign(candidate);
+  let sourceVisual: SourceVisual | null = null;
+  try {
+    const facts = campaign.sourceFactsJson ? (JSON.parse(campaign.sourceFactsJson) as ProductFacts) : null;
+    sourceVisual = sourceVisualForUrl(facts?.sourceUrl);
+  } catch {
+    sourceVisual = null;
+  }
 
   return (
-    <PresellThemeRoot campaign={campaign}>
+    <PresellThemeRoot campaign={campaign} sourceVisual={sourceVisual}>
       <div className="border-b border-amber-500/50 bg-amber-950/70 px-6 py-3 text-center text-sm text-amber-100">
         <p className="text-base font-semibold tracking-wide">RECOMMENDED LP PREVIEW — NOT PUBLISHED</p>
         <p className="mt-1 text-zinc-300">
@@ -47,6 +58,8 @@ export default async function RecommendedPreviewPage({
           renderPixel={VALIDATION_ISOLATION.renderPixel}
           trackClicks={VALIDATION_ISOLATION.trackClicks}
           disableAffiliateNavigation={VALIDATION_ISOLATION.disableAffiliateNavigation}
+          renderAssets={resolvePresellRenderAssets(campaign)}
+          sourceVisual={sourceVisual}
         />
         <PublicFooter />
       </div>

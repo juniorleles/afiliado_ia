@@ -14,6 +14,8 @@ import {
 import {
   createGenerationPlan,
   guaranteeReferenceSpans,
+  RETURNS_PROCEDURE_SOURCE,
+  SHIPPING_TOPIC_SOURCE,
   temporalDescriptionSpans,
   usageInstructionSpans,
   type GenerationPlan,
@@ -23,6 +25,7 @@ import {
   closedIngredientSynergyClaims,
   compositionPromotionClaims,
 } from "@/lib/ai/ingredient-claims";
+import { operationalManufacturerAssertions, operationalPricingAssertions } from "@/lib/ai/operational-context";
 type ClaimSemanticAuthority =
   | "IDENTITY"
   | "DESCRIPTION"
@@ -32,7 +35,10 @@ type ClaimSemanticAuthority =
   | "CAUTIONS"
   | "PRICING"
   | "GUARANTEE"
-  | "MANUFACTURER";
+  | "MANUFACTURER"
+  | "PRODUCT_FORMAT"
+  | "RETURNS"
+  | "SHIPPING";
 
 export const CLAIM_CLASSES = [
   "IDENTITY",
@@ -52,6 +58,9 @@ export const CLAIM_CLASSES = [
   "CATEGORY_CLASSIFICATION",
   "BACKGROUND_SCIENCE",
   "RELATIONAL_EXPANSION",
+  "PRODUCT_FORMAT",
+  "RETURNS",
+  "SHIPPING",
   "OTHER",
 ] as const;
 
@@ -89,7 +98,19 @@ const CLOSED_CLASS_TOPIC: Partial<Record<ClaimClass, GenerationTopic>> = {
   CATEGORY_CLASSIFICATION: "category_classification",
   BACKGROUND_SCIENCE: "background_science",
   RELATIONAL_EXPANSION: "ingredients",
+  PRODUCT_FORMAT: "product_format",
+  RETURNS: "returns",
+  SHIPPING: "shipping",
 };
+
+const OPERATIONAL_FIELD_CLASS: Record<string, ClaimClass> = {
+  productFormat: "PRODUCT_FORMAT",
+  returnsInformation: "RETURNS",
+  shippingInformation: "SHIPPING",
+};
+
+/** Native returns/shipping claims; reclassified operational spans (guarantee, usage, composition) are excluded. */
+const OPERATIONAL_CLAIM_CLASSES: ReadonlySet<ClaimClass> = new Set<ClaimClass>(["RETURNS", "SHIPPING"]);
 
 const EDITORIAL_FRAMING =
   /\b(?:straightforward|convenient|comprehensive|well-rounded|thoughtful|balanced|simple|practical|multi-angle|premium|powerful|impressive|ideal|excellent|robust|advanced|unique|smart)\b/gi;
@@ -106,10 +127,15 @@ function fieldAuthority(field: string): ClaimSemanticAuthority {
   if (field === "pricingInformation") return "PRICING";
   if (field === "guaranteeInformation") return "GUARANTEE";
   if (field === "manufacturer") return "MANUFACTURER";
+  if (field === "productFormat") return "PRODUCT_FORMAT";
+  if (field === "returnsInformation") return "RETURNS";
+  if (field === "shippingInformation") return "SHIPPING";
   return "DESCRIPTION";
 }
 
 function defaultClass(field: string): ClaimClass {
+  const operational = OPERATIONAL_FIELD_CLASS[field];
+  if (operational) return operational;
   if (field === "productName") return "IDENTITY";
   if (field === "features") return "FEATURE_DESCRIPTION";
   if (field === "ingredientsOrComponents") return "INGREDIENT_COMPOSITION";
@@ -181,6 +207,25 @@ function mergeSpans(spans: Array<{ start: number; end: number }>): Array<{ start
   return out;
 }
 
+const CONTINUATION_CLAUSE =
+  /\b(?:is|are|was|were|has|have|contains?|supports?|includes?|provides?|helps?|promotes?)\b/i;
+
+/**
+ * A span that ends before the sentence ends leaves a tail ("Take one" + "capsule each morning").
+ * That tail is the same clause, not a new authorized statement. Text before the span can still stand alone.
+ */
+function remainderWithoutContinuation(sentence: string, spans: Array<{ start: number; end: number }>): string {
+  if (spans.length === 0) return sentence.trim();
+  const lastEnd = Math.max(...spans.map((span) => span.end));
+  const tail = sentence.slice(lastEnd).trim();
+  const punctuationOnly = /^[.!?]+$/.test(tail);
+  const cut = tail && !punctuationOnly && !CONTINUATION_CLAUSE.test(tail) ? sentence.slice(0, lastEnd) : sentence;
+  return subtractSpans(
+    cut,
+    spans.filter((span) => span.start < cut.length).map((span) => ({ start: span.start, end: Math.min(span.end, cut.length) })),
+  );
+}
+
 function subtractSpans(text: string, spans: Array<{ start: number; end: number }>): string {
   if (spans.length === 0) return text.trim();
   const ordered = mergeSpans(spans);
@@ -250,6 +295,24 @@ function projectItem(item: GenerationFactManifestItem, plan: GenerationPlan, fac
     return claims;
   }
 
+  const operationalClass = OPERATIONAL_FIELD_CLASS[item.field];
+  if (operationalClass) {
+    const owned: ClaimClass | null =
+      guaranteeReferenceSpans(item.value).length > 0
+        ? "GUARANTEE_REFERENCE"
+        : usageInstructionSpans(item.value).length > 0
+          ? "USAGE_INSTRUCTION"
+          : compositionPromotionClaims(item.value).length > 0
+            ? "INGREDIENT_COMPOSITION"
+            : null;
+    push({
+      claimClass: owned ?? operationalClass,
+      sourceText: item.value,
+      generationText: item.value,
+    });
+    return claims;
+  }
+
   for (const sentence of splitSentences(item.value)) {
     const usage = usageInstructionSpans(sentence);
     const temporal = temporalDescriptionSpans(sentence);
@@ -301,8 +364,9 @@ function projectItem(item: GenerationFactManifestItem, plan: GenerationPlan, fac
     }
 
     const closedSpans = [...usage, ...temporal, ...guarantee, ...composition, ...relational];
-    const remainder = subtractSpans(sentence, closedSpans);
-    if (remainder.split(/\s+/).filter(Boolean).length >= 3) {
+    const remainder = remainderWithoutContinuation(sentence, closedSpans);
+    const untouched = closedSpans.length === 0 && remainder.trim().length > 0;
+    if (untouched || remainder.split(/\s+/).filter(Boolean).length >= 3) {
       const antioxidant = /\bantioxidants?\b/i.test(remainder);
       const genericIngredient = /\bingredients?\b/i.test(remainder);
       const claimClass: ClaimClass = antioxidant
@@ -365,12 +429,26 @@ export function closedClaimFirewall(projection: ClaimProjection, plan: Generatio
   const usageInText = usageInstructionSpans(visibleText).length + temporalDescriptionSpans(visibleText).length;
   const guaranteeInText = guaranteeReferenceSpans(visibleText).length;
   const compositionInText = compositionPromotionClaims(visibleText).length;
-  const pricingInText = collectVisible(visibleText, /\b(?:price|pricing|cost|discount|on sale|deal)\b/gi);
+  const operationalText = projection.authorized
+    .filter((claim) => OPERATIONAL_CLAIM_CLASSES.has(claim.claimClass))
+    .map((claim) => claim.generationText)
+    .join("\n");
+  const nonOperationalText = projection.authorized
+    .filter((claim) => !OPERATIONAL_CLAIM_CLASSES.has(claim.claimClass))
+    .map((claim) => claim.generationText)
+    .join("\n");
+  const pricingInText =
+    collectVisible(nonOperationalText, /\b(?:price|pricing|cost|discount|on sale|deal)\b/gi) +
+    operationalPricingAssertions(operationalText).length;
   const cautionInText = collectVisible(visibleText, /\bcaution|\bwarning|\ballergen|\bconsult(?:\s+with)?(?:\s+your)?\s+(?:doctor|physician|healthcare)\b/gi);
-  const manufacturerInText = collectVisible(visibleText, /\bmanufacturer|\bmade in|\bgmp\b|\bfacility\b/gi);
+  const manufacturerInText =
+    collectVisible(nonOperationalText, /\bmanufacturer|\bmade in|\bgmp\b|\bfacility\b/gi) +
+    operationalManufacturerAssertions(operationalText).length;
   const resultsInText = collectVisible(visibleText, /\bhow long does it take to notice results\b|\bexpected results\b|\bresults in \d+\s+(?:days?|weeks?|months?)\b/gi);
   const categoryInText = collectVisible(visibleText, /\bdietary supplement\b|\bdaily supplement\b|\bjoint supplement\b/gi);
   const scienceInText = collectVisible(visibleText, /\bsynovial fluid is\b|\bnatural lubricant\b|\bcartilage\b|\bfriction\b/gi);
+  const returnsInText = collectVisible(visibleText, new RegExp(RETURNS_PROCEDURE_SOURCE, "gi"));
+  const shippingInText = collectVisible(visibleText, new RegExp(SHIPPING_TOPIC_SOURCE, "gi"));
   const closedCount = (closed: boolean, n: number) => (closed ? n : 0);
   return {
     USAGE_INSTRUCTION_VISIBLE: usageInText,
@@ -383,6 +461,8 @@ export function closedClaimFirewall(projection: ClaimProjection, plan: Generatio
     BACKGROUND_SCIENCE_VISIBLE: scienceInText,
     INGREDIENT_COMPOSITION_VISIBLE: compositionInText,
     TEMPORAL_DESCRIPTION_VISIBLE: temporalDescriptionSpans(visibleText).length,
+    RETURNS_VISIBLE: returnsInText,
+    SHIPPING_VISIBLE: shippingInText,
     ACTUAL_MODEL_TEXT_AUDITED: true as const,
     TOTAL_VISIBLE_CLOSED_CLAIMS:
       closedCount(plan.closedTopics.includes("usage"), usageInText) +
@@ -393,7 +473,9 @@ export function closedClaimFirewall(projection: ClaimProjection, plan: Generatio
       closedCount(plan.closedTopics.includes("results_timeline"), resultsInText) +
       closedCount(plan.closedTopics.includes("category_classification"), categoryInText) +
       closedCount(plan.closedTopics.includes("background_science"), scienceInText) +
-      closedCount(plan.closedTopics.includes("ingredients"), compositionInText),
+      closedCount(plan.closedTopics.includes("ingredients"), compositionInText) +
+      closedCount(plan.closedTopics.includes("returns"), returnsInText) +
+      closedCount(plan.closedTopics.includes("shipping"), shippingInText),
   };
 }
 

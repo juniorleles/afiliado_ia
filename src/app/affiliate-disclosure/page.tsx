@@ -13,46 +13,47 @@ export default function AffiliateDisclosurePage() {
   const site = getPublicSiteName();
 
   return (
-    <PublicLegalLayout title="Affiliate Disclosure">
+    <PublicLegalLayout title="Affiliate Disclosure" path="/affiliate-disclosure" kicker="Policies">
       <p>
-        {site} participates in affiliate advertising programs. That means some
-        links on review pages are affiliate links.
+        {site} earns money through affiliate programs. The call-to-action buttons on our review pages are
+        affiliate links.
       </p>
 
-      <LegalSection title="Commissions">
+      <LegalSection title="How it works">
         <p>
-          If you click an affiliate link and later buy the product (or a
-          related offer), the site may receive a commission from the merchant
-          or the affiliate network.
+          If you click an affiliate link and then buy the product or a related offer, the seller or the affiliate
+          network (for example ClickBank) may pay this site a commission. Clicking a link costs nothing, and you
+          are never required to buy.
         </p>
       </LegalSection>
 
       <LegalSection title="Price">
         <p>
-          Using an affiliate link should not increase the price you pay unless
-          the merchant independently sets a different price. Any price
-          difference would come from the merchant, not from a surcharge added
-          by this site.
+          The site does not add a surcharge. The price you pay is set by the seller. Using an affiliate link should
+          not raise it; any price difference would come from the seller, not from this site.
         </p>
       </LegalSection>
 
       <LegalSection title="Editorial independence">
         <p>
-          Reviews on this site should not be read as bought opinions. A
-          commission does not mean the product was tested in a lab, endorsed by
-          a medical professional, or guaranteed to work. Readers should judge
-          whether a product fits their own situation.
+          Reviews are not paid opinions. A commission does not mean a product was tested, endorsed by a
+          professional, or guaranteed to work, and it does not change what a page is allowed to say. Every page is
+          limited to what its sources support, as described in our{" "}
+          <Link href="/editorial-policy">Editorial Policy</Link>.
         </p>
       </LegalSection>
 
-      <LegalSection title="Where this also appears">
+      <LegalSection title="Not the seller">
         <p>
-          Each public review includes a short disclosure near the top of the
-          page. For privacy details about click IDs and tracking, see the{" "}
-          <Link href="/privacy" className="text-emerald-400 hover:underline">
-            Privacy Policy
-          </Link>
-          .
+          We are not the manufacturer or seller of the products we review. Orders, shipping, subscriptions, and
+          refunds are handled by the seller.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="Where this appears">
+        <p>
+          This notice appears at the top of every review page and across the site. For details about click
+          identifiers and measurement, see the <Link href="/privacy">Privacy Policy</Link>.
         </p>
       </LegalSection>
     </PublicLegalLayout>

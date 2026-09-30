@@ -241,7 +241,7 @@ export function getCampaignAnalytics(campaignId: number, range: AnalyticsRange, 
     )
     .all(campaignId, ...clickFilter.params) as Array<{ position: string; n: number }>;
 
-  const byPosition: Record<CtaPosition, number> = { hero: 0, middle: 0, final: 0, guarantee: 0, sticky: 0 };
+  const byPosition: Record<CtaPosition, number> = { header: 0, hero: 0, middle: 0, final: 0, guarantee: 0, sticky: 0 };
   for (const row of positionRows) {
     if (isCtaPosition(row.position)) byPosition[row.position] = row.n;
   }

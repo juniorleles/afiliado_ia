@@ -7,6 +7,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { getCampaignById, listCampaigns } from "@/lib/campaigns";
 import { importProductFromUrl, ImportBlockedError } from "@/lib/import-product";
 import type { ProductFacts } from "@/lib/product-facts";
+import { loadResolvedProductFacts } from "@/lib/manual-overrides";
 import type { ScreenshotPayload } from "@/lib/visual-qa/multimodal";
 import { runCrossPageAiReview } from "@/lib/validation/ai-review";
 import { inspectValidationCandidate } from "@/lib/validation/inspect";
@@ -79,8 +80,8 @@ export async function addExistingDraftAction(runId: string, campaignId: number):
   if (campaign.publicationStatus === "published") {
     return { ok: false, error: "Use a draft campaign. Validation must not touch published pages." };
   }
-  if (!campaign.sourceFactsJson) return { ok: false, error: "Draft has no sourceFactsJson." };
-  const facts = JSON.parse(campaign.sourceFactsJson) as ProductFacts;
+  const facts = loadResolvedProductFacts(campaign);
+  if (!facts) return { ok: false, error: "Draft has no sourceFactsJson." };
   const key = `draft_${campaign.id}`;
   if (run.products.some((p) => p.key === key)) return { ok: false, error: "Already added." };
   const product: ValidationProduct = {

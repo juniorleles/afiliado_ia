@@ -1,0 +1,10 @@
+---
+description: One Next.js dev server per repository
+alwaysApply: true
+---
+
+# Dev server
+
+Start this repository with `npm run dev`. That runs the Dev Server Manager.
+
+Only one `next dev` process may use this repository. If a server is already Ready, reuse it. Do not start another `next dev`, `npx next dev`, or a second port against the same `.next` directory.

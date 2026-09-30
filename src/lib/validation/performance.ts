@@ -1,7 +1,7 @@
 import type { LayoutSnapshot } from "@/lib/visual-qa/types";
 import { compositionFamily } from "@/lib/validation/diversity";
 import type { LightweightPerformance, ValidationCandidate } from "@/lib/validation/types";
-import { PRODENTIM_PERF_BASELINE } from "@/lib/validation/types";
+import { PERFORMANCE_BUDGET } from "@/lib/validation/types";
 
 export type ResourceTiming = {
   name: string;
@@ -38,10 +38,8 @@ export function lightweightPerformanceFrom(input: {
   const bytes = aggregateResources(input.resources);
   const overflow = input.snapshots.some((snap) => snap.overflowX);
   const flags: string[] = [];
-  if (bytes.transferBytes > PRODENTIM_PERF_BASELINE.transferBytes * 3) {
-    flags.push(
-      `transfer ${bytes.transferBytes}B exceeds 3x ProDentim baseline ${PRODENTIM_PERF_BASELINE.transferBytes}B`,
-    );
+  if (bytes.transferBytes > PERFORMANCE_BUDGET.transferBytes * 3) {
+    flags.push(`transfer ${bytes.transferBytes}B exceeds 3x budget ${PERFORMANCE_BUDGET.transferBytes}B`);
   }
   if (overflow) flags.push("overflow-x detected");
   return {
@@ -80,11 +78,11 @@ export function applyLighthouseScores(
   scores: { performance: number; lcpMs: number | null; cls: number | null },
 ): LightweightPerformance {
   const flags = [...current.regressionFlags];
-  if (scores.performance + 8 < PRODENTIM_PERF_BASELINE.mobileLighthouse) {
-    flags.push(`lighthouse ${scores.performance} vs ProDentim baseline ${PRODENTIM_PERF_BASELINE.mobileLighthouse}`);
+  if (scores.performance + 8 < PERFORMANCE_BUDGET.mobileLighthouse) {
+    flags.push(`lighthouse ${scores.performance} vs budget ${PERFORMANCE_BUDGET.mobileLighthouse}`);
   }
-  if (scores.lcpMs && scores.lcpMs > PRODENTIM_PERF_BASELINE.lcpMs * 2) {
-    flags.push(`LCP ${scores.lcpMs}ms vs baseline ${PRODENTIM_PERF_BASELINE.lcpMs}ms`);
+  if (scores.lcpMs && scores.lcpMs > PERFORMANCE_BUDGET.lcpMs * 2) {
+    flags.push(`LCP ${scores.lcpMs}ms vs budget ${PERFORMANCE_BUDGET.lcpMs}ms`);
   }
   if (scores.cls && scores.cls > 0.1) {
     flags.push(`CLS ${scores.cls} above 0.1`);

@@ -90,6 +90,22 @@ function wordBoundaryPattern(source: string, flags = "i"): RegExp {
   return new RegExp(`(?<![a-z0-9])(?:${source})(?![a-z0-9])`, flags);
 }
 
+/**
+ * A refund window and the refund term do not have to be adjacent: copy writes
+ * "60-day 100% money-back guarantee" and "money-back guarantee for 60 days" as
+ * often as "60-day guarantee". The rule stays a duration rule, so a duration
+ * alone or a refund term alone still passes.
+ */
+function refundDurationPattern(): RegExp {
+  const duration = "\\d+\\s*[- ]?(?:day|days|week|weeks|month|months)";
+  const term = "(?:refunds?|money[- ]?back|guarantees?|warrant(?:y|ies))";
+  const near = "[^.\\n]{0,40}?";
+  return new RegExp(
+    `(?<![a-z0-9])(?:${duration}${near}${term}|${term}${near}${duration}|(?:refund|money[- ]?back|guarantee)\\s+policy)(?![a-z0-9])`,
+    "i",
+  );
+}
+
 function collectMatches(text: string, pattern: RegExp): string[] {
   const flags = pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`;
   const re = new RegExp(pattern.source, flags);
@@ -516,8 +532,7 @@ const HEALTH_PATTERNS: ClaimPattern[] = [
   {
     ruleId: "health.refund_duration",
     category: "HEALTH_AND_SENSITIVE_CLAIMS",
-    pattern:
-      /\b\d+\s*[- ]?(?:day|days|week|weeks|month|months)\s+(?:money[- ]back\s+)?(?:refund|guarantee|warranty)\b|\b(?:refund|money[- ]back|guarantee)\s+policy\b/i,
+    pattern: refundDurationPattern(),
     message:
       "Defense-in-depth review: a stated refund duration requires operator review even when Grounding supports the same window. This does not mean the duration itself is fabricated; Grounding remains the factual authority.",
     suggestion: "Do not invent refund windows. Restate only copy-eligible guarantee evidence.",
@@ -844,9 +859,17 @@ function checkTrustStructure(ctx: LintContext): LintRuleFinding[] {
 
 const PORTUGUESE_WORDS = ["você", "não", "para", "está", "com", "mais", "também", "então", "muito", "aqui"];
 
+/** URLs, emails and domain names are identifiers, not natural-language tokens. */
+const ADDRESS_SPAN =
+  /\bhttps?:\/\/[^\s<>"')\]]+|\bwww\.[^\s<>"')\]]+|[\w.+-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+|\b(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,24}\b(?:\/[^\s<>"')\]]*)?/gi;
+
+export function withoutAddressSpans(text: string): string {
+  return text.replace(ADDRESS_SPAN, " ");
+}
+
 function checkLanguage(campaign: Campaign): LintRuleFinding[] {
   const findings: LintRuleFinding[] = [];
-  const combined = `${campaign.headline}\n${campaign.body}`;
+  const combined = withoutAddressSpans(`${campaign.headline}\n${campaign.body}`);
   const ptHits: string[] = [];
   if (/[áàâãéêíóôõúç]/i.test(combined)) {
     const accent = combined.match(/[áàâãéêíóôõúç]/i);
@@ -922,6 +945,17 @@ function checkLanguage(campaign: Campaign): LintRuleFinding[] {
   }
 
   return findings;
+}
+
+/**
+ * Statement-level health / unverifiable scan. Reuses the campaign claim
+ * patterns; does not add, remove, or soften any rule.
+ */
+export function lintSourceStatement(text: string): LintRuleFinding[] {
+  return [
+    ...runClaimPatterns(text, HEALTH_PATTERNS),
+    ...runClaimPatterns(text, UNVERIFIABLE_PATTERNS),
+  ].filter((finding) => finding.status !== "pass");
 }
 
 export function lintCampaign(campaign: Campaign, context: Partial<LintContext> = {}): LintResult {

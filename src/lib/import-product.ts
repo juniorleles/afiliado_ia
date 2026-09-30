@@ -11,9 +11,11 @@
 
 import {
   emptyProductFacts,
+  IMPORT_QUALITY_GAPS,
   withImportQuality,
   type FactConfidence,
   type FactField,
+  type OfferFact,
   type ProductFacts,
   type SourceFact,
 } from "@/lib/product-facts";
@@ -25,7 +27,9 @@ import {
   isFeatureStatement,
   isFactualGuarantee,
   isGuaranteeQuestion,
+  isProductAttributeChip,
   isProductLikeName,
+  isMixtureCaption,
   isPromotionalHeading,
   isPromotionalOrCta,
   isQuestionHeading,
@@ -34,6 +38,7 @@ import {
   isUsageQuestion,
   isUsefulDescription,
   normalizeUsageInstruction,
+  looksLikeHeadlineOrSlogan,
   looksLikeIngredientName,
   namesSimilar,
   selectFactualGuarantee,
@@ -50,6 +55,11 @@ import { extractProductImage, materializeProductImage } from "@/lib/product-imag
 import { acquireBestProductAsset } from "@/lib/assets/acquire";
 import { assertSafeOutboundUrl } from "@/lib/fetch-guard";
 import { logEvent } from "@/lib/logger";
+import { checkRobotsRules } from "@/lib/robots";
+import { htmlWithoutPageStructure, classifyContentBoundaries, isStructuralClass, sectionOwning, type ContentSection } from "@/lib/content-boundary";
+import { extractIngredientContextFromHtml, isIngredientIdentityLabel } from "@/lib/ingredient-context";
+import { extractExplicitProductFormat } from "@/lib/operational-evidence";
+import { expandFirstPartySources } from "@/lib/first-party-source-expansion";
 import { classifyImportFailure, looksLikePrimaryHttpBlockError, shouldTriggerNameDiscovery } from "@/lib/source-resolution/block";
 import { FetchTimeoutError, fetchWithTimeout } from "@/lib/source-resolution/http";
 import { importJobSignal, setImportStage } from "@/lib/source-resolution/progress";
@@ -117,6 +127,8 @@ function cleanText(html: string): string {
 
 function stripNoise(html: string): string {
   return html
+    // Commented-out markup is not visible to any reader of the source page, so it is not evidence.
+    .replace(/<!--[\s\S]*?-->/g, " ")
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<nav[\s\S]*?<\/nav>/gi, " ")
@@ -215,10 +227,47 @@ function extractParagraphs(html: string, minLength = 20): string[] {
   return out;
 }
 
+/**
+ * Rows of short attribute labels ("Natural Formula · Non-GMO · Gluten Free") are
+ * explicit product characteristics, but they carry no heading and are too short
+ * to read as feature sentences, so no section branch ever sees them.
+ *
+ * A run is only trusted when at least three consecutive labels are separated by
+ * markup alone: any other visible text between them means this is prose, a price
+ * box or a testimonial card, not an attribute row.
+ */
+function extractAttributeChipRuns(html: string): string[] {
+  // Generous raw window: indentation inflates the markup, the label itself stays short.
+  const CHIP_TAG = /<(p|span|h4|h5|h6|li|div)[^>]*>([^<]{1,400})<\/\1>/gi;
+  const found: string[] = [];
+  let run: string[] = [];
+  let cursor = -1;
+  const flush = () => {
+    if (run.length >= 3) found.push(...run);
+    run = [];
+  };
+  for (const match of html.matchAll(CHIP_TAG)) {
+    const text = cleanText(match[2]);
+    const start = match.index ?? 0;
+    const between = cursor >= 0 ? html.slice(cursor, start) : "";
+    if (cursor >= 0 && cleanText(between).length > 0) flush();
+    if (!text || !isProductAttributeChip(text)) {
+      flush();
+      cursor = start + match[0].length;
+      continue;
+    }
+    run.push(text);
+    cursor = start + match[0].length;
+  }
+  flush();
+  return take(found, MAX_ITEMS);
+}
+
 function extractBoldPhrases(html: string): string[] {
   const out: string[] = [];
-  for (const m of html.matchAll(/<(?:b|strong)[^>]*>([\s\S]*?)<\/(?:b|strong)>/gi)) {
-    const text = cleanText(m[1]);
+  // The tag name must be exactly b or strong. `<br>` is a line break.
+  for (const m of html.matchAll(/<(b|strong)(?:\s[^>]*)?>([\s\S]*?)<\/\1>/gi)) {
+    const text = cleanText(m[2]);
     if (text) out.push(text);
   }
   return out;
@@ -289,6 +338,409 @@ function headingSections(html: string): Array<{ title: string; kind: HeadingKind
     });
   }
   return sections;
+}
+
+const CURRENCY_ONLY = /^(?:[$€£]\s?\d{1,5}(?:[.,]\d{2})?|\d{1,5}(?:[.,]\d{2})?\s?(?:usd|eur|gbp))$/i;
+const INGREDIENT_CARD_LIMIT = 24;
+
+type ParsedHeading = {
+  level: number;
+  title: string;
+  index: number;
+  end: number;
+  openTag: string;
+};
+
+function parseHeadings(html: string): ParsedHeading[] {
+  const out: ParsedHeading[] = [];
+  const opens = [...html.matchAll(/<h([1-6])([^>]*)>/gi)];
+  for (let i = 0; i < opens.length; i += 1) {
+    const match = opens[i];
+    const level = Number(match[1]);
+    const index = match.index ?? 0;
+    const openEnd = index + match[0].length;
+    const nextIndex = opens[i + 1]?.index ?? html.length;
+    const closeRel = html.slice(openEnd, nextIndex).search(new RegExp(`</h${level}>`, "i"));
+    const titleEnd = closeRel >= 0 ? openEnd + closeRel : nextIndex;
+    const title = cleanText(html.slice(openEnd, titleEnd));
+    if (!title) continue;
+    out.push({
+      level,
+      title,
+      index,
+      end: titleEnd,
+      openTag: match[2] ?? "",
+    });
+  }
+  return out;
+}
+
+function headingIsStruck(heading: ParsedHeading): boolean {
+  return /line-through/i.test(heading.openTag);
+}
+
+function isPackageLabel(title: string): boolean {
+  const t = title.replace(/\s+/g, " ").trim();
+  if (!t || t.length > 40) return false;
+  if (isQuestionHeading(t) || isPromotionalOrCta(t) || isPromotionalHeading(t)) return false;
+  if (classifyHeading(t) !== "other") return false;
+  if (CURRENCY_ONLY.test(t)) return false;
+  if (/^(total|subtotal|savings|save|value|was|regular|msrp|retail|bonus|free)\b/i.test(t)) return false;
+  if (/\b(total|savings|msrp|retail|bonus)\b/i.test(t) && /[$€£]|\d/.test(t)) return false;
+  const words = t.split(/\s+/);
+  if (words.length < 1 || words.length > 4) return false;
+  if (!/[a-z]/i.test(t)) return false;
+  return true;
+}
+
+function isComponentCardTitle(title: string): boolean {
+  const t = title.replace(/\s+/g, " ").trim();
+  if (t.length < 2 || t.length > 90) return false;
+  if (isQuestionHeading(t) || isPromotionalOrCta(t) || isPromotionalHeading(t)) return false;
+  if (isMixtureCaption(t) || !isIngredientIdentityLabel(t)) return false;
+  if (classifyHeading(t) !== "other") return false;
+  if (CURRENCY_ONLY.test(t)) return false;
+  const words = t.split(/\s+/);
+  if (words.length > 10) return false;
+  if (!/[a-z]/i.test(t)) return false;
+  if (looksLikeHeadlineOrSlogan(t) && !/[&,]|\(/.test(t)) return false;
+  return true;
+}
+
+function isBenefitCardTitle(title: string): boolean {
+  const t = title.replace(/\s+/g, " ").trim();
+  if (t.length < 3 || t.length > 140) return false;
+  if (isQuestionHeading(t) || isPromotionalOrCta(t)) return false;
+  if (/\bbonus\b/i.test(t)) return false;
+  if (CURRENCY_ONLY.test(t)) return false;
+  if (classifyHeading(t) !== "other") return false;
+  const words = t.split(/\s+/);
+  if (words.length > 14) return false;
+  if (!/[a-z]/i.test(t)) return false;
+  return true;
+}
+
+function firstParagraph(html: string): string | undefined {
+  const match = html.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
+  if (!match) return undefined;
+  const text = cleanText(match[1] ?? "");
+  return text || undefined;
+}
+
+type IngredientRegion = { start: number; end: number; contentStart: number };
+
+function ingredientRegions(html: string, headings: ParsedHeading[]): IngredientRegion[] {
+  const regions: IngredientRegion[] = [];
+  for (let i = 0; i < headings.length; i += 1) {
+    const current = headings[i];
+    if (current.level < 2 || current.level > 5) continue;
+    if (classifyHeading(current.title) !== "ingredients") continue;
+    let end = html.length;
+    for (let j = i + 1; j < headings.length; j += 1) {
+      const next = headings[j];
+      if (next.level < current.level) {
+        end = next.index;
+        break;
+      }
+      if (next.level === current.level) {
+        const kind = classifyHeading(next.title);
+        const continuesCards = kind === "other" && isComponentCardTitle(next.title);
+        if (!continuesCards) {
+          end = next.index;
+          break;
+        }
+      }
+    }
+    regions.push({ start: current.index, end, contentStart: current.end });
+  }
+  return regions;
+}
+
+function collectNamedIngredientCards(
+  html: string,
+  headings: ParsedHeading[],
+): { names: string[]; ranges: IngredientRegion[] } {
+  const ranges = ingredientRegions(html, headings);
+  const names: string[] = [];
+  for (const region of ranges) {
+    names.push(...extractIngredientsFromSection(html.slice(region.contentStart, region.end)));
+    for (let i = 0; i < headings.length; i += 1) {
+      const heading = headings[i];
+      if (heading.index < region.contentStart || heading.index >= region.end) continue;
+      if (heading.level < 3) continue;
+      if (!isComponentCardTitle(heading.title)) continue;
+      const next = headings[i + 1];
+      const boundary = next && next.index < region.end ? next.index : region.end;
+      const paragraph = firstParagraph(html.slice(heading.end, boundary));
+      if (!paragraph || paragraph.length < 12) continue;
+      names.push(heading.title);
+    }
+  }
+  return { names, ranges };
+}
+
+export type SameCardIngredientVisual = {
+  sourceUrl: string;
+  assetUrl: string;
+  sourceSection: string;
+  associatedFactType: "ingredient";
+  associatedFactValue: string;
+  associationMethod: "same-card";
+};
+
+function resolveCardImageUrl(src: string, pageUrl: string): string | null {
+  const trimmed = src.trim();
+  if (!trimmed || trimmed.startsWith("data:") || /\.svg(?:\?|$)/i.test(trimmed)) return null;
+  try {
+    const url = new URL(trimmed, pageUrl || undefined);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function imageUrlsBeforeHeading(slice: string, pageUrl: string): string[] {
+  const found: string[] = [];
+  for (const img of slice.matchAll(/<img\b[^>]*>/gi)) {
+    const src = img[0].match(/\bsrc\s*=\s*["']([^"']+)["']/i)?.[1] ?? "";
+    const url = resolveCardImageUrl(src, pageUrl);
+    if (url && !found.includes(url)) found.push(url);
+  }
+  return found;
+}
+
+/**
+ * An ingredient image is kept only when it sits in the same card as one
+ * component heading. The heading is the fact. The filename is not.
+ */
+export function extractSameCardIngredientVisuals(html: string, sourceUrl: string): SameCardIngredientVisual[] {
+  const bounded = htmlWithoutPageStructure(html);
+  const headings = parseHeadings(bounded);
+  const regions = ingredientRegions(bounded, headings);
+  const visuals: SameCardIngredientVisual[] = [];
+  for (const region of regions) {
+    const regionHeading = headings.find((heading) => heading.index === region.start);
+    const inRegion = headings.filter((heading) => heading.index >= region.contentStart && heading.index < region.end);
+    for (let i = 0; i < inRegion.length; i += 1) {
+      const heading = inRegion[i];
+      if (heading.level < 3 || !isComponentCardTitle(heading.title)) continue;
+      const windowStart = i === 0 ? region.contentStart : inRegion[i - 1].end;
+      const urls = imageUrlsBeforeHeading(bounded.slice(windowStart, heading.index), sourceUrl);
+      if (urls.length !== 1) continue;
+      let sourceSection = regionHeading?.title ?? "";
+      for (let j = i - 1; j >= 0; j -= 1) {
+        if (inRegion[j].level < heading.level) {
+          sourceSection = inRegion[j].title;
+          break;
+        }
+      }
+      visuals.push({
+        sourceUrl,
+        assetUrl: urls[0],
+        sourceSection,
+        associatedFactType: "ingredient",
+        associatedFactValue: heading.title,
+        associationMethod: "same-card",
+      });
+    }
+  }
+  return visuals;
+}
+
+function collectBenefitCards(
+  html: string,
+  headings: ParsedHeading[],
+  ranges: IngredientRegion[],
+): string[] {
+  const inIngredientRegion = (index: number) => ranges.some((region) => index >= region.start && index < region.end);
+  const cards: string[] = [];
+  for (let i = 0; i < headings.length; i += 1) {
+    const parent = headings[i];
+    if (parent.level > 3) continue;
+    const kind = classifyHeading(parent.title);
+    if (kind === "faq" || kind === "ingredients" || kind === "pricing" || kind === "guarantee" || kind === "usage" || kind === "cautions" || kind === "manufacturer") {
+      continue;
+    }
+    if (/\bbonus\b/i.test(parent.title) || CURRENCY_ONLY.test(parent.title) || isPackageLabel(parent.title)) continue;
+    if (/^(total|subtotal|savings|save|value|was|regular|msrp|retail)\b/i.test(parent.title)) continue;
+    let bodyEnd = html.length;
+    for (let j = i + 1; j < headings.length; j += 1) {
+      if (headings[j].level <= parent.level && headings[j].level <= 3) {
+        bodyEnd = headings[j].index;
+        break;
+      }
+    }
+    const found: string[] = [];
+    for (let j = i + 1; j < headings.length; j += 1) {
+      const card = headings[j];
+      if (card.index >= bodyEnd) break;
+      if (card.level < 4 || card.level > 6) continue;
+      if (inIngredientRegion(card.index)) continue;
+      if (!isBenefitCardTitle(card.title)) continue;
+      const next = headings[j + 1];
+      const boundary = next && next.index < bodyEnd ? next.index : bodyEnd;
+      const paragraph = firstParagraph(html.slice(card.end, boundary));
+      if (!paragraph || !isFeatureStatement(paragraph)) continue;
+      if (/^(savings|total|subtotal|was|msrp)\b/i.test(paragraph)) continue;
+      found.push(paragraph);
+    }
+    if (kind === "features" || found.length >= 2) cards.push(...found);
+  }
+  return cards;
+}
+
+const POPULARITY_LINE = /^(?:best seller|most popular|best value|recommended|most savings)$/i;
+const QUANTITY_LINE = /^\d{1,4}\s+[A-Za-z][A-Za-z-]{2,24}$/;
+
+function offerContinuation(title: string): boolean {
+  if (CURRENCY_ONLY.test(title)) return true;
+  if (/^(total|subtotal|savings|save|value|was|regular|msrp|retail|bonus)\b/i.test(title)) return true;
+  return /shipping/i.test(title) && title.length <= 80;
+}
+
+function elementAlwaysHidden(attrs: string): boolean {
+  if (/\bopacity-0\b/i.test(attrs)) return true;
+  if (/\bvisually-hidden\b|\bsr-only\b/i.test(attrs)) return true;
+  if (/\bhidden\b/i.test(attrs) && !/\baria-hidden\b/i.test(attrs)) return true;
+  if (/display\s*:\s*none|visibility\s*:\s*hidden|opacity\s*:\s*0(?:[^\d.]|$)/i.test(attrs)) return true;
+  if (/\bd-none\b/i.test(attrs) && !/\bd-(?:sm|md|lg|xl|xxl)-(?:block|flex|grid|inline)/i.test(attrs)) return true;
+  return false;
+}
+
+function stripAlwaysHidden(html: string): string {
+  return html.replace(/<(p|div|span|li|h[1-6]|small)\b([^>]*)>[\s\S]*?<\/\1>/gi, (full, _tag, attrs) =>
+    elementAlwaysHidden(attrs ?? "") ? "" : full,
+  );
+}
+
+function visibleOfferLines(html: string): string[] {
+  const text = decodeHtmlEntities(
+    stripAlwaysHidden(html)
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/(p|h[1-6]|li|div|tr)>/gi, "\n")
+      .replace(/<[^>]+>/g, " "),
+  );
+  const lines = text
+    .split(/\n+/)
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  return [...new Set(lines)];
+}
+
+function singleLine(lines: string[], test: (line: string) => boolean): string | undefined {
+  const found = [...new Set(lines.filter(test))];
+  return found.length === 1 ? found[0] : undefined;
+}
+
+function offerImageUrl(cardHtml: string, pageUrl: string): string | undefined {
+  const visible = stripAlwaysHidden(cardHtml);
+  const found: string[] = [];
+  for (const img of visible.matchAll(/<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>/gi)) {
+    const src = img[1] ?? "";
+    const tag = img[0];
+    if (/\.svg(?:\?|$)/i.test(src)) continue;
+    if (/payment|cart|badge|seal|icon|logo|lock|secure|visa|mastercard|amex|paypal|guarantee/i.test(`${src} ${tag}`)) {
+      continue;
+    }
+    try {
+      const url = new URL(src, pageUrl || undefined);
+      if (url.protocol !== "http:" && url.protocol !== "https:") continue;
+      found.push(url.toString());
+    } catch {
+      continue;
+    }
+  }
+  return found.length === 1 ? found[0] : undefined;
+}
+
+function collectOfferPrices(
+  headings: ParsedHeading[],
+  html: string,
+  sourceUrl: string,
+): { summary?: string; visible: boolean; offers: OfferFact[] } {
+  const parts: string[] = [];
+  const anchors: Array<{ label: string; heading: ParsedHeading; price: ParsedHeading; unitPrice: string }> = [];
+  const seen = new Set<string>();
+  for (let i = 0; i < headings.length; i += 1) {
+    const price = headings[i];
+    if (headingIsStruck(price) || !CURRENCY_ONLY.test(price.title)) continue;
+    let labelHeading: ParsedHeading | null = null;
+    for (let j = i - 1; j >= 0; j -= 1) {
+      const candidate = headings[j];
+      if (headingIsStruck(candidate) && CURRENCY_ONLY.test(candidate.title)) continue;
+      if (CURRENCY_ONLY.test(candidate.title)) continue;
+      if (/^(total|subtotal|savings|save|value|was|regular|msrp|retail)\b/i.test(candidate.title)) continue;
+      if (isPackageLabel(candidate.title)) labelHeading = candidate;
+      break;
+    }
+    if (!labelHeading) continue;
+    const key = labelHeading.title.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const next = headings[i + 1];
+    const between = html.slice(price.end, next ? next.index : price.end + 180);
+    const unit = cleanText(between).match(/^per\s+[a-z]+/i)?.[0];
+    const unitPrice = unit ? `${price.title} ${unit}` : price.title;
+    parts.push(`${labelHeading.title} ${unitPrice}`);
+    anchors.push({ label: labelHeading.title, heading: labelHeading, price, unitPrice });
+  }
+  const drafts = anchors.map((anchor, index) => {
+    const nextStart = anchors[index + 1]?.heading.index ?? html.length;
+    let boundary = nextStart;
+    for (const heading of headings) {
+      if (heading.index <= anchor.price.end) continue;
+      if (heading.index >= boundary) break;
+      if (heading.level > anchor.heading.level) continue;
+      if (offerContinuation(heading.title) || headingIsStruck(heading)) continue;
+      boundary = heading.index;
+      break;
+    }
+    const slice = html.slice(anchor.heading.end, boundary);
+    const lines = visibleOfferLines(slice);
+    const struck = headings.filter(
+      (heading) =>
+        heading.index > anchor.heading.index &&
+        heading.index < boundary &&
+        headingIsStruck(heading) &&
+        CURRENCY_ONLY.test(heading.title),
+    );
+    const draft: OfferFact = {
+      packageName: anchor.label,
+      unitPrice: anchor.unitPrice,
+      sourceUrl,
+      confidence: "DIRECT_SOURCE",
+    };
+    const quantity = singleLine(lines, (line) => QUANTITY_LINE.test(line));
+    const totalPrice = singleLine(lines, (line) => /^total:\s*\S+/i.test(line));
+    const savings = singleLine(lines, (line) => /^savings:\s*\S+/i.test(line));
+    const shipping = singleLine(lines, (line) => /shipping/i.test(line) && line.length <= 90);
+    const bonuses = singleLine(
+      lines,
+      (line) => line.length <= 48 && /\bfree\b/i.test(line) && !/shipping/i.test(line) && !POPULARITY_LINE.test(line),
+    );
+    const popularityLabel = singleLine(lines, (line) => POPULARITY_LINE.test(line));
+    const imageUrl = offerImageUrl(slice, sourceUrl);
+    if (quantity) draft.quantity = quantity;
+    if (totalPrice) draft.totalPrice = totalPrice;
+    if (struck.length === 1) draft.originalPrice = struck[0].title;
+    if (savings) draft.savings = savings;
+    if (shipping) draft.shipping = shipping;
+    if (bonuses) draft.bonuses = bonuses;
+    if (popularityLabel) draft.popularityLabel = popularityLabel;
+    if (imageUrl) draft.imageUrl = imageUrl;
+    return draft;
+  });
+  if (drafts.length >= 2) {
+    const earlier = drafts.slice(0, -1);
+    const tailKeys = ["totalPrice", "savings", "shipping", "bonuses"] as const;
+    const last = drafts[drafts.length - 1];
+    for (const key of tailKeys) {
+      if (last[key] && !earlier.some((offer) => offer[key])) delete last[key];
+    }
+  }
+  if (parts.length === 0) return { visible: false, offers: [] };
+  return { summary: parts.join("; "), visible: true, offers: drafts };
 }
 
 function chooseProductName(
@@ -374,20 +826,44 @@ function chooseDescription(
   return candidates[0] ?? null;
 }
 
-function extractIngredientsFromSection(body: string): string[] {
-  const bold = extractBoldPhrases(body).filter(looksLikeIngredientName);
-  if (bold.length > 0) return take(bold, MAX_ITEMS);
+function isCardLabelText(text: string): boolean {
+  const t = text.replace(/\s+/g, " ").replace(/[:]+$/g, "").trim();
+  return isIngredientIdentityLabel(t) && !isMixtureCaption(t);
+}
 
-  const cards: string[] = [];
-  for (const m of body.matchAll(/<(?:h3|p)[^>]*>([\s\S]*?)<\/(?:h3|p)>/gi)) {
-    const text = cleanText(m[1]);
-    if (looksLikeIngredientName(text) && text.split(/\s+/).length <= 6) {
-      cards.push(text);
-    }
+/**
+ * A name is an ingredient only when the element is the card label and a list
+ * or description follows it. Bold words inside a sentence are not a name.
+ */
+function extractStructuralIngredientLabels(body: string): string[] {
+  const names: string[] = [];
+  const matches = [...body.matchAll(/<(p|h[3-6])\b[^>]*>([\s\S]*?)<\/\1>/gi)];
+  for (let i = 0; i < matches.length; i += 1) {
+    const match = matches[i];
+    const text = cleanText(match[2]).replace(/[:]+$/g, "").trim();
+    if (!isCardLabelText(text)) continue;
+    const bolds = extractBoldPhrases(match[2]).map((item) => item.replace(/[:]+$/g, "").trim());
+    if (bolds.length > 1) continue;
+    if (bolds.length === 1 && bolds[0].toLowerCase() !== text.toLowerCase()) continue;
+    const end = (match.index ?? 0) + match[0].length;
+    const next = matches.slice(i + 1).find((item) => isCardLabelText(cleanText(item[2])));
+    const window = body.slice(end, next?.index ?? body.length);
+    const hasList = /<(?:ul|ol)\b/i.test(window);
+    const follow = firstParagraph(window);
+    const hasStatement = Boolean(follow && follow.length >= 12 && !isCardLabelText(follow));
+    if (!hasList && !hasStatement) continue;
+    names.push(text);
   }
+  return names;
+}
+
+function extractIngredientsFromSection(body: string): string[] {
+  const cards = extractStructuralIngredientLabels(body);
   if (cards.length > 0) return take(cards, MAX_ITEMS);
 
-  const lists = extractListItems(body).filter((item) => looksLikeIngredientName(item) && item.split(/\s+/).length <= 8);
+  const lists = extractListItems(body).filter(
+    (item) => isIngredientIdentityLabel(item) && item.split(/\s+/).length <= 8,
+  );
   if (lists.length > 0) return take(lists, MAX_ITEMS);
 
   const paragraphs = extractParagraphs(body, 20);
@@ -472,7 +948,9 @@ function extractFaqQaPairsFromHtml(title: string, body: string): FaqQaPair[] {
 }
 
 export function extractProductFacts(html: string, sourceUrl = "", options: ExtractOptions = {}): ProductFacts {
-  const cleaned = stripNoise(html);
+  const cleaned = htmlWithoutPageStructure(stripNoise(html));
+  const boundarySections = classifyContentBoundaries(html);
+  const boundary = { html, sections: boundarySections };
   const pageText = pagePlainText(cleaned);
   const facts = emptyProductFacts("", sourceUrl, "IMPORTED");
   facts.importWarnings = [];
@@ -482,7 +960,7 @@ export function extractProductFacts(html: string, sourceUrl = "", options: Extra
   if (name.name) {
     facts.productName = name.name;
     facts.confidence.productName = name.confidence;
-    facts.sourceSnippets.push(snippet("productName", name.name, sourceUrl, name.confidence));
+    facts.sourceSnippets.push(snippet("productName", name.name, sourceUrl, name.confidence, { boundary }));
   }
 
   const sections = headingSections(cleaned);
@@ -490,7 +968,7 @@ export function extractProductFacts(html: string, sourceUrl = "", options: Extra
   if (description) {
     facts.description = description.value;
     facts.confidence.description = description.confidence;
-    facts.sourceSnippets.push(snippet("description", facts.description, sourceUrl, description.confidence));
+    facts.sourceSnippets.push(snippet("description", facts.description, sourceUrl, description.confidence, { boundary }));
   }
 
   const features: string[] = [];
@@ -559,7 +1037,7 @@ export function extractProductFacts(html: string, sourceUrl = "", options: Extra
           if (!facts.description && isUsefulDescription(p)) {
             facts.description = clip(p);
             facts.confidence.description = "HEURISTIC_EXTRACTION";
-            facts.sourceSnippets.push(snippet("description", facts.description, sourceUrl, "HEURISTIC_EXTRACTION"));
+            facts.sourceSnippets.push(snippet("description", facts.description, sourceUrl, "HEURISTIC_EXTRACTION", { boundary }));
           }
         }
         break;
@@ -572,7 +1050,7 @@ export function extractProductFacts(html: string, sourceUrl = "", options: Extra
             ? rawItems
             : pairs.map((pair) => (pair.question ? `${pair.question} ${pair.answer}` : pair.answer));
         for (const item of toStore) {
-          facts.sourceSnippets.push(snippet("faq", item, sourceUrl, "DIRECT_SOURCE"));
+          facts.sourceSnippets.push(snippet("faq", item, sourceUrl, "DIRECT_SOURCE", { boundary }));
         }
         const promo = promotionsFromFaqPairs(pairs);
         for (const row of promo.usage) pushUsage(row.evidence, row.question);
@@ -611,8 +1089,34 @@ export function extractProductFacts(html: string, sourceUrl = "", options: Extra
   }
   const guarantee = selectFactualGuarantee(guaranteeCandidates);
 
-  facts.features = take(features.filter(isFeatureStatement));
-  facts.ingredientsOrComponents = take(ingredients.filter(looksLikeIngredientName));
+  const parsedHeadings = parseHeadings(cleaned);
+  const structuralIngredients = collectNamedIngredientCards(cleaned, parsedHeadings);
+  ingredients.push(...structuralIngredients.names);
+  const benefitCards = collectBenefitCards(cleaned, parsedHeadings, structuralIngredients.ranges);
+  features.push(...benefitCards);
+  const offerPrices = collectOfferPrices(parsedHeadings, cleaned, sourceUrl);
+  if (!pricing && offerPrices.summary) pricing = offerPrices.summary;
+  if (offerPrices.offers.length > 0) facts.offerFacts = offerPrices.offers;
+
+  features.push(...extractAttributeChipRuns(cleaned));
+  const identityIngredients = ingredients.filter(isIngredientIdentityLabel);
+  const structuralNames = structuralIngredients.names.filter(isComponentCardTitle);
+  facts.ingredientsOrComponents = take([...identityIngredients, ...structuralNames], INGREDIENT_CARD_LIMIT);
+  // A component list is also a run of short labels; the same value must not be
+  // reported twice under two different meanings.
+  const componentValues = new Set(facts.ingredientsOrComponents.map((item) => item.trim().toLowerCase()));
+  const structureLabels = new Set(
+    boundarySections
+      .filter((section) => isStructuralClass(section.classification))
+      .flatMap((section) => section.labels.map((label) => label.trim().toLowerCase())),
+  );
+  facts.features = take(
+    features.filter((item) => {
+      const key = item.trim().toLowerCase();
+      if (structureLabels.has(key) && item.trim().split(/\s+/).length <= 6) return false;
+      return !componentValues.has(key) && (isFeatureStatement(item) || isProductAttributeChip(item));
+    }),
+  );
   const usageTaken = take(usageRows.map((row) => row.value));
   facts.usageInformation = usageTaken;
   facts.cautions = take(cautions.flatMap((c) => cautionStatementsFrom(c)));
@@ -620,14 +1124,51 @@ export function extractProductFacts(html: string, sourceUrl = "", options: Extra
   if (guarantee) facts.guaranteeInformation = clip(guarantee, 240);
   if (manufacturer && !isSectionLabel(manufacturer)) facts.manufacturer = clip(manufacturer, 120);
 
+  facts.ingredientContext = extractIngredientContextFromHtml(
+    cleaned,
+    facts.ingredientsOrComponents,
+    sourceUrl,
+    { sourcePageCategory: "PRIMARY" },
+  );
+  for (const entry of facts.ingredientContext) {
+    facts.sourceSnippets.push({
+      field: "ingredientContext",
+      text: entry.statement,
+      sourceUrl: entry.sourceUrl,
+      confidence: entry.provenance,
+      sourcePageCategory: entry.sourcePageCategory,
+      sourceUnit: entry.sourceUnit,
+      sourceLocation: entry.sourceLocation,
+      retrievedAt: entry.retrievedAt,
+    });
+  }
+
+  const formatPool = [
+    ...facts.usageInformation,
+    ...usageRows.map((row) => row.evidence),
+    ...extractParagraphs(cleaned, 12),
+  ];
+  facts.productFormat = extractExplicitProductFormat(formatPool, sourceUrl, { sourcePageCategory: "PRIMARY" });
+  if (facts.productFormat) {
+    facts.sourceSnippets.push({
+      field: "productFormat",
+      text: facts.productFormat.statement,
+      sourceUrl: facts.productFormat.sourceUrl,
+      confidence: facts.productFormat.provenance,
+      sourcePageCategory: facts.productFormat.sourcePageCategory,
+      sourceUnit: facts.productFormat.sourceUnit,
+      sourceLocation: facts.productFormat.sourceLocation,
+    });
+  }
+
   if (facts.features.length > 0) {
     facts.confidence.features = "DIRECT_SOURCE";
     for (const item of facts.features) {
-      facts.sourceSnippets.push(snippet("features", item, sourceUrl, "DIRECT_SOURCE"));
+      facts.sourceSnippets.push(snippet("features", item, sourceUrl, "DIRECT_SOURCE", { boundary }));
     }
   }
 
-  setListConfidence(facts, "ingredientsOrComponents", facts.ingredientsOrComponents, sourceUrl);
+  setListConfidence(facts, "ingredientsOrComponents", facts.ingredientsOrComponents, sourceUrl, boundary);
   if (facts.usageInformation.length === 0) {
     facts.confidence.usageInformation = "NOT_FOUND";
   } else {
@@ -639,20 +1180,40 @@ export function extractProductFacts(html: string, sourceUrl = "", options: Extra
         snippet("usageInformation", evidence, sourceUrl, "DIRECT_SOURCE", {
           question: row?.question,
           context: row?.question ? "faq" : undefined,
+          boundary,
         }),
       );
     }
   }
-  setListConfidence(facts, "cautions", facts.cautions, sourceUrl);
-  setScalarConfidence(facts, "pricingInformation", facts.pricingInformation, sourceUrl);
+  setListConfidence(facts, "cautions", facts.cautions, sourceUrl, boundary);
+  setScalarConfidence(facts, "pricingInformation", facts.pricingInformation, sourceUrl, "DIRECT_SOURCE", boundary);
+  if (facts.confidence.pricingInformation === "DIRECT_SOURCE") {
+    for (const offer of facts.offerFacts ?? []) {
+      const phrases = [
+        offer.quantity,
+        offer.totalPrice,
+        offer.originalPrice,
+        offer.savings,
+        offer.shipping,
+        offer.bonuses,
+        offer.popularityLabel,
+      ].filter((phrase): phrase is string => Boolean(phrase));
+      for (const phrase of phrases) {
+        facts.sourceSnippets.push(snippet("pricingInformation", phrase, sourceUrl, "DIRECT_SOURCE", { boundary }));
+      }
+    }
+  } else {
+    facts.offerFacts = undefined;
+  }
   setScalarConfidence(
     facts,
     "guaranteeInformation",
     facts.guaranteeInformation,
     sourceUrl,
     facts.guaranteeInformation ? "DIRECT_SOURCE" : "NOT_FOUND",
+    boundary,
   );
-  setScalarConfidence(facts, "manufacturer", facts.manufacturer, sourceUrl);
+  setScalarConfidence(facts, "manufacturer", facts.manufacturer, sourceUrl, "DIRECT_SOURCE", boundary);
 
   if (facts.guaranteeInformation && /\d+\s*-?\s*day/i.test(facts.guaranteeInformation)) {
     facts.confidence.guaranteeInformation = "DIRECT_SOURCE";
@@ -676,6 +1237,17 @@ export function extractProductFacts(html: string, sourceUrl = "", options: Extra
   if (facts.confidence.ingredientsOrComponents === "NOT_FOUND") {
     facts.importWarnings.push("Ingredients / components were not found.");
   }
+  const keptIngredients = new Set(facts.ingredientsOrComponents.map((item) => item.trim().toLowerCase()));
+  const missedIngredientCards = structuralNames.filter((name) => !keptIngredients.has(name.trim().toLowerCase()));
+  if (structuralNames.length > 0 && facts.ingredientsOrComponents.length === 0 && missedIngredientCards.length > 0) {
+    facts.importWarnings.push(IMPORT_QUALITY_GAPS.ingredients);
+  }
+  if (benefitCards.length > 0 && facts.features.length === 0) {
+    facts.importWarnings.push(IMPORT_QUALITY_GAPS.features);
+  }
+  if (offerPrices.visible && facts.confidence.pricingInformation === "NOT_FOUND") {
+    facts.importWarnings.push(IMPORT_QUALITY_GAPS.pricing);
+  }
   if (recognizedFaq) {
     facts.importWarnings.push("FAQ section recognized; snippets stored as source facts, not copied as the presell.");
   }
@@ -698,11 +1270,34 @@ export function extractProductFacts(html: string, sourceUrl = "", options: Extra
   return applyGenericFaqRecovery(withImportQuality(pinOperatorProductName(facts, options.operatorProductName)));
 }
 
+function boundaryMeta(html: string, sections: ContentSection[], text: string): { sourceUnit: string; sourceLocation: string } {
+  const needle = text.replace(/\s+/g, " ").trim().slice(0, 80).toLowerCase();
+  const lower = html.toLowerCase();
+  let from = 0;
+  let fallback: ContentSection | undefined;
+  while (needle && from < lower.length) {
+    const at = lower.indexOf(needle, from);
+    if (at < 0) break;
+    const owner = sectionOwning(sections, at);
+    if (owner && !isStructuralClass(owner.classification)) return located(owner);
+    fallback = owner ?? fallback;
+    from = at + Math.max(needle.length, 1);
+  }
+  return located(fallback);
+}
+
+function located(owner: ContentSection | undefined): { sourceUnit: string; sourceLocation: string } {
+  return {
+    sourceUnit: owner?.labels.find((label) => label.trim())?.slice(0, 120) || "document",
+    sourceLocation: owner && !isStructuralClass(owner.classification) ? owner.classification : "PRODUCT_CONTENT",
+  };
+}
 function setListConfidence(
   facts: ProductFacts,
   field: FactField,
   values: string[],
   sourceUrl: string,
+  boundary?: { html: string; sections: ContentSection[] },
 ) {
   if (values.length === 0) {
     facts.confidence[field] = "NOT_FOUND";
@@ -710,7 +1305,7 @@ function setListConfidence(
   }
   facts.confidence[field] = "DIRECT_SOURCE";
   for (const item of values) {
-    facts.sourceSnippets.push(snippet(field, item, sourceUrl, "DIRECT_SOURCE"));
+    facts.sourceSnippets.push(snippet(field, item, sourceUrl, "DIRECT_SOURCE", { boundary }));
   }
 }
 
@@ -720,13 +1315,14 @@ function setScalarConfidence(
   value: string | undefined,
   sourceUrl: string,
   confidence: FactConfidence = "DIRECT_SOURCE",
+  boundary?: { html: string; sections: ContentSection[] },
 ) {
   if (!value) {
     facts.confidence[field] = "NOT_FOUND";
     return;
   }
   facts.confidence[field] = confidence;
-  facts.sourceSnippets.push(snippet(field, value, sourceUrl, confidence));
+  facts.sourceSnippets.push(snippet(field, value, sourceUrl, confidence, { boundary }));
 }
 
 function snippet(
@@ -734,8 +1330,13 @@ function snippet(
   text: string,
   sourceUrl: string,
   confidence: FactConfidence,
-  extra?: { question?: string; context?: string },
+  extra?: {
+    question?: string;
+    context?: string;
+    boundary?: { html: string; sections: ContentSection[] };
+  },
 ): SourceFact {
+  const place = extra?.boundary ? boundaryMeta(extra.boundary.html, extra.boundary.sections, text) : undefined;
   return {
     field,
     text,
@@ -743,6 +1344,7 @@ function snippet(
     confidence,
     ...(extra?.question ? { question: extra.question } : {}),
     ...(extra?.context ? { context: extra.context } : {}),
+    ...(place ? { sourceUnit: place.sourceUnit, sourceLocation: place.sourceLocation } : {}),
   };
 }
 
@@ -755,30 +1357,7 @@ export function extractProductInfo(html: string): ExtractedProduct {
   };
 }
 
-export function checkRobotsRules(robotsText: string, path: string): boolean {
-  const lines = robotsText.split("\n").map((l) => l.trim());
-  let inWildcardGroup = false;
-  let disallowed = false;
-
-  for (const line of lines) {
-    if (/^user-agent:\s*\*\s*$/i.test(line)) {
-      inWildcardGroup = true;
-      continue;
-    }
-    if (/^user-agent:/i.test(line)) {
-      inWildcardGroup = false;
-      continue;
-    }
-    if (inWildcardGroup && /^disallow:/i.test(line)) {
-      const rule = line.split(":").slice(1).join(":").trim();
-      if (rule !== "" && path.startsWith(rule)) {
-        disallowed = true;
-      }
-    }
-  }
-
-  return !disallowed;
-}
+export { checkRobotsRules } from "@/lib/robots";
 
 export class RobotsDisallowedError extends Error {
   constructor(url: string) {
@@ -959,20 +1538,26 @@ export function isRecoverablePrimaryImportError(error: unknown): boolean {
 async function finalizeExtractedPage(html: string, targetUrl: string, options: ExtractOptions): Promise<ProductFacts> {
   const facts = extractProductFacts(html, targetUrl, options);
   const pinned = pinOperatorProductName(facts, options.operatorProductName);
-  const text = pagePlainText(stripNoise(html));
-  let resolved = pinned;
-  if (shouldTryAiFallback(pinned, text)) {
+  let expanded = pinned;
+  try {
+    expanded = (await expandFirstPartySources(pinned, html, targetUrl)).facts;
+  } catch {
+    expanded = pinned;
+  }
+  const text = pagePlainText(htmlWithoutPageStructure(stripNoise(html)));
+  let resolved = expanded;
+  if (shouldTryAiFallback(expanded, text)) {
     try {
       resolved = pinOperatorProductName(
-        await classifyMissingFactsWithAi(pinned, text, options.operatorProductName || pinned.productName),
+        await classifyMissingFactsWithAi(expanded, text, options.operatorProductName || expanded.productName),
         options.operatorProductName,
       );
     } catch {
-      pinned.importWarnings = [
-        ...pinned.importWarnings,
+      expanded.importWarnings = [
+        ...expanded.importWarnings,
         "AI source classification was skipped after an error; deterministic extraction was kept.",
       ];
-      resolved = withImportQuality(pinned);
+      resolved = withImportQuality(expanded);
     }
   }
   return attachLocalProductImage(resolved, html, targetUrl);

@@ -15,6 +15,7 @@ import {
   isIngredientsFieldAssertion,
   namedIngredientMentions,
 } from "@/lib/ai/ingredient-claims";
+import { operationalManufacturerAssertions, operationalPricingAssertions } from "@/lib/ai/operational-context";
 
 export const GENERATION_TOPICS = [
   "identity",
@@ -29,6 +30,9 @@ export const GENERATION_TOPICS = [
   "results_timeline",
   "category_classification",
   "background_science",
+  "product_format",
+  "returns",
+  "shipping",
 ] as const;
 
 export type GenerationTopic = (typeof GENERATION_TOPICS)[number];
@@ -47,6 +51,8 @@ export const GENERATION_BLOCK_TYPES = [
   "PRICING",
   "GUARANTEE",
   "MANUFACTURER",
+  "RETURNS",
+  "SHIPPING",
   "FAQ",
   "FINAL_THOUGHTS",
 ] as const;
@@ -69,6 +75,8 @@ export type GenerationWordBudget = {
   pricing: number;
   guarantee: number;
   manufacturer: number;
+  returns: number;
+  shipping: number;
   faqItems: number;
   faqAnswer: number;
   finalThoughts: number;
@@ -156,6 +164,9 @@ export function createGenerationPlan(facts: ProductFacts): GenerationPlan {
   mark("pricingInformation", Boolean(eligible.pricingInformation));
   mark("guaranteeInformation", Boolean(eligible.guaranteeInformation));
   mark("manufacturer", Boolean(eligible.manufacturer));
+  if (eligible.productFormat) available.push("productFormat");
+  if (eligible.returnsInformation.length) available.push("returnsInformation");
+  if (eligible.shippingInformation.length) available.push("shippingInformation");
 
   const eligibleBag = eligibleTextBag(eligible);
   const allowed: GenerationTopic[] = [];
@@ -177,6 +188,9 @@ export function createGenerationPlan(facts: ProductFacts): GenerationPlan {
   setTopic("results_timeline", TIMELINE_EVIDENCE.test(eligibleBag));
   setTopic("category_classification", CATEGORY_EVIDENCE.test(eligibleBag));
   setTopic("background_science", false);
+  setTopic("product_format", Boolean(eligible.productFormat));
+  setTopic("returns", eligible.returnsInformation.length > 0);
+  setTopic("shipping", eligible.shippingInformation.length > 0);
 
   const allowedSections: string[] = [];
   const disallowedSections: string[] = [];
@@ -192,6 +206,8 @@ export function createGenerationPlan(facts: ProductFacts): GenerationPlan {
   section("Pricing", allowed.includes("pricing"));
   section("Guarantee", allowed.includes("guarantee"));
   section("Manufacturer", allowed.includes("manufacturer"));
+  if (allowed.includes("returns")) allowedSections.push("Returns");
+  if (allowed.includes("shipping")) allowedSections.push("Shipping");
   const faqAllowed = allowed.some((topic) => topic !== "background_science");
   section("FAQ", faqAllowed);
   allowedSections.push("Final Thoughts");
@@ -209,8 +225,15 @@ export function createGenerationPlan(facts: ProductFacts): GenerationPlan {
   if (allowed.includes("manufacturer")) authorizedBlocks.push("MANUFACTURER");
   authorizedBlocks.push("FINAL_THOUGHTS");
   const optionalBlocks: GenerationBlockType[] = faqAllowed ? ["FAQ"] : [];
+  if (allowed.includes("returns")) optionalBlocks.push("RETURNS");
+  if (allowed.includes("shipping")) optionalBlocks.push("SHIPPING");
   const disallowedBlocks = GENERATION_BLOCK_TYPES.filter(
-    (type) => type !== "FAQ" && !authorizedBlocks.includes(type),
+    (type) =>
+      type !== "FAQ" &&
+      type !== "RETURNS" &&
+      type !== "SHIPPING" &&
+      !authorizedBlocks.includes(type) &&
+      !optionalBlocks.includes(type),
   );
   if (!faqAllowed) disallowedBlocks.push("FAQ");
 
@@ -247,6 +270,8 @@ export function wordBudgetForCoverage(coverage: FactCoverage): GenerationWordBud
       pricing: 80,
       guarantee: 80,
       manufacturer: 80,
+      returns: 90,
+      shipping: 90,
       faqItems: 6,
       faqAnswer: 50,
       finalThoughts: 140,
@@ -264,6 +289,8 @@ export function wordBudgetForCoverage(coverage: FactCoverage): GenerationWordBud
       pricing: 60,
       guarantee: 70,
       manufacturer: 70,
+      returns: 70,
+      shipping: 70,
       faqItems: 4,
       faqAnswer: 40,
       finalThoughts: 120,
@@ -280,6 +307,8 @@ export function wordBudgetForCoverage(coverage: FactCoverage): GenerationWordBud
     pricing: 40,
     guarantee: 50,
     manufacturer: 50,
+    returns: 50,
+    shipping: 50,
     faqItems: 2,
     // THIN FAQ answer budget stays 35. Run 04 answers were 38 and 36 words
     // with attribution/editorial filler that can be compressed; do not enlarge.
@@ -356,6 +385,11 @@ export function formatGenerationPlanForPrompt(plan: GenerationPlan): string {
       "GUARANTEE CLOSED: do not discuss guarantee, refund, return window, risk-free trial, money-back, or that guarantee details are unavailable. Do not elevate a description mention into a Guarantee section.",
     );
   }
+  if (plan.allowedTopics.includes("returns") || plan.allowedTopics.includes("shipping")) {
+    lines.push(
+      "RETURNS/SHIPPING OPEN: restate the source operational facts exactly — keep every window, fee, destination distinction, responsibility, and processing time. One wording per proposition: each RETURNS/SHIPPING wording cites exactly one propositionId. Keep each subject, duration, fee, condition, exception, and optionality with its own proposition; never attach a condition (depending on, because, if) or move a duration, fee, subject, or exception from another proposition. Do not write guaranteed delivery, risk-free, hassle-free, no questions asked, or \"only $X\". Do not reproduce addresses, emails, or phone numbers.",
+    );
+  }
   if (plan.closedTopics.includes("results_timeline")) {
     lines.push(
       "RESULTS TIMELINE CLOSED: do not ask or answer how long it takes to notice results, time-to-effect, or expected-results timelines.",
@@ -389,8 +423,17 @@ function requiredFieldForTopic(topic: GenerationTopic): string {
   if (topic === "manufacturer") return "manufacturer";
   if (topic === "cautions") return "cautions";
   if (topic === "results_timeline") return "usageInformation";
+  if (topic === "product_format") return "productFormat";
+  if (topic === "returns") return "returnsInformation";
+  if (topic === "shipping") return "shippingInformation";
   return "description";
 }
+
+export const RETURNS_PROCEDURE_SOURCE =
+  String.raw`\breturn shipping\b|\bpacking slip\b|\breturn (?:address|label|process|procedure)\b|\bsend (?:all |the |your )?(?:\w+ )?(?:bottles?|items?|products?|packages?|orders?|it|them) back\b|\brefunds? (?:is |are |will be )?processed\b|\b(?:full\s+)?refund(?:s|ed|ing)?\s+(?:on|of)\s+the\s+(?:purchase\s+)?price\b|\brefund\s+the\s+(?:purchase\s+)?price\b|\brefund\s+the\s+amount\s+paid\b|\bpurchase\s+price\s+is\s+refundable\b`;
+
+export const SHIPPING_TOPIC_SOURCE =
+  String.raw`\bfree shipping\b|(?<!return )\bshipping (?:fees?|costs?|times?|rates?|methods?)\b|\b(?:international|domestic) shipping\b|\bships? (?:to|within|worldwide|internationally)\b|\bdelivery (?:times?|window|estimates?|fees?)\b|\b\d+\s*(?:-|to|–)\s*\d+\s+(?:business|working) days\b`;
 
 function closedTopicForAbsenceSentence(text: string, closed: Set<GenerationTopic>): GenerationTopic | null {
   const lower = text.toLowerCase();
@@ -450,9 +493,14 @@ export function directionsSpanIsUsage(text: string, start: number): boolean {
   return true;
 }
 
+/** "take a while", "take a few days": elapsed-time idioms, not an intake instruction. */
+const TAKE_A_TIME_IDIOM = /^\s+(?:while|moment|minute|second|bit|little|long|few|couple|look|day|week|month)\b/i;
+
 export function usageInstructionSpans(text: string): Array<{ text: string; start: number; end: number }> {
-  return collectSpans(text, new RegExp(USAGE_INSTRUCTION_SOURCE, "gi")).filter((span) =>
-    directionsSpanIsUsage(text, span.start),
+  return collectSpans(text, new RegExp(USAGE_INSTRUCTION_SOURCE, "gi")).filter(
+    (span) =>
+      directionsSpanIsUsage(text, span.start) &&
+      !(/^take\s+a$/i.test(span.text) && TAKE_A_TIME_IDIOM.test(text.slice(span.end))),
   );
 }
 
@@ -469,6 +517,18 @@ export function guaranteeReferenceSpans(text: string): Array<{ text: string; sta
 
 export function hasGuaranteeReferenceLanguage(text: string): boolean {
   return guaranteeReferenceSpans(text).length > 0;
+}
+
+const GUARANTEE_ASSERTION_TERMS = /\bguarantee\b|\bmoney[\s-]?back\b|\brisk[\s-]?free\b|\btrial period\b|\breturn window\b|\breturn policy\b/gi;
+
+/**
+ * Guarantee assertions inside returns/shipping text. Requesting, processing or
+ * losing a refund is an operational fact there; a refund policy/period, an
+ * N-day refund, money-back or guarantee wording is a guarantee assertion. Uses
+ * the same span classifier as pre-model claim projection.
+ */
+export function operationalGuaranteeAssertions(text: string): string[] {
+  return [...guaranteeReferenceSpans(text).map((span) => span.text), ...collect(text, GUARANTEE_ASSERTION_TERMS)];
 }
 
 function collect(text: string, pattern: RegExp): string[] {
@@ -528,10 +588,16 @@ export function isKnowledgeExpansion(text: string, eligibleSupport: string): boo
   );
 }
 
+/**
+ * `operationalSlot`: the candidate fills a returns/shipping slot backed only by
+ * operational evidence. Pricing, manufacturer and guarantee then count only as assertions,
+ * the same contract as pre-model slot projection (operational-context).
+ */
 export function validateGenerationPlan(
   candidate: string,
   plan: GenerationPlan,
   productName?: string,
+  context: { operationalSlot?: boolean } = {},
 ): { violations: GenerationPlanViolation[] } {
   const violations: GenerationPlanViolation[] = [];
   const push = (topic: GenerationTopic, text: string, reason: string, requiredField: string) => {
@@ -539,6 +605,7 @@ export function validateGenerationPlan(
     violations.push({ topic, text, reason, requiredField });
   };
   const closed = new Set(plan.closedTopics);
+  const operational = context.operationalSlot === true;
 
   if (closed.has("ingredients")) {
     for (const hit of namedIngredientMentions(candidate, { productName })) {
@@ -556,32 +623,53 @@ export function validateGenerationPlan(
   }
 
   if (closed.has("manufacturer")) {
-    for (const hit of collect(
-      candidate,
-      /\bmanufacturer(?:'s)?\s+(?:identity|transparency|information|is|does not)\b|\bmanufacturing (?:location|facility)\b|\b(?:c?gmp|fda[\s-]?inspected)\b|\bfacility\b|\bmanufacturer information is unavailable\b|\bthe manufacturer does not disclose\b/gi,
-    )) {
+    const hits = operational
+      ? operationalManufacturerAssertions(candidate)
+      : collect(
+          candidate,
+          /\bmanufacturer(?:'s)?\s+(?:identity|transparency|information|is|does not)\b|\bmanufacturing (?:location|facility)\b|\b(?:c?gmp|fda[\s-]?inspected)\b|\bfacility\b|\bmanufacturer information is unavailable\b|\bthe manufacturer does not disclose\b/gi,
+        );
+    for (const hit of hits) {
       push("manufacturer", hit, "manufacturer topic is CLOSED", "manufacturer");
     }
   }
 
   if (closed.has("pricing")) {
-    for (const hit of collect(
-      candidate,
-      /\b(?:price|pricing|cost|discount|on sale|deal)\b|\bcheck current price\b|\bpricing (?:is |was )?(?:unavailable|not provided|not detailed)\b|\bpricing transparency\b/gi,
-    )) {
+    const hits = operational
+      ? operationalPricingAssertions(candidate)
+      : collect(
+          candidate,
+          /\b(?:price|pricing|cost|discount|on sale|deal)\b|\bcheck current price\b|\bpricing (?:is |was )?(?:unavailable|not provided|not detailed)\b|\bpricing transparency\b/gi,
+        );
+    for (const hit of hits) {
       push("pricing", hit, "pricing topic is CLOSED", "pricingInformation");
     }
   }
 
   if (closed.has("guarantee")) {
-    for (const hit of collect(
-      candidate,
-      /\b(?:guarantee|refund|money[\s-]?back|risk[\s-]?free|return window|return policy|trial period)\b|\bguarantee details are unavailable\b/gi,
-    )) {
+    const hits = operational
+      ? operationalGuaranteeAssertions(candidate)
+      : collect(
+          candidate,
+          /\b(?:guarantee|refund|money[\s-]?back|risk[\s-]?free|return window|return policy|trial period)\b|\bguarantee details are unavailable\b/gi,
+        );
+    for (const hit of hits) {
       if (isDescriptionRestatement(hit, plan) && !/refund|guarantee|money[\s-]?back|risk[\s-]?free/i.test(hit)) {
         continue;
       }
       push("guarantee", hit, "guarantee topic is CLOSED; description mentions are not guarantee authority", "guaranteeInformation");
+    }
+  }
+
+  if (closed.has("returns")) {
+    for (const hit of collect(candidate, new RegExp(RETURNS_PROCEDURE_SOURCE, "gi"))) {
+      push("returns", hit, "returns topic is CLOSED", "returnsInformation");
+    }
+  }
+
+  if (closed.has("shipping")) {
+    for (const hit of collect(candidate, new RegExp(SHIPPING_TOPIC_SOURCE, "gi"))) {
+      push("shipping", hit, "shipping topic is CLOSED", "shippingInformation");
     }
   }
 
@@ -634,6 +722,9 @@ export function validateGenerationPlan(
     if (!text || !absenceCue.test(text)) continue;
     const topic = closedTopicForAbsenceSentence(text, closed);
     if (!topic) continue;
+    if (operational && topic === "pricing" && operationalPricingAssertions(text).length === 0) continue;
+    if (operational && topic === "manufacturer" && operationalManufacturerAssertions(text).length === 0) continue;
+    if (operational && topic === "guarantee" && operationalGuaranteeAssertions(text).length === 0) continue;
     push(topic, text, "MISSING_FACT_IS_OMISSION_NOT_CONTENT", requiredFieldForTopic(topic));
   }
 

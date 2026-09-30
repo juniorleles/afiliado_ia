@@ -1,0 +1,339 @@
+/* Concept B — premium product. The packshot leads every major beat. */
+
+[data-presell-presentation="premium-design-v3-b"] {
+  --v3-shell: 82rem;
+  --v3-ink: #161513;
+  --v3-stone: #e6e1d8;
+  --v3-panel: #d7d1c6;
+  --v3-paper: #f7f4ef;
+  --ps-font-display: "Segoe UI", system-ui, sans-serif;
+  --ps-font-body: "Segoe UI", system-ui, sans-serif;
+  --ps-text: var(--v3-ink);
+  --ps-bg: var(--v3-paper);
+  --ps-accent: var(--v3-ink);
+}
+
+[data-presell-presentation="premium-design-v3-b"] .presell-canvas {
+  --ps-accent: var(--v3-ink);
+  --ps-text: var(--v3-ink);
+  --ps-bg: var(--v3-paper);
+  --ps-font-display: "Segoe UI", system-ui, sans-serif;
+  --ps-font-body: "Segoe UI", system-ui, sans-serif;
+  background: var(--v3-paper);
+  color: var(--v3-ink);
+  font-family: var(--ps-font-body);
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-hero {
+  padding: 0 0 2rem;
+  background: var(--v3-stone);
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-v3 .ps-hero-stage-grid,
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-stage-grid {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  gap: 0;
+  grid-template-areas:
+    "visual"
+    "eyebrow"
+    "title"
+    "summary"
+    "cta"
+    "disclosure"
+    "reassure"
+    "facts";
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-visual {
+  background: var(--v3-panel);
+  padding: 1.25rem 1.15rem 0.25rem;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-v3 .ps-product-hero .ps-product-stage-img {
+  max-height: 24rem;
+  margin-inline: auto;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-eyebrow,
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-title,
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-summary,
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-cta,
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-disclosure,
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-reassure {
+  padding-inline: var(--v3-pad);
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-eyebrow {
+  margin-top: 1.4rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-title {
+  margin-top: 0.35rem;
+  font-size: clamp(2.7rem, 10vw, 3.6rem);
+  font-weight: 620;
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-summary {
+  margin-top: 0.8rem;
+  max-width: 34rem;
+  font-size: 1.08rem;
+  line-height: 1.45;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .presell-canvas a[data-cta-position] {
+  display: flex;
+  width: 100%;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0 !important;
+  background: var(--v3-ink) !important;
+  color: #f7f4ef !important;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: none;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-cta > div,
+[data-presell-presentation="premium-design-v3-b"] .ps-closing-cta > div {
+  width: 100%;
+  margin: 0.9rem 0 0;
+  justify-content: stretch;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-disclosure,
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-reassure {
+  margin-top: 0.75rem;
+  max-width: 32rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #4d4944;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-scene {
+  padding: 0;
+  background: var(--v3-paper);
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-scene .ps-shell {
+  padding-block: 2.4rem;
+}
+
+[data-presell-presentation="premium-design-v3-b"] [data-section-id="overview"] .ps-eyebrow { display: none; }
+
+[data-presell-presentation="premium-design-v3-b"] [data-section-id="overview"] .ps-h2 {
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+[data-presell-presentation="premium-design-v3-b"] [data-section-id="overview"] .ps-overview-lede,
+[data-presell-presentation="premium-design-v3-b"] [data-section-id="overview"] .ps-body {
+  margin-top: 0.8rem;
+  max-width: 36rem;
+  border: 0;
+  font-size: 1.45rem;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-scene[data-section-id="features"] {
+  background: transparent;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-scene[data-section-id="features"] .ps-shell {
+  width: 100%;
+  max-width: none;
+  padding-inline: 0;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-feature-system .ps-h2 {
+  padding: 1.6rem var(--v3-pad) 0.8rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-feature-module {
+  display: block;
+  padding: 2rem var(--v3-pad) 2.2rem;
+  border: 0;
+  background: var(--v3-ink);
+  color: #f6f3ee;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-feature-module-2 {
+  background: var(--v3-panel);
+  color: var(--v3-ink);
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-feature-num {
+  display: block;
+  font-size: 2.4rem;
+  font-weight: 620;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-feature-rule { display: none; }
+
+[data-presell-presentation="premium-design-v3-b"] .ps-feature-copy {
+  margin-top: 0.8rem;
+  max-width: 36rem;
+  font-size: 1.28rem;
+  line-height: 1.4;
+  color: inherit;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-scene[data-section-id="usage"] .ps-eyebrow,
+[data-presell-presentation="premium-design-v3-b"] .ps-guarantee-kicker {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-usage-card .ps-body-lg,
+[data-presell-presentation="premium-design-v3-b"] .ps-guarantee-copy {
+  margin-top: 0.7rem;
+  max-width: 28rem;
+  font-size: 1.85rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: inherit;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-scene[data-section-id="guarantee"] {
+  background: #221f1c;
+  color: #f6f3ee;
+  padding: 2.4rem var(--v3-pad);
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-guarantee {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-guarantee-kicker { color: #d7d1c6 !important; }
+
+[data-presell-presentation="premium-design-v3-b"] .ps-faq-band {
+  display: block;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-faq-band details {
+  border-bottom: 1px solid #d7d1c6;
+  background: transparent;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-faq-band summary {
+  padding: 1rem 0;
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--v3-ink);
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-faq-band details p {
+  padding: 0 0 1rem;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: #4d4944;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-closing-scene {
+  display: grid;
+  gap: 1rem;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-scene[data-section-id="closing"] {
+  background: var(--v3-stone);
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-closing-visual .ps-product-stage-img {
+  max-height: 22rem;
+  margin-inline: auto;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-trust-editorial { margin-top: 2rem; color: #4d4944; }
+
+[data-presell-presentation="premium-design-v3-b"] .ps-footer {
+  background: #161513;
+  color: #d7d1c6;
+}
+
+[data-presell-presentation="premium-design-v3-b"] .ps-footer p,
+[data-presell-presentation="premium-design-v3-b"] .ps-footer a { color: #d7d1c6; }
+
+@media (min-width: 1100px) {
+  [data-presell-presentation="premium-design-v3-b"] .ps-hero-v3 .ps-hero-stage-grid,
+  [data-presell-presentation="premium-design-v3-b"] .ps-hero-stage-grid {
+    min-height: 40rem;
+    grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+    grid-template-areas:
+      "eyebrow visual"
+      "title visual"
+      "summary visual"
+      "cta visual"
+      "disclosure visual"
+      "reassure visual"
+      "facts visual";
+    align-items: center;
+  }
+
+  [data-presell-presentation="premium-design-v3-b"] .ps-hero-visual {
+    grid-row: 1 / span 7;
+    min-height: 40rem;
+    display: flex;
+    align-items: center;
+    padding: 2rem 3rem;
+  }
+
+  [data-presell-presentation="premium-design-v3-b"] .ps-hero-eyebrow,
+  [data-presell-presentation="premium-design-v3-b"] .ps-hero-title,
+  [data-presell-presentation="premium-design-v3-b"] .ps-hero-summary,
+  [data-presell-presentation="premium-design-v3-b"] .ps-hero-cta,
+  [data-presell-presentation="premium-design-v3-b"] .ps-hero-disclosure,
+  [data-presell-presentation="premium-design-v3-b"] .ps-hero-reassure {
+    padding-left: 4.5rem;
+    padding-right: 2rem;
+  }
+
+  [data-presell-presentation="premium-design-v3-b"] .ps-hero-title { font-size: 5.4rem; }
+
+  [data-presell-presentation="premium-design-v3-b"] .ps-hero-cta > div { max-width: 18rem; }
+
+  [data-presell-presentation="premium-design-v3-b"] .ps-hero-v3 .ps-product-hero .ps-product-stage-img {
+    max-height: 36rem;
+  }
+
+  [data-presell-presentation="premium-design-v3-b"] .ps-feature-module {
+    display: grid;
+    grid-template-columns: 8rem minmax(0, 42rem);
+    gap: 1rem 2rem;
+    align-items: end;
+    padding: 3.5rem 6vw;
+  }
+
+  [data-presell-presentation="premium-design-v3-b"] .ps-feature-num { font-size: 4.5rem; }
+
+  [data-presell-presentation="premium-design-v3-b"] .ps-feature-copy { margin-top: 0; font-size: 1.7rem; }
+
+  [data-presell-presentation="premium-design-v3-b"] .ps-faq-band .mt-5 > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0 3rem;
+  }
+
+  [data-presell-presentation="premium-design-v3-b"] .ps-closing-visual .ps-product-stage-img { max-height: 30rem; }
+}

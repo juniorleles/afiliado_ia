@@ -161,6 +161,7 @@ async function main() {
     sourceUrl: recovered.sourceUrl,
     facts: recovered,
     targetApproach: strategy.recommendedStrategy,
+    modelInputTrace: { directory: out, required: true },
   });
   const variant = variants[0];
   if (!variant) throw new Error("no variant");

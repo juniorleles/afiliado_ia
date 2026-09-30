@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getCampaignById } from "@/lib/campaigns";
 import { lintCampaign } from "@/lib/policy-linter";
+import { withResolvedCampaign } from "@/lib/manual-overrides";
 import { PublishPanel } from "@/app/admin/publish-panel";
 
 type Props = {
@@ -19,7 +20,7 @@ export default async function PublishPage({ params }: Props) {
     notFound();
   }
 
-  const result = lintCampaign(campaign);
+  const result = lintCampaign(withResolvedCampaign(campaign));
 
   return (
     <div className="max-w-2xl space-y-4">

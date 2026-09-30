@@ -135,6 +135,12 @@ export default async function ValidationRunPage({
                       fingerprint={candidate.fingerprint?.heroFamily || "—"} · failures=
                       {candidate.failures.map((f) => f.type).join(",") || "none"} · HUMAN={candidate.humanReview}
                     </p>
+                    {candidate.contentQa.gateTrace ? (
+                      <p className="text-xs text-zinc-400">
+                        PRE_COMPOSITION_GROUNDING={candidate.contentQa.gateTrace.preComposition.status} ·
+                        FINAL_COMPOSITION_GROUNDING={candidate.contentQa.gateTrace.finalComposition.status}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="flex flex-col items-end gap-1 text-sm">
                     <Link
@@ -179,6 +185,22 @@ export default async function ValidationRunPage({
                       </li>
                     ))}
                   </ul>
+                ) : null}
+                {candidate.contentQa.gateTrace?.preComposition.failures.length ? (
+                  <details className="mt-3 text-xs text-zinc-400">
+                    <summary className="cursor-pointer text-zinc-300">
+                      PRE_COMPOSITION_GROUNDING failures ({candidate.contentQa.gateTrace.preComposition.failures.length})
+                    </summary>
+                    <ul className="mt-2 space-y-2">
+                      {candidate.contentQa.gateTrace.preComposition.failures.map((failure) => (
+                        <li key={`${failure.section ?? "none"}-${failure.proposition.slice(0, 80)}`}>
+                          <span className="text-zinc-200">{failure.section ?? "unsectioned"}</span>
+                          {failure.slotId ? ` · ${failure.slotId}` : ""} — {failure.reason}
+                          <span className="mt-1 block text-zinc-500">{failure.proposition}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
                 ) : null}
                 <HumanReviewForm candidateId={candidate.id} current={candidate.humanReview} notes={candidate.humanNotes} />
               </article>

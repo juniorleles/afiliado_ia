@@ -1039,6 +1039,47 @@ activities. `directions` stays a usage token; aspect/angle context is
 not dosage language. No global allowlist. No Anthropic call. No
 publish, deploy, or commit.
 
+**Lab progress — PAGE_LEVEL_FAQ_AUTHORITY_PROPAGATION_V1:** Page-level
+grounding uses the FAQ item authority already assigned at slot
+construction. Usage and guarantee questions stay authorized only for
+the item that owns that field. Identity, description, and feature FAQs
+stay closed. Question strengthening stays blocked. S003 synergy and
+policy repetition are unchanged. No Anthropic call. No publish, deploy,
+or commit.
+
+**Lab progress — PROPOSITION_BOUND_STRUCTURED_OUTPUT_V1:** MODEL output
+cites authorized proposition IDs. The ID is not proof. Wording still
+passes Model Wording Constraint, ModelSlotAuthority, and Grounding
+against the cited proposition text. A support-coordination sentence can
+split into separate support objects plus a trailing with-phrase.
+Unbound content fails closed. THIN does not use this contract. No
+Anthropic call. No publish, deploy, or commit.
+
+**Lab progress — MODEL_INPUT_TRACE_V1:** Controlled MODEL runs can
+persist `model-input-trace.json` from the provider body immediately
+before the call. The artifact stores that system prompt, user prompt,
+model, and proposition-bound schema, plus the slot structures already
+interpolated into the prompt. It does not include API keys, headers, or
+ProductFacts that were not in the provider input. A requested write that
+fails aborts before the provider call. Production generation does not
+request a trace. Policy repetition is unchanged. No Anthropic call. No
+publish, deploy, or commit.
+
+**Lab progress — OPTIONAL_FINAL_THOUGHTS_V1:** A MODEL closing slot is
+created only when it has an authorized proposition that no primary body
+slot already owns. FAQ may still reuse a proposition. The page validator
+requires FINAL_THOUGHTS only when that slot is in the evidence plan.
+THIN generation is unchanged. No Anthropic call. No publish, deploy, or
+commit.
+
+**Lab progress — MODEL_CONSERVATIVE_REALIZATION_V1:** The MODEL prompt
+now asks for conservative linguistic realization of authorized
+propositions. FAQ question intent is assigned from the slot authority
+and still has to pass the existing question validator. MODEL word
+budgets shrink to the projected evidence size. Proposition-only fills
+hydrate into the planned sections. Validators are unchanged. No
+Anthropic call. No publish, deploy, or commit.
+
 **What this lab is**
 
 Admin `/admin/validation` + comparison view. Validation runs persist separately from campaign analytics. Each candidate records IMPORT → FACTS → AI CONTENT → GROUNDING → POLICY → DESIGN PLAN → CREATIVE COMPOSITION → DESKTOP/MOBILE RENDER → VISUAL QA → PERFORMANCE QA. Failures stay visible. First batch is diagnostic: do not auto-redesign the engine for quality issues.

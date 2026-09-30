@@ -146,6 +146,18 @@ function isAudienceHeading(title: string): boolean {
   );
 }
 
+/**
+ * Pricing, returns, and shipping have no public section id. They must not
+ * fall through into Overview. Refund/guarantee headings are classified earlier.
+ */
+function isCommercialOrOperationalHeading(title: string): boolean {
+  return (
+    /\b(pric(?:e|ing)|msrp|\bcosts?\b)\b/.test(title) ||
+    /\b(shipping|delivery|dispatch|order processing|processing time)\b/.test(title) ||
+    /\b(returns?|return policy)\b/.test(title)
+  );
+}
+
 /** Public for classifier tests. Mechanism headings must not fall through to Usage. */
 export function classifyHeading(title: string): PresellSectionId | "skip" | "intro" {
   const t = title.toLowerCase().trim();
@@ -159,6 +171,7 @@ export function classifyHeading(title: string): PresellSectionId | "skip" | "int
   if (/consider|cons\b|caution|warning/.test(t)) return "considerations";
   if (/guarantee|money-back|refund/.test(t)) return "guarantee";
   if (/feature|benefit|key/.test(t)) return "features";
+  if (isCommercialOrOperationalHeading(t)) return "skip";
   if (/what is|overview|about/.test(t)) return "overview";
   if (/final thoughts|bottom line/.test(t)) return "overview";
   return "overview";

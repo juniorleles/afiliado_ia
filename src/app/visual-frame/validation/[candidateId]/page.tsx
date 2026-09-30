@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { CampaignTemplate } from "@/components/campaign-template";
 import { PublicFooter } from "@/components/public-footer";
 import { PresellThemeRoot } from "@/components/presell/presell-theme";
+import { resolvePresellRenderAssets } from "@/lib/presell-render-assets-server";
 import { candidateToSyntheticCampaign } from "@/lib/validation/candidate-campaign";
 import { getValidationCandidate } from "@/lib/validation/store";
 import { VALIDATION_ISOLATION } from "@/lib/validation/types";
@@ -37,6 +38,7 @@ export default async function ValidationFramePage({
           renderPixel={VALIDATION_ISOLATION.renderPixel}
           trackClicks={VALIDATION_ISOLATION.trackClicks}
           disableAffiliateNavigation={VALIDATION_ISOLATION.disableAffiliateNavigation}
+          renderAssets={resolvePresellRenderAssets(campaign)}
         />
         <PublicFooter />
       </div>

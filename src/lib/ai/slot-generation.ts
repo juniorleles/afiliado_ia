@@ -10,6 +10,7 @@ import {
   isKnowledgeExpansion,
   validateGenerationPlan,
 } from "@/lib/ai/generation-plan";
+import { isOperationalContextSlot } from "@/lib/ai/operational-context";
 import {
   CLAIM_CLASS_COMPOSITION_PROMOTION,
   hasCompositionPromotionLanguage,
@@ -19,6 +20,7 @@ import {
 import {
   adaptStructuredToVariantCopy,
   factsFromEvidenceIds,
+  pageFaqAuthorityBindings,
   STRUCTURED_CTA_LABELS,
   type EvidenceTrace,
   type StructuralViolation,
@@ -39,13 +41,20 @@ import {
   wordingConstraintToStructural,
 } from "@/lib/ai/model-wording-constraint";
 import {
+  propositionsForSlot,
+  validatePropositionBindings,
+  type BoundWording,
+} from "@/lib/ai/authorized-propositions";
+import {
   createEvidenceSlotPlan,
   type EvidenceSlot,
   type EvidenceSlotPlan,
 } from "@/lib/ai/evidence-slot-plan";
 import {
+  composeContentReadiness,
   composePublicationGate,
   validateGrounding,
+  type ContentReadiness,
   type GroundingResult,
 } from "@/lib/ai/grounding-validator";
 import { lintCampaign } from "@/lib/policy-linter";
@@ -56,6 +65,8 @@ export type SlotFill = {
   content?: string;
   question?: string;
   answer?: string;
+  propositions?: BoundWording[];
+  answerPropositions?: BoundWording[];
   generationMethod?: "DETERMINISTIC_THIN" | "MODEL";
 };
 
@@ -83,6 +94,18 @@ function pushViolation(
 ) {
   if (violations.some((item) => item.code === code && item.text === text && item.reason === reason)) return;
   violations.push({ code, text, reason, requiredField });
+}
+
+function boundWordingSchema() {
+  return {
+    type: "object",
+    additionalProperties: false,
+    required: ["propositionIds", "wording"],
+    properties: {
+      propositionIds: { type: "array", items: { type: "string" } },
+      wording: { type: "string" },
+    },
+  };
 }
 
 export function slotFillSchema(slotPlan: EvidenceSlotPlan) {
@@ -115,9 +138,8 @@ export function slotFillSchema(slotPlan: EvidenceSlotPlan) {
                 required: ["slotId"],
                 properties: {
                   slotId: { type: "string", enum: ids },
-                  content: { type: "string" },
-                  question: { type: "string" },
-                  answer: { type: "string" },
+                  propositions: { type: "array", items: boundWordingSchema() },
+                  answerPropositions: { type: "array", items: boundWordingSchema() },
                 },
               },
             },
@@ -160,6 +182,8 @@ export function parseSlotFills(raw: unknown): { fills: SlotFill[]; ctaLabel: str
       content: typeof item.content === "string" ? item.content : undefined,
       question: typeof item.question === "string" ? item.question : undefined,
       answer: typeof item.answer === "string" ? item.answer : undefined,
+      propositions: parseBoundWordings(item.propositions),
+      answerPropositions: parseBoundWordings(item.answerPropositions),
       generationMethod:
         item.generationMethod === "DETERMINISTIC_THIN" || item.generationMethod === "MODEL"
           ? item.generationMethod
@@ -169,10 +193,43 @@ export function parseSlotFills(raw: unknown): { fills: SlotFill[]; ctaLabel: str
   return { fills, ctaLabel };
 }
 
+function parseBoundWordings(value: unknown): BoundWording[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const rows: BoundWording[] = [];
+  for (const row of value) {
+    if (!row || typeof row !== "object") continue;
+    const item = row as Record<string, unknown>;
+    const wording = typeof item.wording === "string" ? item.wording : "";
+    const propositionIds = Array.isArray(item.propositionIds)
+      ? item.propositionIds.filter((id): id is string => typeof id === "string")
+      : undefined;
+    const propositionId = typeof item.propositionId === "string" ? item.propositionId : undefined;
+    if (!wording && !propositionId && !propositionIds?.length) continue;
+    rows.push({ propositionId, propositionIds, wording });
+  }
+  return rows;
+}
+
+function boundText(rows: BoundWording[] | undefined): string {
+  return (rows || [])
+    .map((item) => item.wording.trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
+function realizedProse(fill: SlotFill | undefined): string {
+  if (!fill) return "";
+  return boundText(fill.propositions) || (fill.content || "").trim();
+}
+
+function fillAnswer(fill: SlotFill): string {
+  return (fill.answer || "").trim() || boundText(fill.answerPropositions);
+}
+
 function slotCopy(slot: EvidenceSlot, fill: SlotFill | undefined): string {
   if (!fill) return "";
-  if (slot.type === "FAQ") return `${fill.question || ""} ${fill.answer || ""}`.trim();
-  return (fill.content || "").trim();
+  if (slot.type === "FAQ") return `${fill.question || ""} ${fillAnswer(fill)}`.trim();
+  return boundText(fill.propositions) || (fill.content || "").trim();
 }
 
 function claimClassesFor(text: string, support = ""): string[] {
@@ -206,9 +263,20 @@ export function validateSlotFills(
     seen.add(fill.slotId);
     const slot = byId.get(fill.slotId)!;
     const copy = slotCopy(slot, fill);
+    if (plan.generationRoute === "MODEL") {
+      for (const hit of validatePropositionBindings({
+        fill,
+        slot,
+        slots: slotPlan.slots,
+        plan,
+        productName: facts.productName,
+      })) {
+        pushViolation(violations, hit.code, hit.text, hit.reason);
+      }
+    }
     if (slot.type === "FAQ") {
-      if (!fill.question?.trim() || !fill.answer?.trim()) {
-        if (fill.question?.trim() || fill.answer?.trim() || slot.required) {
+      if (!fill.question?.trim() || !fillAnswer(fill)) {
+        if (fill.question?.trim() || fillAnswer(fill) || slot.required) {
           pushViolation(violations, "MALFORMED", fill.slotId, "FAQ slot requires question and answer");
         }
         continue;
@@ -217,7 +285,7 @@ export function validateSlotFills(
       if (slot.required) pushViolation(violations, "MALFORMED", fill.slotId, "required slot content is empty");
       continue;
     }
-    const words = slot.type === "FAQ" ? countWords(fill.answer || "") : countWords(copy);
+    const words = slot.type === "FAQ" ? countWords(fillAnswer(fill)) : countWords(copy);
     if (words > slot.maxWords) {
       pushViolation(violations, "WORD_BUDGET", copy, `${slot.slotId} exceeds ${slot.maxWords} words`);
     }
@@ -285,13 +353,13 @@ export function validateSlotFills(
       }
     }
     if (plan.thinMode) {
-      const closureText = slot.type === "FAQ" ? fill.answer || "" : copy;
+      const closureText = slot.type === "FAQ" ? fillAnswer(fill) : copy;
       for (const hit of semanticClosureViolations(closureText, support, slot.type, true)) {
         pushViolation(violations, "SEMANTIC_CLOSURE", hit.text, hit.code);
       }
     }
     if (plan.generationRoute === "MODEL") {
-      const authorityText = slot.type === "FAQ" ? `${fill.question || ""} ${fill.answer || ""}`.trim() : copy;
+      const authorityText = slot.type === "FAQ" ? `${fill.question || ""} ${fillAnswer(fill)}`.trim() : copy;
       for (const hit of wordingConstraintToStructural(validateModelWordingConstraint({ generated: authorityText, slot }))) {
         pushViolation(violations, hit.code, hit.text, hit.reason, hit.requiredField);
       }
@@ -300,19 +368,20 @@ export function validateSlotFills(
         slot,
         plan,
         productName: facts.productName,
+        authorizedPropositions: propositionsForSlot(slot).map((item) => item.sourceText),
       })) {
         pushViolation(violations, hit.code, hit.text, hit.reason, hit.requiredField);
       }
     }
     if (slot.type === "FAQ" && plan.closedTopics.includes("results_timeline")) {
-      for (const hit of resultsExpectationClaims(`${fill.question || ""} ${fill.answer || ""}`)) {
+      for (const hit of resultsExpectationClaims(`${fill.question || ""} ${fillAnswer(fill)}`)) {
         pushViolation(violations, "RESULTS_FRAMING", hit, "FAQ cannot introduce results-expectation framing when results_timeline is CLOSED", "usageInformation");
       }
     }
     if (isKnowledgeExpansion(copy, support)) {
       pushViolation(violations, "CLOSED_TOPIC", copy, "background science / knowledge expansion is CLOSED", "description");
     }
-    for (const hit of validateGenerationPlan(copy, plan, facts.productName).violations) {
+    for (const hit of validateGenerationPlan(copy, plan, facts.productName, { operationalSlot: isOperationalContextSlot(slot) }).violations) {
       pushViolation(violations, "CLOSED_TOPIC", hit.text, hit.reason, hit.requiredField);
     }
   }
@@ -337,18 +406,19 @@ export function hydrateSlotFillsToPage(
   let blockSeq = 1;
 
   const overview = slotPlan.slots.find((slot) => slot.type === "OVERVIEW");
-  if (overview && byFill.get(overview.slotId)?.content?.trim()) {
+  const overviewText = realizedProse(byFill.get(overview?.slotId || ""));
+  if (overview && overviewText) {
     blocks.push({
       id: `B${String(blockSeq++).padStart(3, "0")}`,
       type: "OVERVIEW",
       evidenceIds: overview.allowedEvidenceIds,
-      content: byFill.get(overview.slotId)!.content!.trim(),
+      content: overviewText,
     });
   }
 
   const featureSlots = slotPlan.slots.filter((slot) => slot.type === "FEATURE");
   const featureParts = featureSlots
-    .map((slot) => byFill.get(slot.slotId)?.content?.trim())
+    .map((slot) => realizedProse(byFill.get(slot.slotId)))
     .filter((text): text is string => Boolean(text));
   if (featureParts.length) {
     blocks.push({
@@ -359,17 +429,18 @@ export function hydrateSlotFillsToPage(
     });
   }
 
-  for (const type of ["INGREDIENTS", "USAGE", "CAUTIONS", "PRICING", "GUARANTEE", "MANUFACTURER"] as const) {
+  for (const type of ["INGREDIENTS", "USAGE", "CAUTIONS", "PRICING", "GUARANTEE", "MANUFACTURER", "RETURNS", "SHIPPING"] as const) {
     const typedSlots = slotPlan.slots.filter((item) => item.type === type);
     const parts = typedSlots
-      .map((slot) => byFill.get(slot.slotId)?.content?.trim())
+      .map((slot) => realizedProse(byFill.get(slot.slotId)))
       .filter((text): text is string => Boolean(text));
     if (parts.length) {
       blocks.push({
         id: `B${String(blockSeq++).padStart(3, "0")}`,
         type,
         evidenceIds: typedSlots.flatMap((slot) => slot.allowedEvidenceIds),
-        content: parts.join(" "),
+        content: parts.join("\n"),
+        lines: type === "INGREDIENTS" ? parts : undefined,
       });
     }
   }
@@ -378,12 +449,16 @@ export function hydrateSlotFillsToPage(
   const items: StructuredFaqItem[] = [];
   for (const slot of faqSlots) {
     const fill = byFill.get(slot.slotId);
-    if (!fill?.question?.trim() || !fill.answer?.trim()) continue;
+    if (!fill?.question?.trim() || !fillAnswer(fill)) continue;
     items.push({
       question: fill.question.trim(),
-      answer: fill.answer.trim(),
+      answer: fillAnswer(fill),
       topic: slot.topic,
       evidenceIds: slot.allowedEvidenceIds,
+      field: slot.evidence[0]?.field,
+      semanticAuthority: slot.semanticAuthority,
+      slotId: slot.slotId,
+      supportText: slot.evidence.map((item) => item.value).join("\n"),
     });
   }
   if (items.length) {
@@ -397,23 +472,24 @@ export function hydrateSlotFillsToPage(
   }
 
   const closing = slotPlan.slots.find((slot) => slot.type === "FINAL_THOUGHTS");
-  if (closing && byFill.get(closing.slotId)?.content?.trim()) {
+  const closingText = realizedProse(byFill.get(closing?.slotId || ""));
+  if (closing && closingText) {
     blocks.push({
       id: `B${String(blockSeq++).padStart(3, "0")}`,
       type: "FINAL_THOUGHTS",
       evidenceIds: closing.allowedEvidenceIds,
-      content: byFill.get(closing.slotId)!.content!.trim(),
+      content: closingText,
     });
   }
 
   return {
     approach,
     headline: {
-      text: headline ? byFill.get(headline.slotId)?.content?.trim() || "" : "",
+      text: headline ? realizedProse(byFill.get(headline.slotId)) : "",
       evidenceIds: headline?.allowedEvidenceIds || [],
     },
     summary: {
-      text: summary ? byFill.get(summary.slotId)?.content?.trim() || "" : "",
+      text: summary ? realizedProse(byFill.get(summary.slotId)) : "",
       evidenceIds: summary?.allowedEvidenceIds || [],
     },
     blocks,
@@ -437,7 +513,7 @@ export function evaluateSlotGeneration(
   productName: string,
   affiliateUrl: string,
   slotPlan = createEvidenceSlotPlan(facts),
-): StructuredEvaluation & { slotTraces: SlotTrace[]; slotPlan: EvidenceSlotPlan } {
+): StructuredEvaluation & { slotTraces: SlotTrace[]; slotPlan: EvidenceSlotPlan; contentReadiness: ContentReadiness } {
   const emptyGrounding: GroundingResult = { status: "UNGROUNDED", unsupportedClaims: [] };
   const parsed = parseSlotFills(raw);
   if (!parsed) {
@@ -452,6 +528,7 @@ export function evaluateSlotGeneration(
       grounding: emptyGrounding,
       policyGate: "BLOCKED",
       finalGate: "BLOCKED",
+      contentReadiness: "CONTENT_BLOCKED",
     };
   }
 
@@ -488,14 +565,16 @@ export function evaluateSlotGeneration(
         supportText: support,
         productName: facts.productName,
       });
-      const aGround = fill.answer?.trim()
-        ? validateGrounding(fill.answer.trim(), scoped)
+      const aGround = fillAnswer(fill)
+        ? validateGrounding(fillAnswer(fill), scoped, { productIdentity: facts.productName })
         : { status: "GROUNDED" as const, unsupportedClaims: [] };
       questionGrounding = questionSemantic.semanticResult === "PASS" ? "GROUNDED" : "UNGROUNDED";
       answerGrounding = aGround.status;
       ground = aGround;
     } else {
-      ground = text ? validateGrounding(text, scoped) : { status: "GROUNDED", unsupportedClaims: [] };
+      ground = text
+        ? validateGrounding(text, scoped, { productIdentity: facts.productName })
+        : { status: "GROUNDED", unsupportedClaims: [] };
     }
     if (text) scopedResults.push(ground);
     const structuralFail = violations.some((item) => item.text === slot.slotId || item.text === text || item.text === (fill?.question || ""));
@@ -512,7 +591,7 @@ export function evaluateSlotGeneration(
       structuralResult: structuralFail ? "FAIL" : "PASS",
       claimClasses: claimClassesFor(text, support),
       question: fill?.question,
-      answer: fill?.answer,
+      answer: fill ? fillAnswer(fill) : undefined,
       declaredFields: slot.evidence.map((item) => item.field),
       unsupportedClaims: ground.unsupportedClaims,
       allowedClaimIds: slot.allowedClaimIds,
@@ -524,9 +603,11 @@ export function evaluateSlotGeneration(
     traces.push(trace);
   }
 
+  const faqAuthorities = pageFaqAuthorityBindings(page, { closedTopics: plan.closedTopics });
   const fullGrounding = validateGrounding(
     `${inspectionCopy.headline}\n${inspectionCopy.body}\n${inspectionCopy.ctaLabel}`,
     facts,
+    { faqAuthorities },
   );
   const grounding = (() => {
     const unsupported = [...scopedResults.flatMap((item) => item.unsupportedClaims), ...fullGrounding.unsupportedClaims];
@@ -560,6 +641,11 @@ export function evaluateSlotGeneration(
   const structuralFail = violations.length > 0;
   let finalGate = composePublicationGate(policy.gate, grounding.status);
   if (structuralFail) finalGate = "BLOCKED";
+  const contentReadiness = composeContentReadiness({
+    grounding: grounding.status,
+    policyFindings: policy.findings,
+    structuralViolations: violations.length,
+  });
   return {
     page,
     structuralViolations: violations,
@@ -571,5 +657,7 @@ export function evaluateSlotGeneration(
     grounding,
     policyGate: policy.gate,
     finalGate,
+    /** Whether the copy is valid. finalGate stays the publication decision. */
+    contentReadiness,
   };
 }

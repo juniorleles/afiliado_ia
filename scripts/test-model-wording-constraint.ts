@@ -5,7 +5,7 @@ import { emptyProductFacts, buildGenerationFactManifest, type ProductFacts } fro
 import { applyGenericFaqRecovery } from "../src/lib/faq-field-promotion.ts";
 import { createGenerationPlan } from "../src/lib/ai/generation-plan.ts";
 import { projectEvidenceClaims } from "../src/lib/ai/claim-projection.ts";
-import { createEvidenceSlotPlan } from "../src/lib/ai/evidence-slot-plan.ts";
+import { createEvidenceSlotPlan, type EvidenceSlot } from "../src/lib/ai/evidence-slot-plan.ts";
 import { validateSlotFills, type SlotFill } from "../src/lib/ai/slot-generation.ts";
 import {
   checkModelWordingConstraint,
@@ -17,6 +17,27 @@ import {
 function assert(cond: boolean, msg: string) {
   if (!cond) throw new Error("FALHOU: " + msg);
   console.log("OK: " + msg);
+}
+
+function replayStoredClosingSlot(slots: EvidenceSlot[]): EvidenceSlot[] {
+  if (slots.some((slot) => slot.slotId === "S008")) return slots;
+  const features = slots.filter((slot) => slot.type === "FEATURE");
+  if (features.length === 0) return slots;
+  return [
+    ...slots,
+    {
+      slotId: "S008",
+      type: "FINAL_THOUGHTS",
+      topic: "features",
+      allowedEvidenceIds: features.flatMap((slot) => slot.allowedEvidenceIds),
+      allowedClaimIds: features.flatMap((slot) => slot.allowedClaimIds),
+      evidence: features.flatMap((slot) => slot.evidence),
+      maxWords: features.reduce((total, slot) => total + slot.maxWords, 0),
+      required: false,
+      semanticAuthority: "FEATURE_DESCRIPTION",
+      preserveSemanticRelationships: true,
+    },
+  ];
 }
 
 function typesOf(generated: string, support: string): ModelWordingForbidden[] {
@@ -177,7 +198,7 @@ const expansionChecks: Array<{ id: string; slotId: string; probe: (generated: st
 
 const byFill = new Map(storedRaw.fills.map((fill) => [fill.slotId, fill]));
 const slotResult = new Map<string, ReturnType<typeof validateModelWordingConstraint>>();
-for (const slot of slotPlan.slots) {
+for (const slot of replayStoredClosingSlot(slotPlan.slots)) {
   const fill = byFill.get(slot.slotId);
   if (!fill) continue;
   const generated =

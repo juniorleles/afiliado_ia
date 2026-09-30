@@ -5,7 +5,7 @@ import { storeManualProductImage, validateManualProductUpload } from "@/lib/prod
 import { evaluateProductAsset } from "@/lib/assets/status";
 import { applyDesignToCampaign, assertNoCopyRewrite } from "@/lib/design/optimize";
 import { acquireBestProductAsset, type AcquisitionResult } from "@/lib/assets/acquire";
-import type { ProductFacts } from "@/lib/product-facts";
+import { loadResolvedProductFacts } from "@/lib/manual-overrides";
 
 export async function attachManualProductAsset(campaign: Campaign, buffer: Buffer, mime: string) {
   const validated = validateManualProductUpload(buffer, mime);
@@ -67,8 +67,8 @@ export async function rediscoverCampaignProductAsset(campaign: Campaign): Promis
   if (!campaign.sourceFactsJson) {
     throw new Error("missing source facts");
   }
-  const facts = JSON.parse(campaign.sourceFactsJson) as ProductFacts;
-  if (!facts.sourceUrl) throw new Error("missing sourceUrl");
+  const facts = loadResolvedProductFacts(campaign);
+  if (!facts?.sourceUrl) throw new Error("missing sourceUrl");
   const response = await fetch(facts.sourceUrl, {
     headers: { "user-agent": "AfiliadoIA-Import/1.0 (+internal tool, not a public crawler)" },
     redirect: "follow",

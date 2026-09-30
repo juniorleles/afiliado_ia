@@ -11,6 +11,7 @@ import { assertSafeOutboundUrl } from "../src/lib/fetch-guard.ts";
 import { validateManualProductUpload } from "../src/lib/product-image.ts";
 import { migrate, resetDbForTests, getDb, schemaVersion } from "../src/lib/db.ts";
 import { createCampaign, listPublishedCampaigns, publishCampaign } from "../src/lib/campaigns.ts";
+import { readyPublicationInput } from "./fixtures/ready-publication-campaign.ts";
 import { securityHeaders } from "../src/lib/security-headers.ts";
 import { CACHE_POLICY, cacheInvalidationAfter } from "../src/lib/cache-policy.ts";
 import { createBackup, restoreBackup } from "./backup-presell-os.ts";
@@ -30,16 +31,7 @@ function joinSrc(rel: string) {
 const prev = { ...process.env };
 
 function campaignInput(slug: string) {
-  return {
-    name: "Phase 9 fixture",
-    slug,
-    headline: "How to Choose a Trail Bottle",
-    body: "A trail bottle is a reusable flask for daily hiking.\n\n## Key Features\n\n- Stainless wall\n- Screw cap\n",
-    ctaLabel: "Check Current Price",
-    affiliateUrl: "https://example.com/hop",
-    headScript: null,
-    adHeadline: null,
-  };
+  return readyPublicationInput({ name: "Phase 9 fixture", slug });
 }
 
 async function main() {
@@ -142,7 +134,7 @@ fs.mkdirSync(backupDir, { recursive: true });
 process.env.PRESELL_OS_MEDIA = path.join(tmp, "media");
 fs.mkdirSync(process.env.PRESELL_OS_MEDIA, { recursive: true });
 fs.writeFileSync(path.join(process.env.PRESELL_OS_MEDIA, "aabbccddeeff001122334455.png"), Buffer.from("png"));
-const made = createBackup("phase9-test");
+const made = createBackup("phase9-test", { root: backupDir, visualDesignDir: path.join(tmp, "visual-design") });
 assert(fs.existsSync(path.join(made, "presell-os.db")), "backup copies sqlite");
 const restoredDb = path.join(tmp, "restored.db");
 restoreBackup(made, restoredDb, path.join(tmp, "restored-media"));

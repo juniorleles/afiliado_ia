@@ -1,4 +1,5 @@
 import { extractJsonText, JsonExtractError } from "@/lib/ai/parse-ai-json";
+import { providerFetch } from "@/lib/ai/resilience";
 import {
   isVisualQaActionCode,
   isFindingSeverity,
@@ -262,15 +263,19 @@ async function callAnthropicVision(
     };
   }
 
-  const response = await fetch(ANTHROPIC_API_URL, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
+  const response = await providerFetch(
+    ANTHROPIC_API_URL,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify(body),
     },
-    body: JSON.stringify(body),
-  });
+    { provider: "anthropic", model: VISUAL_QA_MODEL, promptId: "visual-qa" },
+  );
 
   if (!response.ok) {
     const errorBody = await response.text().catch(() => "");

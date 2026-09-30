@@ -5,7 +5,7 @@ import { emptyProductFacts, buildGenerationFactManifest, type ProductFacts } fro
 import { applyGenericFaqRecovery } from "../src/lib/faq-field-promotion.ts";
 import { createGenerationPlan, hasUsageAuthorityLanguage, USAGE_INSTRUCTION_SOURCE } from "../src/lib/ai/generation-plan.ts";
 import { projectEvidenceClaims } from "../src/lib/ai/claim-projection.ts";
-import { createEvidenceSlotPlan } from "../src/lib/ai/evidence-slot-plan.ts";
+import { createEvidenceSlotPlan, type EvidenceSlot } from "../src/lib/ai/evidence-slot-plan.ts";
 import { validateSlotFills, type SlotFill } from "../src/lib/ai/slot-generation.ts";
 import {
   unauthorizedCausalPredicates,
@@ -22,6 +22,27 @@ import {
 function assert(cond: boolean, msg: string) {
   if (!cond) throw new Error("FALHOU: " + msg);
   console.log("OK: " + msg);
+}
+
+function replayStoredClosingSlot(slots: EvidenceSlot[]): EvidenceSlot[] {
+  if (slots.some((slot) => slot.slotId === "S008")) return slots;
+  const features = slots.filter((slot) => slot.type === "FEATURE");
+  if (features.length === 0) return slots;
+  return [
+    ...slots,
+    {
+      slotId: "S008",
+      type: "FINAL_THOUGHTS",
+      topic: "features",
+      allowedEvidenceIds: features.flatMap((slot) => slot.allowedEvidenceIds),
+      allowedClaimIds: features.flatMap((slot) => slot.allowedClaimIds),
+      evidence: features.flatMap((slot) => slot.evidence),
+      maxWords: features.reduce((total, slot) => total + slot.maxWords, 0),
+      required: false,
+      semanticAuthority: "FEATURE_DESCRIPTION",
+      preserveSemanticRelationships: true,
+    },
+  ];
 }
 
 function causalHits(generated: string, support: string): string[] {
@@ -113,8 +134,10 @@ function slotCopy(slotId: string): string {
   return fill.content || "";
 }
 
+const replaySlots = replayStoredClosingSlot(slotPlan.slots);
+
 function slotHits(slotId: string) {
-  const slot = slotPlan.slots.find((item) => item.slotId === slotId);
+  const slot = replaySlots.find((item) => item.slotId === slotId);
   if (!slot) throw new Error("missing " + slotId);
   return validateModelSlotAuthority({
     copy: slotCopy(slotId),
@@ -166,7 +189,7 @@ const expansionChecks: Array<{ id: string; slotId: string; probe: (generated: st
 
 const missed: string[] = [];
 for (const check of expansionChecks) {
-  const slot = slotPlan.slots.find((item) => item.slotId === check.slotId);
+  const slot = replaySlots.find((item) => item.slotId === check.slotId);
   const generated = slotCopy(check.slotId);
   const types = slot
     ? validateModelWordingConstraint({ generated, slot }).violations.map((item) => item.violationType)

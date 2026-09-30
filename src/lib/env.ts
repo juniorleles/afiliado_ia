@@ -15,12 +15,23 @@ export type EnvVarSpec = {
 };
 
 export const ENV_VAR_SPECS: EnvVarSpec[] = [
+  {
+    name: "AIA_ENV",
+    cls: "SERVER_ONLY",
+    requiredInProduction: true,
+    description: "Must be production to enable production protections. NODE_ENV=production alone does not.",
+  },
   { name: "PUBLIC_SITE_URL", cls: "PUBLIC", requiredInProduction: true, description: "Canonical https origin (alias: APP_BASE_URL)" },
   { name: "APP_BASE_URL", cls: "PUBLIC", requiredInProduction: false, description: "Optional alias of PUBLIC_SITE_URL" },
   { name: "PUBLIC_SITE_NAME", cls: "PUBLIC", requiredInProduction: false, description: "Public site name" },
   { name: "PUBLIC_CONTACT_EMAIL", cls: "PUBLIC", requiredInProduction: false, description: "Public contact email" },
   { name: "PUBLIC_HEALTH_DISCLAIMER", cls: "PUBLIC", requiredInProduction: false, description: "Show health disclaimer (default on)" },
   { name: "ANTHROPIC_API_KEY", cls: "SECRET", requiredInProduction: false, description: "Claude; required only if AI generation is used" },
+  { name: "OPENAI_API_KEY", cls: "SECRET", requiredInProduction: false, description: "OpenAI image generation. Server-side only. Never NEXT_PUBLIC_." },
+  { name: "VISUAL_CONCEPT_MODEL", cls: "SERVER_ONLY", requiredInProduction: false, description: "Concept exploration image model. Default gpt-image-2.5-flare." },
+  { name: "VISUAL_MASTER_MODEL", cls: "SERVER_ONLY", requiredInProduction: false, description: "Visual master image model. Default gpt-image-2.5-sunburst." },
+  { name: "VISUAL_MASTER_QUALITY", cls: "SERVER_ONLY", requiredInProduction: false, description: "Visual master quality. Default high." },
+  { name: "VISUAL_MASTER_SIZE", cls: "SERVER_ONLY", requiredInProduction: false, description: "Visual master size. Default 1024x1536." },
   { name: "WEB_SEARCH_PROVIDER", cls: "SERVER_ONLY", requiredInProduction: false, description: "duckduckgo (default) | brave | tavily | serpapi | none" },
   { name: "MARKET_RESEARCH_MAX_AGE_HOURS", cls: "SERVER_ONLY", requiredInProduction: false, description: "Market research freshness window (default 24)" },
   { name: "BRAVE_SEARCH_API_KEY", cls: "SECRET", requiredInProduction: false, description: "Optional Brave Search API for source resolution" },
@@ -90,6 +101,13 @@ export function collectEnvIssues(env = getAppEnv()): EnvIssue[] {
   const issues: EnvIssue[] = [];
   const origin = configuredOrigin();
   if (env === "production") {
+    if ((process.env.AIA_ENV || "").trim().toLowerCase() !== "production") {
+      issues.push({
+        name: "AIA_ENV",
+        message: "AIA_ENV=production is required; NODE_ENV=production does not enable production protections",
+        fatal: true,
+      });
+    }
     if (!origin) {
       issues.push({ name: "PUBLIC_SITE_URL", message: "canonical https origin is required", fatal: true });
     } else if (!originIsHttps(origin)) {
@@ -106,6 +124,9 @@ export function collectEnvIssues(env = getAppEnv()): EnvIssue[] {
     }
     if (!trimEnv("INTERNAL_FRAME_SECRET") || (trimEnv("INTERNAL_FRAME_SECRET") || "").length < 16) {
       issues.push({ name: "INTERNAL_FRAME_SECRET", message: "internal Visual QA frame secret is required", fatal: true });
+    }
+    if (!trimEnv("PUBLIC_CONTACT_EMAIL")) {
+      issues.push({ name: "PUBLIC_CONTACT_EMAIL", message: "no public contact address; /contact cannot offer a way to reach the operator", fatal: false });
     }
     if (mediaStorageKind() === "OBJECT_STORAGE") {
       for (const name of ["S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"]) {

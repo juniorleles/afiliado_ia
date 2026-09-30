@@ -160,7 +160,7 @@ export function createCreativeCompositionPlan(input: {
         desktopComposition: "INGREDIENT_ORBIT_WIDE",
         mobileComposition: "FACT_STACK",
         collapsed: true,
-        visibleLeadCount: collapseHard ? 4 : 6,
+        visibleLeadCount: Math.max(ingredients.cards.length, ingredients.bullets.length, ingredients.paragraphs.length, 1),
         visualMoment: true,
       }),
     );

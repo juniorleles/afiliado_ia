@@ -6,6 +6,7 @@
  */
 
 import { ASSET_ROLE_QUESTION, AI_ASSET_ROLES, type AiAssetRole } from "@/lib/assets/types";
+import { providerFetch } from "@/lib/ai/resilience";
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-4-5-20250929";
@@ -41,14 +42,16 @@ export async function classifyAssetRoleWithAi(input: {
   const mediaType =
     input.mime === "image/png" || input.mime === "image/webp" || input.mime === "image/gif" ? input.mime : "image/jpeg";
   try {
-    const response = await fetch(ANTHROPIC_API_URL, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
+    const response = await providerFetch(
+      ANTHROPIC_API_URL,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
         model: MODEL,
         max_tokens: 200,
         system:
@@ -63,7 +66,9 @@ export async function classifyAssetRoleWithAi(input: {
           },
         ],
       }),
-    });
+      },
+      { provider: "anthropic", model: MODEL, promptId: "asset-vision" },
+    );
     if (!response.ok) return null;
     const json = (await response.json()) as { content?: Array<{ type?: string; text?: string }> };
     const text = json.content?.find((part) => part.type === "text")?.text || "";

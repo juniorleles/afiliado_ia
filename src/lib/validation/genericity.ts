@@ -43,7 +43,7 @@ export const GENERICITY_FINDINGS: GenericityFinding[] = [
     id: "packshot-bottle-keywords",
     area: "asset classifier",
     observation:
-      "Packshot heuristics include bottle/jar/supplement keywords. Not ProDentim-specific, but bottle-shaped products score more easily than other pack forms.",
+      "Packshot heuristics include bottle, jar, and supplement words. Bottle-shaped products score more easily than other pack forms.",
     legitimate: true,
   },
   {

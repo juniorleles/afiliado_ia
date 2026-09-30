@@ -235,9 +235,21 @@ export function selectFactualGuarantee(candidates: Array<string | undefined | nu
   return withDuration[0] ?? factual[0];
 }
 
+/**
+ * Outcome copy that mentions a dose only to sell a result.
+ * "Every capsule you take gets you one step closer" is not a direction.
+ */
+export function isPromotionalUsageOutcome(text: string): boolean {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (!t) return false;
+  if (/\b(step closer|closer to (?:this|that|your|the)|will get you|gets you)\b/i.test(t)) return true;
+  if (/\bevery\b[^.]{0,80}\byou\s+(?:take|chew|swallow|use)\b/i.test(t)) return true;
+  return false;
+}
+
 export function isUsageInstruction(text: string): boolean {
   const t = text.replace(/\s+/g, " ").trim();
-  if (isPromotionalOrCta(t)) return false;
+  if (isPromotionalOrCta(t) || isPromotionalUsageOutcome(t)) return false;
   if (t.length < 12 || t.length > 400) return false;
   const ingest = /\b(take|chew|swallow|dissolve)\b/i.test(t);
   const topical = /\b(apply|massage)\b/i.test(t);
@@ -249,13 +261,27 @@ export function isUsageInstruction(text: string): boolean {
     /\b(daily|once\s+(a|per)\s+day|per\s+day|each\s+day|every\s+(day|morning)|twice|times?\s+(a|per)\s+day|morning|evening|night)\b/i.test(
       t,
     );
+  const withVehicle =
+    /\b(?:take|chew|swallow|dissolve|apply|massage)\b(?:\s+\S+){0,6}\s+with\s+(?:a\s+|an\s+|the\s+)?(?:water|food|meals?|milk|juice|breakfast|lunch|dinner)\b/i.test(
+      t,
+    );
+  const directive =
+    /(?:^|[.!;]\s+)(?:(?:simply|just|please|only|always|adults|users)\s+)?(?:(?:we|it is|it's)\s+)?(?:recommend(?:ed)?\s+(?:that\s+)?(?:you\s+)?)?(?:should\s+)?(?:slowly|gently|carefully\s+)?(?:to\s+)?(?:take|chew|swallow|dissolve|apply|massage)\b/i.test(
+      t,
+    );
+  const relativeHabit = /\byou(?:'ll|’ll)?\s+(?:take|chew|swallow|dissolve|apply|massage)\b/i.test(t);
   const labelOnly =
     /\b(follow (the )?(product )?label|see (the )?label|as directed on (the )?label|dosage is (clearly )?(mentioned|listed|printed|found) on|take (it )?consistently)\b/i.test(
       t,
     );
-  if (labelOnly && !(hasQty && hasUnit)) return false;
-  if (ingest) return Boolean((hasQty && hasUnit) || (hasUnit && hasFreq));
-  return hasFreq;
+  if (labelOnly && !(hasQty && hasUnit) && !withVehicle) return false;
+  if (relativeHabit && !directive) return false;
+  if (directive && withVehicle) return true;
+  if (ingest) {
+    if (directive && (hasUnit || hasFreq)) return true;
+    return Boolean((hasQty && hasUnit) || (hasUnit && hasFreq));
+  }
+  return Boolean(hasFreq || (directive && withVehicle));
 }
 
 /** Prefer the actionable instruction; drop a trailing health-benefit clause when separable. */
@@ -281,7 +307,7 @@ export function isUsageQuestion(text: string): boolean {
   if (!t) return false;
   if (/\bhow many servings?\b/i.test(t) && !/\b(capsule|tablet|take|use)\b/i.test(t)) return false;
   if (/\beasy to use\b/i.test(t)) return false;
-  return /\b(how (do i|should i|to) (use|take)|when (and how|should i|do i|to) (take|use)|how should i take|directions|recommended (use|dosage|serving)|serving directions|how (do|can) i (take|use)|how many (capsules?|tablets?|pills|drops) (should|do) i|when should i take)\b/i.test(
+  return /\b(how (do i|should i|to) (use|take)|when (and how|should i|do i|to) (take|use)|how should i take|directions|recommended (use|dosage|serving)|serving directions|how (do|can) i (take|use)|how many (capsules?|tablets?|pills|drops) (should|do) i|when should i take|(?:best|right|correct|proper)\s+way\s+to\s+(?:take|use)|how\s+to\s+(?:take|use)|way\s+to\s+take)\b/i.test(
     t,
   );
 }
@@ -389,7 +415,7 @@ export function looksLikeHeadlineOrSlogan(text: string): boolean {
   if (!t) return false;
   if (hasComponentMorphology(t)) return false;
   if (
-    /^(reclaim|discover|unlock|enjoy|experience|restore|transform|feel|live|embrace|achieve|boost|improve|enhance|grab|welcome|never)\b/i.test(
+    /^(reclaim|discover|unlock|enjoy|experience|restore|transform|feel|live|embrace|achieve|boost|improve|enhance|grab|welcome|never|try)\b/i.test(
       t,
     )
   ) {
@@ -403,12 +429,19 @@ export function looksLikeHeadlineOrSlogan(text: string): boolean {
   return false;
 }
 
+/** A contents description ("blend of 4 plants"), not one component name. */
+export function isMixtureCaption(text: string): boolean {
+  const t = text.replace(/\s+/g, " ").trim();
+  return /\b(?:blend|formula|complex|mixture|mix)\s+of\b/i.test(t);
+}
+
 export function looksLikeIngredientName(text: string): boolean {
   const t = text.replace(/\s+/g, " ").replace(/[:]+$/g, "").trim();
   if (t.length < 2 || t.length > 80) return false;
+  if (isMixtureCaption(t)) return false;
   if (isPromotionalOrCta(t)) return false;
   if (isSectionLabel(t)) return false;
-  if (looksLikeHeadlineOrSlogan(t)) return false;
+  if (looksLikeHeadlineOrSlogan(t) && !/[&,]|\(/.test(t)) return false;
   if (/[.]/.test(t) && t.split(".").length > 2) return false;
   if (
     /\b(unique ingredients?|clinically proven|scientifically proven|support the health|designed to|is made|are made|developed by|choice for|daily (joint )?support|long-term)\b/i.test(
@@ -438,6 +471,18 @@ export function looksLikeIngredientName(text: string): boolean {
   return distinctive.length > 0;
 }
 
+/** A component name, not a sentence, a slogan, or a blend caption. */
+export function isIngredientIdentityName(text: string): boolean {
+  const t = text.replace(/\s+/g, " ").replace(/[:]+$/g, "").trim();
+  if (!looksLikeIngredientName(t)) return false;
+  if (/\b(supports?|helps?|maintains?|promotes?|targets?|contains?)\b/i.test(t)) return false;
+  if (/\b(is an?|is the)\b/i.test(t)) return false;
+  const core = t.replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
+  const words = core.split(/\s+/).filter(Boolean);
+  if (/\b[a-z]{4,}\b/.test(core) && words.length >= 4) return false;
+  return true;
+}
+
 export function isDiseaseTreatmentClaim(text: string): boolean {
   const t = text.replace(/\s+/g, " ").trim();
   if (!t) return false;
@@ -445,6 +490,35 @@ export function isDiseaseTreatmentClaim(text: string): boolean {
     /\b(treats?|treating|treatment|cures?|curing|cure)\b/i.test(t) ||
     /\bprevents?\s+(?:the\s+)?(?:disease|cancer|diabetes|arthritis)\b/i.test(t)
   );
+}
+
+/**
+ * Purchase-context labels a page prints in the same short-chip shape as product
+ * attributes: offer boxes, social proof, logistics. They describe the sale, not
+ * the product, so they never become product characteristics.
+ */
+const PURCHASE_CONTEXT_CHIP =
+  /\b(verified purchase|most popular|best value|best[- ]?seller|top seller|in stock|sold out|limited|basic|standard|starter|bundle|day supply|total|subtotal|shipping|delivery|refund|guarantee|money[- ]back|warranty|price|pricing|discount|sale|save|offer|bonus|free (?:shipping|bottle|bonus)|reviews?|ratings?|customers?|orders?|checkout|cart|buy|add to)\b/i;
+
+/**
+ * A short attribute label printed as one of a row of chips: "Non-GMO",
+ * "Gluten Free", "No Stimulants". Explicit seller-stated product characteristics
+ * that are too short to read as feature sentences.
+ */
+export function isProductAttributeChip(text: string): boolean {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (t.length < 3 || t.length > 32) return false;
+  if (/[0-9$€£%]/.test(t)) return false;
+  if (/[.!?:;·•|]/.test(t)) return false;
+  if (!/^[A-Za-z][A-Za-z\s'’\-/&]*$/.test(t)) return false;
+  const words = t.split(/\s+/);
+  if (words.length > 4) return false;
+  if (isPromotionalOrCta(t)) return false;
+  if (isPromotionalHeading(t)) return false;
+  if (isSectionLabel(t)) return false;
+  if (isQuestionHeading(t)) return false;
+  if (PURCHASE_CONTEXT_CHIP.test(t)) return false;
+  return true;
 }
 
 export function isFeatureStatement(text: string): boolean {

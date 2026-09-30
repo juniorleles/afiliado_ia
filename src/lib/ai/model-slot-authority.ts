@@ -48,6 +48,9 @@ const TOPIC_FIELD: Record<string, string> = {
   pricing: "pricingInformation",
   guarantee: "guaranteeInformation",
   manufacturer: "manufacturer",
+  product_format: "productFormat",
+  returns: "returnsInformation",
+  shipping: "shippingInformation",
 };
 
 const ATTRIBUTION_AUTHORITY =
@@ -73,10 +76,13 @@ export function createModelSlotAuthority(slot: EvidenceSlot, _plan: GenerationPl
 
 export function formatModelSlotAuthorityForPrompt(authorities: ModelSlotAuthority[]): string {
   const lines = [
-    "MODEL SLOT AUTHORITY — CODE owns meaning. MODEL owns wording only.",
-    "Allowed operations: conservative paraphrase, compression, combining grammar-compatible claims assigned to the SAME slot, using the product name as grammatical subject.",
+    "MODEL SLOT AUTHORITY — CODE owns meaning. MODEL owns conservative linguistic realization only.",
+    "Allowed operations: lexical paraphrase, grammatical transformation, compression, reordering, pronoun resolution, safe hedging, and combining grammar-compatible claims assigned to the SAME slot, using the product name as grammatical subject. Exception: RETURNS and SHIPPING slots never combine propositions; each wording cites exactly one propositionId.",
+    "Every factual predicate must already exist in a proposition assigned to that slot. Do not add purpose, causation, mechanism, synergy, comparison, differentiation, audience, recommendation, strategy, evaluation, result, or a new relationship.",
+    "Do not add an explanatory tail after an authorized restatement unless that tail realizes another authorized proposition for the same slot.",
+    "Prefer a faithful grammatical restatement, then compression, then source-close paraphrase. Do not write past the authorized information.",
     "Forbidden: new predicates, invented relationships, attribution not in the slot text, editorial characterization, cross-field promotion, closed-topic facts, treating identity as ingredient evidence.",
-    "Return only slotId plus consumer wording (FAQ: question + answer). Do not choose evidence IDs, claim IDs, fields, or topics.",
+    "Return slotId plus propositionIds and wording. FAQ questions are assigned by CODE: return answerPropositions only. Do not choose evidence IDs, claim IDs, fields, or topics.",
     "IDENTITY slots may use the product name as a grammatical subject or title only. They do not authorize ingredients, usage, guarantee, manufacturer, or other field facts.",
   ];
   for (const slot of authorities) {
@@ -230,14 +236,20 @@ export function countModelSlotAuthorityViolations(violations: StructuralViolatio
   return violations.filter((item) => codes.has(item.code)).length;
 }
 
+/**
+ * `authorizedPropositions`: the slot's own authorized proposition texts. They
+ * are deterministic decompositions of the slot evidence (for example a list
+ * predicate distributed to each object), so they are support, as in binding.
+ */
 export function validateModelSlotAuthority(input: {
   copy: string;
   slot: EvidenceSlot;
   plan: GenerationPlan;
   productName: string;
+  authorizedPropositions?: string[];
 }): StructuralViolation[] {
   const authority = createModelSlotAuthority(input.slot, input.plan);
-  const support = authority.projectedSourceText.join("\n");
+  const support = [...authority.projectedSourceText, ...(input.authorizedPropositions ?? [])].join("\n");
   const copy = input.copy;
   const violations: StructuralViolation[] = [];
   const push = (code: string, text: string, reason: string, requiredField?: string) => {

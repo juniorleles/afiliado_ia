@@ -1,0 +1,201 @@
+/* Shared safety for V3 exploration. Art direction lives in the concept files. */
+
+[data-presell-presentation="premium-design-v3-a"],
+[data-presell-presentation="premium-design-v3-b"],
+[data-presell-presentation="premium-design-v3-c"] {
+  --v3-pad: 1.15rem;
+}
+
+[data-presell-presentation="premium-design-v3-a"] .presell-canvas,
+[data-presell-presentation="premium-design-v3-b"] .presell-canvas,
+[data-presell-presentation="premium-design-v3-c"] .presell-canvas {
+  background-image: none;
+  overflow: visible;
+}
+
+[data-presell-presentation="premium-design-v3-a"] .ps-article,
+[data-presell-presentation="premium-design-v3-b"] .ps-article,
+[data-presell-presentation="premium-design-v3-c"] .ps-article {
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+  width: 100%;
+  max-width: none;
+  padding-bottom: 5.5rem;
+}
+
+[data-presell-presentation="premium-design-v3-a"] .ps-hero,
+[data-presell-presentation="premium-design-v3-b"] .ps-hero,
+[data-presell-presentation="premium-design-v3-c"] .ps-hero,
+[data-presell-presentation="premium-design-v3-a"] .ps-scene,
+[data-presell-presentation="premium-design-v3-b"] .ps-scene,
+[data-presell-presentation="premium-design-v3-c"] .ps-scene,
+[data-presell-presentation="premium-design-v3-a"] .ps-product-stage,
+[data-presell-presentation="premium-design-v3-b"] .ps-product-stage,
+[data-presell-presentation="premium-design-v3-c"] .ps-product-stage {
+  overflow: visible;
+}
+
+[data-presell-presentation="premium-design-v3-a"] .ps-hero::before,
+[data-presell-presentation="premium-design-v3-b"] .ps-hero::before,
+[data-presell-presentation="premium-design-v3-c"] .ps-hero::before,
+[data-presell-presentation="premium-design-v3-a"] .ps-geo,
+[data-presell-presentation="premium-design-v3-b"] .ps-geo,
+[data-presell-presentation="premium-design-v3-c"] .ps-geo,
+[data-presell-presentation="premium-design-v3-a"] .ps-product-stage-plane,
+[data-presell-presentation="premium-design-v3-b"] .ps-product-stage-plane,
+[data-presell-presentation="premium-design-v3-c"] .ps-product-stage-plane,
+[data-presell-presentation="premium-design-v3-a"] .ps-product-stage-ring,
+[data-presell-presentation="premium-design-v3-b"] .ps-product-stage-ring,
+[data-presell-presentation="premium-design-v3-c"] .ps-product-stage-ring,
+[data-presell-presentation="premium-design-v3-a"] .ps-guarantee-display,
+[data-presell-presentation="premium-design-v3-b"] .ps-guarantee-display,
+[data-presell-presentation="premium-design-v3-c"] .ps-guarantee-display {
+  display: none;
+}
+
+[data-presell-presentation="premium-design-v3-a"] .ps-hero-v3 .ps-hero-stage-grid,
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-v3 .ps-hero-stage-grid,
+[data-presell-presentation="premium-design-v3-c"] .ps-hero-v3 .ps-hero-stage-grid,
+[data-presell-presentation="premium-design-v3-a"] .ps-hero-stage-grid,
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-stage-grid,
+[data-presell-presentation="premium-design-v3-c"] .ps-hero-stage-grid {
+  width: min(100%, var(--v3-shell));
+  margin-inline: auto;
+  padding-inline: var(--v3-pad);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+[data-presell-presentation="premium-design-v3-a"] .ps-hero-title,
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-title,
+[data-presell-presentation="premium-design-v3-c"] .ps-hero-title,
+[data-presell-presentation="premium-design-v3-a"] .ps-h2,
+[data-presell-presentation="premium-design-v3-b"] .ps-h2,
+[data-presell-presentation="premium-design-v3-c"] .ps-h2,
+[data-presell-presentation="premium-design-v3-a"] .ps-hero-summary,
+[data-presell-presentation="premium-design-v3-b"] .ps-hero-summary,
+[data-presell-presentation="premium-design-v3-c"] .ps-hero-summary,
+[data-presell-presentation="premium-design-v3-a"] .ps-feature-copy,
+[data-presell-presentation="premium-design-v3-b"] .ps-feature-copy,
+[data-presell-presentation="premium-design-v3-c"] .ps-feature-copy,
+[data-presell-presentation="premium-design-v3-a"] .ps-guarantee-copy,
+[data-presell-presentation="premium-design-v3-b"] .ps-guarantee-copy,
+[data-presell-presentation="premium-design-v3-c"] .ps-guarantee-copy {
+  max-width: 100%;
+  overflow: visible;
+  overflow-wrap: break-word;
+}
+
+[data-presell-presentation="premium-design-v3-a"] .ps-product-stage,
+[data-presell-presentation="premium-design-v3-b"] .ps-product-stage,
+[data-presell-presentation="premium-design-v3-c"] .ps-product-stage,
+[data-presell-presentation="premium-design-v3-a"] .ps-product-stage-lg,
+[data-presell-presentation="premium-design-v3-b"] .ps-product-stage-lg,
+[data-presell-presentation="premium-design-v3-c"] .ps-product-stage-lg {
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  transform: none;
+}
+
+[data-presell-presentation="premium-design-v3-a"] .ps-product-stage-img,
+[data-presell-presentation="premium-design-v3-b"] .ps-product-stage-img,
+[data-presell-presentation="premium-design-v3-c"] .ps-product-stage-img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: none;
+  min-width: 0;
+  object-fit: contain;
+  filter: none;
+  box-shadow: none;
+}
+
+[data-presell-presentation="premium-design-v3-a"] .ps-guarantee,
+[data-presell-presentation="premium-design-v3-b"] .ps-guarantee,
+[data-presell-presentation="premium-design-v3-c"] .ps-guarantee {
+  margin-inline: 0 !important;
+  width: auto;
+  max-width: none;
+  overflow: visible;
+  border-radius: 0;
+}
+
+[data-presell-presentation="premium-design-v3-a"] .ps-shell,
+[data-presell-presentation="premium-design-v3-b"] .ps-shell,
+[data-presell-presentation="premium-design-v3-c"] .ps-shell {
+  width: min(100%, var(--v3-shell));
+  margin-inline: auto;
+  padding-inline: var(--v3-pad);
+}
+
+[data-presell-presentation="premium-design-v3-a"] .ps-feature-grid,
+[data-presell-presentation="premium-design-v3-b"] .ps-feature-grid,
+[data-presell-presentation="premium-design-v3-c"] .ps-feature-grid,
+[data-presell-presentation="premium-design-v3-a"] .ps-feature-system .ps-fact-canvas-grid,
+[data-presell-presentation="premium-design-v3-b"] .ps-feature-system .ps-fact-canvas-grid,
+[data-presell-presentation="premium-design-v3-c"] .ps-feature-system .ps-fact-canvas-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+[data-presell-presentation="premium-design-v3-a"] .ps-feature-module,
+[data-presell-presentation="premium-design-v3-b"] .ps-feature-module,
+[data-presell-presentation="premium-design-v3-c"] .ps-feature-module {
+  min-height: 0;
+  width: auto;
+  max-width: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+[data-presell-presentation="premium-design-v3-a"] .ps-usage-split,
+[data-presell-presentation="premium-design-v3-b"] .ps-usage-split,
+[data-presell-presentation="premium-design-v3-c"] .ps-usage-split,
+[data-presell-presentation="premium-design-v3-a"] .ps-editorial-scene,
+[data-presell-presentation="premium-design-v3-b"] .ps-editorial-scene,
+[data-presell-presentation="premium-design-v3-c"] .ps-editorial-scene {
+  display: block;
+  width: 100%;
+}
+
+[data-presell-presentation="premium-design-v3-a"] .ps-usage-card,
+[data-presell-presentation="premium-design-v3-b"] .ps-usage-card,
+[data-presell-presentation="premium-design-v3-c"] .ps-usage-card {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  max-width: none;
+}
+
+[data-presell-presentation="premium-design-v3-a"] .ps-faq-band details,
+[data-presell-presentation="premium-design-v3-b"] .ps-faq-band details,
+[data-presell-presentation="premium-design-v3-c"] .ps-faq-band details,
+[data-presell-presentation="premium-design-v3-a"] .ps-faq-band .mt-4,
+[data-presell-presentation="premium-design-v3-b"] .ps-faq-band .mt-4,
+[data-presell-presentation="premium-design-v3-c"] .ps-faq-band .mt-4 {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+  box-shadow: none;
+}
+
+[data-presell-presentation="premium-design-v3-a"] .ps-footer,
+[data-presell-presentation="premium-design-v3-b"] .ps-footer,
+[data-presell-presentation="premium-design-v3-c"] .ps-footer {
+  margin-top: 0;
+  border-top: 0;
+}
+
+[data-presell-presentation="premium-design-v3-a"] .ps-footer > div,
+[data-presell-presentation="premium-design-v3-b"] .ps-footer > div,
+[data-presell-presentation="premium-design-v3-c"] .ps-footer > div {
+  width: min(100%, var(--v3-shell));
+  max-width: none;
+}

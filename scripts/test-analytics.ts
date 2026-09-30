@@ -5,7 +5,8 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 import Database from "better-sqlite3";
 import { migrate, resetDbForTests } from "../src/lib/db.ts";
-import { createCampaign, type CampaignInput } from "../src/lib/campaigns.ts";
+import { createCampaign } from "../src/lib/campaigns.ts";
+import { readyPublicationInput } from "./fixtures/ready-publication-campaign.ts";
 import { publishCampaign } from "../src/lib/campaigns.ts";
 import {
   ATTRIBUTION_KEYS,
@@ -124,41 +125,12 @@ raw.close();
 process.env.PRESELL_OS_DB = tmp;
 resetDbForTests();
 
-const FACTUAL_BODY = `This winter jacket is a mid-weight insulated layer for daily cold weather.
-
-## What Is The XT-200?
-
-A synthetic-fill coat meant for walking.
-
-## Key Features
-
-- Insulated core
-- Washable shell
-
-## FAQ
-
-- Is it a jacket? Yes.
-
-## Final Thoughts
-
-Ordinary winter days.
-`;
-
-function input(overrides: Partial<CampaignInput> = {}): CampaignInput {
-  return {
+const campaign = createCampaign(
+  readyPublicationInput({
     name: "Analytics fixture",
     slug: "phase4-analytics-fixture",
-    headline: "Winter Jacket XT-200 Review",
-    body: FACTUAL_BODY,
-    ctaLabel: "Check Current Price",
-    affiliateUrl: "https://example.com/hop",
-    headScript: null,
-    adHeadline: null,
-    ...overrides,
-  };
-}
-
-const campaign = createCampaign(input());
+  }),
+);
 publishCampaign(campaign.id);
 const sessionA = generateSessionId();
 const sessionB = generateSessionId();

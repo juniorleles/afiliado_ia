@@ -5,6 +5,11 @@ import { ProductStage } from "@/components/presell/product-stage";
 import { SceneGeometry } from "@/components/presell/scene-geometry";
 import { HEALTH_DISCLAIMER_TEXT, TRUST_EDITORIAL, isHealthDisclaimerEnabled } from "@/lib/public-site";
 import { splitSentences } from "@/lib/presell-display";
+import { displayedIngredientCards } from "@/lib/presell-ingredient-display";
+import { GuaranteeStatement, IngredientCards, UsageMotif } from "@/components/presell/presentation-blocks";
+import { DecorativeMark } from "@/components/presell/decorative-marks";
+import { splitAuthorizedLead } from "@/lib/premium/conversion-plan";
+import type { SectionArtPlan } from "@/lib/premium/section-art-director";
 
 function leadAndRest<T>(items: T[], count: number, collapsed: boolean): { lead: T[]; rest: T[] } {
   if (!collapsed || items.length <= count) return { lead: items, rest: [] };
@@ -32,83 +37,36 @@ function sectionOf(page: PresellPage, id: string): PresellSection | undefined {
   return page.sections.find((section) => section.id === id && section.visible);
 }
 
-function Packshot({
-  scene,
-  image,
-}: {
-  scene: ScenePlan;
-  image?: PresellImage;
-}) {
-  if (!image?.src || !scene.slot || scene.assetUse === "NONE") return null;
-  const presentation =
-    scene.slot.id === "heroPrimary" ? "hero" : scene.slot.id === "sectionAnchor" ? "anchor" : scene.slot.id === "edgeProduct" ? "edge" : "support";
-  return (
-    <ProductStage
-      image={image}
-      overlap={scene.slot.desktop.overlap}
-      scale={scene.slot.fit}
-      presentation={presentation}
-      priority={scene.slot.priority === "PRIMARY" || scene.slot.id === "heroPrimary" || scene.slot.id === "sectionAnchor"}
-    />
-  );
-}
-
 function IngredientShowcase({
   section,
   scene,
   image,
+  ingredientImages,
 }: {
   section: PresellSection;
   scene: ScenePlan;
   image?: PresellImage;
+  ingredientImages?: ReadonlyMap<string, string>;
 }) {
   const cards =
     section.cards.length > 0 ? section.cards : section.bullets.map((body) => ({ title: body, body: "" }));
-  const { lead, rest } = leadAndRest(cards, scene.visibleLeadCount, scene.collapsed);
-  const withAsset = Boolean(scene.slot && image?.src);
+  const { shown, withheld } = displayedIngredientCards(cards, scene.visibleLeadCount, scene.collapsed);
+  const shownWithVisuals = shown.map((card) => ({
+    ...card,
+    imageSrc: ingredientImages?.get(card.title.replace(/\s+/g, " ").trim().toLowerCase()),
+  }));
+  void scene;
+  void image;
   return (
-    <div className={withAsset ? "ps-ingredient-v2" : "ps-ingredient-editorial"} data-ingredient-compact="1">
+    <div className="ps-ingredient-editorial" data-ingredient-compact="1" data-ingredient-complete="1" data-ingredient-layout="cards">
       <div className="ps-ingredient-v2-head">
         <p className="ps-eyebrow">Formulation</p>
         <h2 className="ps-h2 mt-2">{section.title}</h2>
       </div>
-      {withAsset ? (
-        <div className="ps-ingredient-v2-grid">
-          <div className="ps-ingredient-v2-asset">
-            <Packshot scene={scene} image={image} />
-          </div>
-          <ol className="ps-orbit-list">
-            {lead.map((card, index) => (
-              <li key={card.title} className={`ps-orbit-item ${index === 0 ? "ps-orbit-lead" : ""}`}>
-                <span className="ps-display-sm">{String(index + 1).padStart(2, "0")}</span>
-                <div>
-                  <p className="ps-h3" data-ingredient-name={card.title}>
-                    {card.title}
-                  </p>
-                  {card.body ? <p className="ps-small mt-1 ps-ingredient-detail">{card.body}</p> : null}
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-      ) : (
-        <ol className="ps-ingredient-scale">
-          {lead.map((card, index) => (
-            <li key={card.title} className={`ps-ingredient-cell ${index === 0 ? "ps-ingredient-cell-lead" : ""}`}>
-              <span className="ps-display-sm" aria-hidden="true">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <p className="ps-h3 mt-3" data-ingredient-name={card.title}>
-                {card.title}
-              </p>
-              {card.body ? <p className="ps-small mt-2">{card.body}</p> : null}
-            </li>
-          ))}
-        </ol>
-      )}
-      {rest.length > 0 ? (
+      <IngredientCards cards={shownWithVisuals} />
+      {withheld.length > 0 ? (
         <Details>
-          {rest.map((card) => (
+          {withheld.map((card) => (
             <p key={card.title} className="ps-body">
               <strong className="text-[color:var(--ps-text)]">{card.title}.</strong> {card.body}
             </p>
@@ -134,6 +92,7 @@ function UsageScene({
   const facts = features ? (features.bullets.length ? features.bullets : features.paragraphs) : [];
   const { lead: factLead, rest: factRest } = leadAndRest(facts, Math.min(2, scene.visibleLeadCount), scene.collapsed);
   const compact = steps.length <= 1;
+  void image;
   return (
     <div className={`ps-usage-scene ${features ? "ps-usage-split" : ""}`}>
       <div className="ps-usage-main">
@@ -141,6 +100,7 @@ function UsageScene({
         <h2 className="ps-h2 mt-2">{usage.title}</h2>
         {compact ? (
           <div className="ps-usage-card" data-usage-compact="1">
+            <UsageMotif />
             <p className="ps-body-lg text-[color:var(--ps-text)]">{steps[0] || ""}</p>
           </div>
         ) : (
@@ -158,14 +118,6 @@ function UsageScene({
       </div>
       {features ? (
         <aside className="ps-usage-facts">
-          {scene.slot && image?.src ? (
-            <div
-              className={`ps-usage-edge${scene.assetUse === "TRANSITION_ANCHOR" ? " ps-desktop-only-asset" : ""}`}
-              data-mobile-asset={scene.assetUse === "TRANSITION_ANCHOR" ? "omit" : "on"}
-            >
-              <Packshot scene={scene} image={image} />
-            </div>
-          ) : null}
           <p className="ps-eyebrow">{features.title}</p>
           <ul className="ps-micro-facts">
             {factLead.map((item) => (
@@ -182,13 +134,6 @@ function UsageScene({
             </Details>
           ) : null}
         </aside>
-      ) : scene.slot && image?.src ? (
-        <div
-          className={`ps-usage-edge${scene.assetUse === "TRANSITION_ANCHOR" ? " ps-desktop-only-asset" : ""}`}
-          data-mobile-asset={scene.assetUse === "TRANSITION_ANCHOR" ? "omit" : "on"}
-        >
-          <Packshot scene={scene} image={image} />
-        </div>
       ) : null}
     </div>
   );
@@ -206,18 +151,36 @@ function CharacteristicsScene({ section, scene }: { section: PresellSection; sce
     <div className="ps-fact-canvas ps-feature-system">
       <h2 className="ps-h2">{section.title}</h2>
       <div className="ps-feature-grid ps-fact-canvas-grid" data-feature-grid="2x2">
-        {lead.map((item, index) => (
-          <article
-            key={item}
-            className={`ps-feature-module ps-feature-module-${index + 1} ${index === 0 ? "ps-fact-lead" : "ps-fact-side"}`}
-          >
-            <span className="ps-feature-num" aria-hidden="true">
-              {String(index + 1).padStart(2, "0")}
-            </span>
-            <span className="ps-feature-rule" aria-hidden="true" />
-            <p className="ps-feature-copy">{item}</p>
-          </article>
-        ))}
+        {lead.map((item, index) => {
+          const parts = splitAuthorizedLead(item);
+          return (
+            <article
+              key={item}
+              className={`ps-feature-module ps-feature-module-${index + 1} ${index === 0 ? "ps-fact-lead" : "ps-fact-side"}`}
+              data-feature-anchor={index === 0 && lead.length >= 4 ? "spotlight" : "support"}
+            >
+              <span className="ps-feature-mark" aria-hidden="true">
+                <DecorativeMark role="feature" index={index} />
+              </span>
+              <span className="ps-feature-num" aria-hidden="true">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <p className="ps-feature-copy">
+                {parts.lead ? (
+                  <>
+                    <strong className="ps-feature-lead">
+                      {parts.lead}
+                      {item[parts.lead.length]}
+                    </strong>{" "}
+                    {parts.rest}
+                  </>
+                ) : (
+                  item
+                )}
+              </p>
+            </article>
+          );
+        })}
       </div>
       {rest.length > 0 ? (
         <Details>
@@ -232,7 +195,17 @@ function CharacteristicsScene({ section, scene }: { section: PresellSection; sce
   );
 }
 
-export function OverviewVisualBridge() {
+function artAttrs(art?: SectionArtPlan) {
+  if (!art) return {};
+  return {
+    "data-archetype": art.layoutArchetype,
+    "data-surface": art.surfaceTreatment,
+    "data-density": art.visualDensity,
+    "data-asset": art.assetStrategy,
+  };
+}
+
+export function OverviewVisualBridge({ art }: { art?: SectionArtPlan }) {
   return (
     <section
       className="ps-scene ps-scene-overview-bridge ps-rhythm-quiet ps-weight-supporting"
@@ -240,6 +213,7 @@ export function OverviewVisualBridge() {
       data-overview-bridge="1"
       data-section-id="overview-bridge"
       data-narrative="ORIENT"
+      {...artAttrs(art)}
     >
       <div className="ps-shell">
         <div className="ps-overview-transition">
@@ -255,9 +229,15 @@ export function OverviewVisualBridge() {
 export function ClosingProductScene({
   image,
   cta,
+  line,
+  name,
+  art,
 }: {
   image?: PresellImage;
   cta: React.ReactNode;
+  line?: string;
+  name?: string;
+  art?: SectionArtPlan;
 }) {
   return (
     <section
@@ -265,11 +245,18 @@ export function ClosingProductScene({
       data-scene="CLOSING_PRODUCT_SCENE"
       data-closing-scene="1"
       data-section-id="closing"
+      id="closing"
       data-narrative="ACT"
+      {...artAttrs(art)}
     >
       <SceneGeometry variant="arch" />
       <div className="ps-shell">
         <div className="ps-closing-scene">
+          <div className="ps-closing-copy">
+            {name ? <p className="ps-eyebrow">{name}</p> : null}
+            {line ? <p className="ps-closing-line">{line}</p> : null}
+            <div className="ps-closing-cta">{cta}</div>
+          </div>
           {image?.src ? (
             <div className="ps-closing-visual">
               <ProductStage image={image} presentation="anchor" scale="contain" />
@@ -277,7 +264,6 @@ export function ClosingProductScene({
           ) : (
             <div className="ps-closing-geo" aria-hidden="true" />
           )}
-          <div className="ps-closing-cta">{cta}</div>
         </div>
       </div>
     </section>
@@ -386,23 +372,7 @@ function EditorialScene({
 
 function GuaranteeScene({ section, daysDisplay }: { section: PresellSection; daysDisplay: string | null }) {
   const text = section.paragraphs[0] || section.bullets[0] || "";
-  const days = daysDisplay;
-  return (
-    <div className="ps-guarantee">
-      <p className="ps-eyebrow ps-guarantee-kicker">Guarantee</p>
-      {days ? (
-        <div className="ps-guarantee-statement">
-          <p className="ps-guarantee-display">{days} DAYS</p>
-          <p className="ps-guarantee-copy">{text}</p>
-        </div>
-      ) : (
-        <>
-          <h2 className="ps-h2 mt-4 text-[color:var(--ps-on-accent)]">{section.title}</h2>
-          <p className="ps-guarantee-copy">{text}</p>
-        </>
-      )}
-    </div>
-  );
+  return <GuaranteeStatement title={section.title} text={text} days={daysDisplay} />;
 }
 
 function TrustScene({ faq, cta }: { faq?: PresellSection; cta?: React.ReactNode }) {
@@ -446,11 +416,15 @@ export function CreativeScene({
   page,
   image,
   cta,
+  art,
+  ingredientImages,
 }: {
   scene: ScenePlan;
   page: PresellPage;
   image?: PresellImage;
   cta?: React.ReactNode;
+  art?: SectionArtPlan;
+  ingredientImages?: ReadonlyMap<string, string>;
 }) {
   const primary = scene.sectionIds[0] ? sectionOf(page, scene.sectionIds[0]) : undefined;
   const secondary = scene.sectionIds[1] ? sectionOf(page, scene.sectionIds[1]) : undefined;
@@ -459,7 +433,7 @@ export function CreativeScene({
 
   const body = (() => {
     if (scene.kind === "INGREDIENT_SHOWCASE" && primary) {
-      return <IngredientShowcase section={primary} scene={scene} image={image} />;
+      return <IngredientShowcase section={primary} scene={scene} image={image} ingredientImages={ingredientImages} />;
     }
     if ((scene.kind === "NUMBERED_USAGE_SCENE" || scene.kind === "PRODUCT_FACT_SCENE") && primary) {
       return (
@@ -507,6 +481,8 @@ export function CreativeScene({
       data-whitespace={scene.whitespace ?? "INTENTIONAL_NEGATIVE_SPACE"}
       data-visual-moment={scene.visualMoment ? "1" : "0"}
       data-section-id={scene.sectionIds[0] || scene.id}
+      id={scene.sectionIds[0] || undefined}
+      {...artAttrs(art)}
     >
       <SceneGeometry variant={scene.geometry ?? "none"} />
       <div className={scene.kind === "GUARANTEE_STATEMENT_SCENE" ? "" : "ps-shell"}>{body}</div>

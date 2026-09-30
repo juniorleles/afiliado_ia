@@ -16,6 +16,7 @@ import {
   type ImportResult,
 } from "@/lib/execute-generate-import";
 import { cancelImportJob, getImportProgress } from "@/lib/source-resolution/progress";
+import { readOperatorStatus, type OperatorStatus } from "@/lib/ai/resilience";
 import type { ProductFacts } from "@/lib/product-facts";
 import type { MarketResearchReport } from "@/lib/market-research/types";
 import type { StrategyFamily, StrategyRecommendation } from "@/lib/strategy/types";
@@ -56,6 +57,11 @@ export async function importProductAction(
   return executeGenerateImport(parsed);
 }
 
+export async function getAiProviderStatusAction(): Promise<OperatorStatus> {
+  await requireAdmin();
+  return readOperatorStatus();
+}
+
 export async function getImportProgressAction(importId: string): Promise<{ stage: string; cancelled: boolean } | null> {
   await requireAdmin();
   const progress = getImportProgress(importId);
@@ -92,6 +98,11 @@ export type RecommendedLpActionResult =
       strategy: StrategyFamily;
       usedFallback: boolean;
       blocked: boolean;
+      gateInspection: {
+        preComposition: string;
+        finalComposition: string;
+        failures: Array<{ proposition: string; reason: string; section: string | null; slotId: string | null }>;
+      } | null;
       variant: LintedVariant;
       research: MarketResearchReport;
       recommendation: StrategyRecommendation;
@@ -118,6 +129,18 @@ export async function generateRecommendedLpAction(input: {
       strategy: result.variant.approach,
       usedFallback: result.usedFallback,
       blocked: result.blocked,
+      gateInspection: result.candidate.contentQa.gateTrace
+        ? {
+            preComposition: result.candidate.contentQa.gateTrace.preComposition.status,
+            finalComposition: result.candidate.contentQa.gateTrace.finalComposition.status,
+            failures: result.candidate.contentQa.gateTrace.preComposition.failures.map((failure) => ({
+              proposition: failure.proposition,
+              reason: failure.reason,
+              section: failure.section,
+              slotId: failure.slotId,
+            })),
+          }
+        : null,
       variant: result.variant,
       research: result.research,
       recommendation: result.recommendation,

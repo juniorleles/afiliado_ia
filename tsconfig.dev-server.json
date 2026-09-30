@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "types": ["node"]
+  },
+  "files": [
+    "scripts/dev-server/core.ts",
+    "scripts/dev-server/session.ts",
+    "scripts/dev-server/os.ts",
+    "scripts/dev-server-manager.ts",
+    "tests/visual-qa/global-setup.ts"
+  ]
+}

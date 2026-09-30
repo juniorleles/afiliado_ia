@@ -1,7 +1,8 @@
 import type { PresellImage, PresellPage, PresellSection } from "@/lib/presell-page";
 import type { DesignPlan, SectionPlan, SectionVariant, StoryBand } from "@/lib/design/plan";
 import { FAQAccordion } from "@/components/presell/faq-accordion";
-import { ProductStage } from "@/components/presell/product-stage";
+import { displayedIngredientCards } from "@/lib/presell-ingredient-display";
+import { GuaranteeStatement, IngredientCards } from "@/components/presell/presentation-blocks";
 
 function leadAndRest<T>(items: T[], count: number, collapsed: boolean): { lead: T[]; rest: T[] } {
   if (!collapsed || items.length <= count) return { lead: items, rest: [] };
@@ -124,46 +125,18 @@ function SectionBody({
       section.cards.length > 0
         ? section.cards
         : section.bullets.map((body) => ({ title: body, body: "" }));
-    const { lead, rest } = leadAndRest(cards, plan.visibleLeadCount, true);
-    const orbit = variant === "INGREDIENT_ORBIT" && packshotReady && productImage?.src;
+    const { shown, withheld } = displayedIngredientCards(cards, plan.visibleLeadCount, true);
+    void packshotReady;
+    void productImage;
     return (
-      <div className={orbit ? "ps-ingredient-orbit" : "ps-ingredient-editorial"}>
+      <div className="ps-ingredient-editorial" data-ingredient-complete="1" data-ingredient-layout="cards">
         <p className="ps-eyebrow">Formulation</p>
         <h2 className="ps-h2 mt-2">{section.title}</h2>
-        {orbit ? (
-          <div className="ps-orbit-layout">
-            <div className="ps-orbit-core">
-              <ProductStage image={productImage!} scale="contain" />
-            </div>
-            <ol className="ps-orbit-list">
-              {lead.map((card, index) => (
-                <li key={card.title} className="ps-orbit-item">
-                  <span className="ps-display-sm">{String(index + 1).padStart(2, "0")}</span>
-                  <div>
-                    <p className="ps-h3">{card.title}</p>
-                    {card.body ? <p className="ps-small mt-1">{card.body}</p> : null}
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
-        ) : (
-          <ol className="ps-ingredient-scale">
-            {lead.map((card, index) => (
-              <li key={card.title} className={`ps-ingredient-cell ${index === 0 ? "ps-ingredient-cell-lead" : ""}`}>
-                <span className="ps-display-sm" aria-hidden="true">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <p className="ps-h3 mt-3">{card.title}</p>
-                {card.body ? <p className="ps-small mt-2">{card.body}</p> : null}
-              </li>
-            ))}
-          </ol>
-        )}
-        {rest.length > 0 ? (
+        <IngredientCards cards={shown} />
+        {withheld.length > 0 ? (
           <Details>
             <div className="grid gap-3 sm:grid-cols-2">
-              {rest.map((card) => (
+              {withheld.map((card) => (
                 <p key={card.title} className="ps-body">
                   <strong className="text-[color:var(--ps-text)]">{card.title}.</strong> {card.body}
                 </p>
@@ -227,18 +200,8 @@ function SectionBody({
 
   if (variant === "GUARANTEE_PANEL" || variant === "WIDE_GUARANTEE_STATEMENT") {
     const text = section.paragraphs[0] || section.bullets[0] || "";
-    const days = text.match(/(\d+)\s*-?\s*day/i)?.[1];
-    return (
-      <div className="ps-guarantee">
-        <p className="ps-eyebrow ps-guarantee-kicker">Guarantee</p>
-        {days ? (
-          <p className="ps-guarantee-display">{days} DAYS</p>
-        ) : (
-          <h2 className="ps-h2 mt-4 text-[color:var(--ps-on-accent)]">{section.title}</h2>
-        )}
-        <p className="ps-guarantee-copy">{text}</p>
-      </div>
-    );
+    const days = text.match(/(\d+)\s*-?\s*day/i)?.[1] ?? null;
+    return <GuaranteeStatement title={section.title} text={text} days={days} />;
   }
 
   if (variant === "PROS_CONSIDERATIONS_SPLIT" || variant === "CONSIDERATION_COLUMNS") {

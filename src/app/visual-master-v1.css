@@ -1,0 +1,1373 @@
+[data-visual-system="visual-master-v1"] {
+  --vm-ink: #1c1915;
+  --vm-muted: #5c564e;
+  --vm-paper: #f6f3ee;
+  --vm-line: rgba(28, 25, 21, 0.14);
+  --vm-dark: #1b2420;
+  --vm-dark-text: #f3efe8;
+  color: var(--vm-ink);
+  background: var(--vm-paper);
+  font-family: var(--vm-sans), "Avenir Next", "Segoe UI", sans-serif;
+  max-width: 100%;
+}
+
+[data-visual-system="visual-master-v1"] * {
+  box-sizing: border-box;
+}
+
+[data-visual-system="visual-master-v1"] .vm-display,
+[data-visual-system="visual-master-v1"] .vm-overview-line,
+[data-visual-system="visual-master-v1"] .vm-brand {
+  font-family: var(--vm-serif), "Iowan Old Style", Palatino, Georgia, serif;
+  font-weight: 500;
+}
+
+[data-visual-system="visual-master-v1"] .vm-nav,
+[data-visual-system="visual-master-v1"] .vm-hero,
+[data-visual-system="visual-master-v1"] .vm-split,
+[data-visual-system="visual-master-v1"] .vm-return,
+[data-visual-system="visual-master-v1"] .vm-faq,
+[data-visual-system="visual-master-v1"] .vm-footer {
+  width: min(1180px, calc(100% - 8vw));
+  margin-inline: auto;
+}
+
+[data-visual-system="visual-master-v1"] .vm-disclosure-bar {
+  margin: 0;
+  padding: 0.55rem max(4vw, calc((100% - 1180px) / 2));
+  border-bottom: 1px solid var(--vm-line);
+  background: #ece6dc;
+  color: #3f3a33;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+[data-visual-system="visual-master-v1"] .vm-nav {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "brand links cta";
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+  padding: 1.4rem 0 0.6rem;
+}
+
+[data-visual-system="visual-master-v1"] .vm-nav > .vm-brand {
+  grid-area: brand;
+}
+
+[data-visual-system="visual-master-v1"] .vm-nav > .vm-nav-links {
+  grid-area: links;
+}
+
+[data-visual-system="visual-master-v1"] .vm-nav > .vm-cta-nav {
+  grid-area: cta;
+}
+
+[data-visual-system="visual-master-v1"] .vm-brand {
+  color: inherit;
+  text-decoration: none;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+[data-visual-system="visual-master-v1"] .vm-nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1.1rem 1.4rem;
+}
+
+[data-visual-system="visual-master-v1"] .vm-nav-links > a,
+[data-visual-system="visual-master-v1"] .vm-footer nav a,
+[data-visual-system="visual-master-v1"] .vm-legal-links a {
+  color: var(--vm-muted);
+  text-decoration: none;
+  font-size: 0.92rem;
+}
+
+[data-visual-system="visual-master-v1"] .vm-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+  gap: clamp(1.5rem, 4vw, 4rem);
+  align-items: end;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: clamp(3rem, 7vw, 6.5rem) max(4vw, calc((100% - 1180px) / 2)) clamp(3.5rem, 8vw, 7rem);
+  min-height: 40rem;
+}
+
+[data-visual-system="visual-master-v1"] .vm-display {
+  margin: 0;
+  font-size: clamp(3.4rem, 6.4vw, 6.6rem);
+  line-height: 0.9;
+  letter-spacing: -0.035em;
+  max-width: 8ch;
+  font-weight: 500;
+}
+
+[data-visual-system="visual-master-v1"] .vm-display-sm {
+  font-size: clamp(2.6rem, 4vw, 4.4rem);
+  max-width: none;
+}
+
+[data-visual-system="visual-master-v1"] .vm-lede,
+[data-visual-system="visual-master-v1"] .ps-hero-summary {
+  max-width: 28rem;
+  margin: 1.4rem 0 0;
+  color: var(--vm-muted);
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+
+[data-visual-system="visual-master-v1"] .vm-cta > div {
+  margin: 1.5rem 0 0;
+  justify-content: flex-start;
+}
+
+[data-visual-system="visual-master-v1"] .vm-cta-nav > div {
+  margin: 0;
+}
+
+[data-visual-identity="source"] [data-visual-system="visual-master-v1"] {
+  --vm-ink: var(--ps-text);
+  --vm-muted: var(--ps-text-muted);
+  --vm-paper: var(--ps-bg);
+  --vm-line: var(--ps-border);
+  --vm-dark: var(--ps-accent-strong);
+  --vm-dark-text: var(--ps-cta-label-strong);
+}
+
+[data-visual-system="visual-master-v1"] a[data-cta-position] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.7rem;
+  padding: 0.55rem 1.15rem;
+  border-radius: 999px;
+  background: #24211d;
+  color: #f7f3ec;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+}
+
+[data-visual-identity="source"] [data-visual-system="visual-master-v1"] a[data-cta-position] {
+  background: var(--ps-accent);
+  color: var(--ps-cta-label);
+}
+
+[data-visual-system="visual-master-v1"] .vm-hero-copy,
+[data-visual-system="visual-master-v1"] .vm-hero-stage {
+  position: relative;
+  z-index: 1;
+}
+
+[data-visual-system="visual-master-v1"] .vm-hero-stage {
+  min-height: 28rem;
+}
+
+[data-visual-system="visual-master-v1"] .vm-photo {
+  background:
+    radial-gradient(120% 80% at 80% 20%, rgba(255, 252, 247, 0.55), transparent 42%),
+    linear-gradient(165deg, #efe6d8 0%, #d7cbb8 46%, #b7aa96 100%);
+}
+
+[data-visual-system="visual-master-v1"] .vm-photo-hero {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+}
+
+[data-visual-system="visual-master-v1"] .vm-photo-pause,
+[data-visual-system="visual-master-v1"] .vm-photo-close {
+  position: absolute;
+  inset: 0;
+}
+
+[data-visual-system="visual-master-v1"] .vm-pack {
+  position: absolute;
+  right: 8%;
+  bottom: 8%;
+  width: min(34%, 15rem);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 24px rgba(48, 40, 28, 0.18));
+}
+
+[data-visual-system="visual-master-v1"] .vm-hero-stage:has(.vm-product) {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+[data-visual-system="visual-master-v1"] .vm-product {
+  display: block;
+  height: auto;
+  min-width: 0;
+  max-width: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 24px rgba(48, 40, 28, 0.18));
+}
+
+[data-visual-system="visual-master-v1"] .vm-product-hero {
+  width: min(86%, 24rem);
+}
+
+[data-visual-system="visual-master-v1"] .vm-product-moment {
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
+  padding: 1.25rem 1.5rem 2rem;
+}
+
+[data-visual-system="visual-master-v1"] .vm-product-bundle {
+  width: min(100%, 22rem);
+}
+
+[data-visual-system="visual-master-v1"] .vm-product-cue {
+  width: 7.25rem;
+  margin: 0 auto 1.25rem;
+}
+
+[data-visual-system="visual-master-v1"] .vm-kicker {
+  margin: 0 0 0.9rem;
+  color: var(--vm-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+[data-visual-system="visual-master-v1"] .vm-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: clamp(1.5rem, 4vw, 4.5rem);
+  align-items: center;
+  padding: clamp(3rem, 6vw, 5.5rem) 0;
+}
+
+[data-visual-system="visual-master-v1"] .vm-overview-line {
+  margin: 0;
+  max-width: 16em;
+  font-size: clamp(1.8rem, 3vw, 2.7rem);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+[data-visual-system="visual-master-v1"] .vm-overview-line + .vm-overview-line {
+  margin-top: 1rem;
+  max-width: 34rem;
+  font-family: var(--vm-sans), sans-serif;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  letter-spacing: 0;
+  color: var(--vm-muted);
+}
+
+[data-visual-system="visual-master-v1"] .vm-photo-overview,
+[data-visual-system="visual-master-v1"] .vm-photo-feature,
+[data-visual-system="visual-master-v1"] .vm-photo-usage {
+  min-height: 18rem;
+  border-radius: 2px;
+}
+
+[data-visual-system="visual-master-v1"] .vm-features {
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+}
+
+[data-visual-system="visual-master-v1"] .ps-feature-copy p,
+[data-visual-system="visual-master-v1"] .ps-body-lg {
+  margin: 0 0 1rem;
+  max-width: 38rem;
+  color: var(--vm-ink);
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+[data-visual-system="visual-master-v1"] .vm-pause {
+  position: relative;
+  height: clamp(12rem, 24vw, 22rem);
+  margin: 1rem 0 0;
+}
+
+[data-visual-system="visual-master-v1"] .vm-photo-pause {
+  background:
+    linear-gradient(180deg, rgba(246, 243, 238, 0) 0%, rgba(90, 104, 112, 0.18) 100%),
+    linear-gradient(105deg, #c5cdd2 0%, #a9b4ae 38%, #8e8578 100%);
+}
+
+[data-visual-system="visual-master-v1"] .vm-split-solo {
+  grid-template-columns: minmax(0, 46rem);
+}
+
+/* Everything that is not hero, guarantee, closing or FAQ reads as one editorial core. */
+[data-visual-system="visual-master-v1"] .vm-core {
+  width: min(1180px, calc(100% - 8vw));
+  margin: clamp(2.5rem, 5vw, 4rem) auto clamp(3rem, 5vw, 4.5rem);
+}
+
+[data-visual-system="visual-master-v1"] .vm-core-lead {
+  max-width: 46rem;
+  margin: 0 0 clamp(2rem, 3.5vw, 3rem);
+  padding-bottom: clamp(1.6rem, 3vw, 2.4rem);
+  border-bottom: 1px solid var(--vm-line);
+}
+
+[data-visual-system="visual-master-v1"] .ps-body-lg.vm-core-statement {
+  max-width: 34rem;
+  font-family: var(--vm-serif), "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+
+[data-visual-system="visual-master-v1"] .vm-core-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: clamp(1.75rem, 3vw, 2.75rem);
+  align-items: start;
+}
+
+[data-visual-system="visual-master-v1"] .vm-photo-frame.vm-photo-core {
+  aspect-ratio: 4 / 5;
+  width: 100%;
+  min-height: 0;
+  max-height: 30rem;
+  border-radius: 2px;
+}
+
+[data-visual-system="visual-master-v1"] .vm-note p {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+[data-visual-system="visual-master-v1"] .vm-note ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.55rem;
+}
+
+[data-visual-system="visual-master-v1"] .vm-note li {
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid rgba(31, 33, 30, 0.1);
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+[data-visual-system="visual-master-v1"] .vm-note li:last-child {
+  border-bottom: 0;
+}
+
+/* A short note with no list of its own is a single statement; give it a quiet panel. */
+[data-visual-system="visual-master-v1"] .vm-note:not(:has(.vm-note-list)) {
+  padding: clamp(1.25rem, 2vw, 1.75rem) clamp(1.25rem, 2vw, 1.75rem) clamp(0.6rem, 1.2vw, 1rem);
+  border-left: 2px solid rgba(31, 33, 30, 0.22);
+  background: rgba(31, 33, 30, 0.035);
+}
+
+[data-visual-system="visual-master-v1"] .vm-return {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 0.7fr);
+  gap: 2rem;
+  align-items: center;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: clamp(3rem, 6vw, 5rem) max(4vw, calc((100% - 1180px) / 2));
+  background: var(--vm-dark);
+  color: var(--vm-dark-text);
+}
+
+[data-visual-system="visual-master-v1"] .vm-return .vm-kicker,
+[data-visual-system="visual-master-v1"] .ps-guarantee-copy {
+  color: #d9d3c8;
+}
+
+[data-visual-system="visual-master-v1"] .ps-guarantee-copy {
+  margin: 0;
+  max-width: 34rem;
+  font-size: 1.35rem;
+  line-height: 1.45;
+}
+
+[data-visual-system="visual-master-v1"] .vm-return-plain {
+  grid-template-columns: minmax(0, 42rem);
+  background:
+    linear-gradient(180deg, rgba(255, 248, 236, 0.05), transparent 32%),
+    var(--vm-dark);
+}
+
+[data-visual-system="visual-master-v1"] .vm-photo-frame.vm-photo-usage {
+  aspect-ratio: 1 / 1;
+  min-height: 0;
+  max-height: 26rem;
+}
+
+[data-visual-system="visual-master-v1"] [data-visual-role="usageVisual"] .vm-photo-bound {
+  object-position: 64% 62%;
+}
+
+[data-visual-system="visual-master-v1"] .vm-close {
+  position: relative;
+  min-height: 28rem;
+  margin-top: 0;
+}
+
+[data-visual-system="visual-master-v1"] .vm-photo-close {
+  background:
+    radial-gradient(80% 70% at 70% 40%, rgba(255, 248, 236, 0.7), transparent 50%),
+    linear-gradient(180deg, #f3eadc, #e4d3bc 70%, #cbb89a);
+}
+
+[data-visual-system="visual-master-v1"] .vm-close-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: 28rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem 1.5rem;
+}
+
+[data-visual-system="visual-master-v1"] .vm-close .vm-cta > div {
+  justify-content: center;
+}
+
+[data-visual-system="visual-master-v1"] .vm-faq {
+  padding: clamp(3.5rem, 7vw, 6rem) 0 2rem;
+}
+
+[data-visual-system="visual-master-v1"] .vm-faq details {
+  border-top: 1px solid var(--vm-line);
+}
+
+[data-visual-system="visual-master-v1"] .vm-faq details:last-of-type {
+  border-bottom: 1px solid var(--vm-line);
+}
+
+[data-visual-system="visual-master-v1"] .vm-faq summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.35rem 0;
+  cursor: pointer;
+  list-style: none;
+  font-size: 1.15rem;
+  line-height: 1.4;
+}
+
+[data-visual-system="visual-master-v1"] .vm-faq summary::-webkit-details-marker {
+  display: none;
+}
+
+[data-visual-system="visual-master-v1"] .vm-faq summary::after {
+  content: "+";
+  color: var(--vm-muted);
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+[data-visual-system="visual-master-v1"] .vm-faq details[open] summary::after {
+  content: "–";
+}
+
+[data-visual-system="visual-master-v1"] .vm-faq details p {
+  margin: 0 0 1.3rem;
+  max-width: 42rem;
+  color: var(--vm-muted);
+  font-size: 1.02rem;
+  line-height: 1.6;
+}
+
+[data-visual-system="visual-master-v1"] .vm-footer {
+  display: grid;
+  gap: 1.2rem;
+  margin-top: 1rem;
+  padding: 2.2rem 0 3rem;
+  color: #d9d3c8;
+  background: transparent;
+}
+
+[data-visual-system="visual-master-v1"] .vm-footer,
+[data-visual-system="visual-master-v1"] .vm-return {
+  box-sizing: border-box;
+}
+
+[data-visual-system="visual-master-v1"] .vm-page,
+[data-visual-system="visual-master-v1"] {
+  background: var(--vm-paper);
+}
+
+[data-visual-system="visual-master-v1"] .vm-footer {
+  width: 100%;
+  max-width: none;
+  padding: 2.4rem max(4vw, calc((100% - 1180px) / 2)) 3rem;
+  background: var(--vm-dark);
+}
+
+[data-visual-system="visual-master-v1"] .vm-footer .vm-brand,
+[data-visual-system="visual-master-v1"] .vm-footer a {
+  color: #d9d3c8;
+}
+
+[data-visual-system="visual-master-v1"] .vm-footer nav,
+[data-visual-system="visual-master-v1"] .vm-legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem 1.3rem;
+}
+
+[data-visual-system="visual-master-v1"] .vm-disclosure {
+  max-width: 46rem;
+  color: #b7b1a6;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+[data-visual-system="visual-master-v1"] .vm-disclosure p {
+  margin: 0 0 0.55rem;
+}
+
+@media (max-width: 1024px) {
+  [data-visual-system="visual-master-v1"] .vm-hero-stage {
+    min-height: 26rem;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-pack {
+    width: min(38%, 13rem);
+  }
+}
+
+[data-presell-presentation="premium-final-candidate-v2"] .presell-canvas [data-visual-system="visual-master-v1"] .ps-hero-summary,
+[data-presell-presentation="premium-final-candidate-v2"] .presell-canvas [data-visual-system="visual-master-v1"] .ps-feature-copy,
+[data-presell-presentation="premium-final-candidate-v2"] .presell-canvas [data-visual-system="visual-master-v1"] .ps-guarantee-copy,
+[data-presell-presentation="premium-final-candidate-v2"] .presell-canvas [data-visual-system="visual-master-v1"] .ps-body-lg,
+[data-presell-presentation="premium-final-candidate-v2"] .presell-canvas [data-visual-system="visual-master-v1"] .vm-faq summary,
+[data-presell-presentation="premium-final-candidate-v2"] .presell-canvas [data-visual-system="visual-master-v1"] .vm-faq details p {
+  max-width: 42rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+[data-presell-presentation="premium-final-candidate-v2"] .presell-canvas [data-visual-system="visual-master-v1"] a[data-cta-position] {
+  display: inline-flex;
+  width: auto;
+  min-height: 2.7rem;
+  margin: 0;
+  padding: 0.55rem 1.15rem;
+  border-radius: 999px;
+  background: #24211d;
+  color: #f7f3ec;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+}
+
+[data-visual-system="visual-master-v1"] .vm-photo-frame {
+  position: relative;
+  overflow: hidden;
+}
+
+[data-visual-system="visual-master-v1"] .vm-photo-frame.vm-photo-hero,
+[data-visual-system="visual-master-v1"] .vm-photo-frame.vm-photo-pause,
+[data-visual-system="visual-master-v1"] .vm-photo-frame.vm-photo-close {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+[data-visual-system="visual-master-v1"] .vm-photo-bound {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+[data-visual-system="visual-master-v1"] .vm-hero {
+  overflow: hidden;
+}
+
+[data-visual-system="visual-master-v1"] [data-visual-role="heroAtmosphere"] .vm-photo-bound {
+  object-position: 74% 16%;
+  transform: scale(1.34);
+  transform-origin: 82% 10%;
+}
+
+[data-visual-system="visual-master-v1"] .vm-hero:has([data-visual-role="heroAtmosphere"] img)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(246, 243, 238, 0.78) 0%, rgba(246, 243, 238, 0.34) 32%, rgba(246, 243, 238, 0) 58%);
+}
+
+[data-visual-system="visual-master-v1"] [data-visual-role="decisionBackground"] .vm-photo-bound {
+  object-position: 18% 100%;
+  transform: scale(1.42);
+  transform-origin: 12% 100%;
+}
+
+[data-visual-system="visual-master-v1"] .vm-close:has([data-visual-role="decisionBackground"] img)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(246, 243, 238, 0.42), rgba(246, 243, 238, 0.08) 58%, transparent 76%);
+}
+
+[data-visual-system="visual-master-v1"] .vm-photo-frame.vm-photo-overview {
+  aspect-ratio: 3 / 2;
+  min-height: 16rem;
+}
+
+[data-visual-system="visual-master-v1"] [data-visual-role="editorialMaterial"] .vm-photo-bound {
+  object-position: 32% 46%;
+}
+
+[data-visual-system="visual-master-v1"] .vm-photo-frame.vm-photo-feature {
+  aspect-ratio: 1 / 1;
+  min-height: 18rem;
+  max-height: 28rem;
+}
+
+[data-visual-system="visual-master-v1"] [data-visual-role="featureVisual"] .vm-photo-bound {
+  object-position: 50% 100%;
+  transform: scale(2.2);
+  transform-origin: 50% 100%;
+}
+
+/* Decoration with no copy beside it stays a transition band, never a full screen. */
+[data-visual-system="visual-master-v1"] .vm-pause:has([data-visual-role="photographicPause"] img) {
+  height: auto;
+  aspect-ratio: 21 / 9;
+  max-height: clamp(12rem, 24vw, 22rem);
+}
+
+[data-visual-system="visual-master-v1"] [data-visual-role="photographicPause"] .vm-photo-bound {
+  object-position: 50% 62%;
+}
+
+@media (max-width: 800px) {
+  /* The hero is full-bleed; only the reading sections take the inset column. */
+  [data-visual-system="visual-master-v1"] .vm-nav,
+  [data-visual-system="visual-master-v1"] .vm-split,
+  [data-visual-system="visual-master-v1"] .vm-faq {
+    width: min(100% - 2rem, 40rem);
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-disclosure-bar {
+    padding-inline: 1rem;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-nav {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand cta"
+      "links links";
+    gap: 0.6rem 1rem;
+    padding-top: 1rem;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-nav-links {
+    justify-content: flex-start;
+    gap: 0.4rem 1.1rem;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-photo-frame.vm-photo-overview {
+    width: 100%;
+    min-height: 0;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-hero,
+  [data-visual-system="visual-master-v1"] .vm-split,
+  [data-visual-system="visual-master-v1"] .vm-return {
+    grid-template-columns: 1fr;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-hero {
+    min-height: 0;
+    padding: 1.5rem 1rem 2.5rem;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-display {
+    font-size: clamp(2.8rem, 14vw, 4.2rem);
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-hero-stage {
+    min-height: 18rem;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-hero-stage:has(.vm-product) {
+    min-height: 0;
+    margin-top: 0.35rem;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-split {
+    padding: 2.2rem 0;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-product-moment {
+    padding: 0.35rem 1.25rem 1.35rem;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-product-bundle {
+    width: min(72%, 15rem);
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-pack {
+    width: min(46%, 11.5rem);
+    right: 6%;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-product-hero {
+    width: min(70%, 16rem);
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-pause {
+    height: 16rem;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-photo-frame.vm-photo-usage {
+    aspect-ratio: 5 / 4;
+    max-height: 16rem;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-close,
+  [data-visual-system="visual-master-v1"] .vm-close-copy {
+    min-height: 22rem;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-close-copy {
+    padding: 2.4rem 1.25rem;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-faq {
+    padding-top: 2.4rem;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-return,
+  [data-visual-system="visual-master-v1"] .vm-footer {
+    padding-inline: 1rem;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-pause:has([data-visual-role="photographicPause"] img) {
+    height: auto;
+    aspect-ratio: 16 / 9;
+    max-height: none;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-photo-frame.vm-photo-feature {
+    aspect-ratio: 1 / 1;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-hero:has([data-visual-role="heroAtmosphere"] img)::after {
+    background: linear-gradient(180deg, rgba(246, 243, 238, 0.82) 0%, rgba(246, 243, 238, 0.4) 34%, rgba(246, 243, 238, 0) 62%);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Compact density.
+
+   Little copy is a reason to tighten the composition and let type, product and
+   grouping carry the page. It is never a reason to grow decorative bands: a
+   short page must end sooner, not stretch around the text it does have.
+   --------------------------------------------------------------------------- */
+
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-hero {
+  align-items: center;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  min-height: 34rem;
+  padding-block: clamp(2rem, 4vw, 3.25rem) clamp(2rem, 4vw, 3.25rem);
+}
+
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-hero-stage {
+  min-height: 0;
+}
+
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-product-hero {
+  width: min(100%, 38rem);
+}
+
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-display {
+  font-size: clamp(3.6rem, 7.2vw, 7.4rem);
+}
+
+[data-visual-system="visual-master-v1"] .vm-eyebrow {
+  margin: 0 0 1.1rem;
+  color: var(--vm-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* Compact pages: less empty air between Key Features, the bundle, and the next section. */
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-features {
+  padding-bottom: clamp(1rem, 2vw, 1.5rem);
+}
+
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-product-moment {
+  padding: 0.35rem 1.5rem 0.5rem;
+}
+
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-core {
+  margin-top: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+/* A decorative-only band stays a transition strip. */
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-pause,
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-pause:has([data-visual-role="photographicPause"] img) {
+  height: clamp(4.75rem, 8vh, 6.5rem);
+  aspect-ratio: auto;
+  max-height: none;
+  margin: 0;
+}
+
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-return {
+  padding-block: clamp(2rem, 3.2vw, 2.75rem);
+}
+
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .ps-guarantee-copy {
+  max-width: 40rem;
+  font-size: clamp(1.3rem, 2.2vw, 1.75rem);
+}
+
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-close-copy {
+  min-height: 0;
+  padding-block: clamp(2.75rem, 5vw, 4.5rem);
+}
+
+/* The product carries the closing moment when the closing copy is one line. */
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-product-cue {
+  width: min(100%, 21rem);
+  margin-bottom: 1.6rem;
+}
+
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-cta a[data-cta-position] {
+  min-height: 3.35rem;
+  padding: 0.85rem 2.1rem;
+  font-size: 1.05rem;
+  letter-spacing: 0.005em;
+}
+
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-cta-nav a[data-cta-position] {
+  min-height: 2.6rem;
+  padding: 0.5rem 1.15rem;
+  font-size: 0.92rem;
+}
+
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-faq.ps-faq-band {
+  padding: clamp(2.5rem, 4.5vw, 4rem) 0 clamp(2rem, 4vw, 3rem);
+}
+
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-faq.ps-faq-band summary {
+  padding: 1.35rem 0;
+  font-size: clamp(1.1rem, 1.7vw, 1.3rem);
+}
+
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-faq.ps-faq-band details p {
+  margin: 0 0 1.4rem;
+  font-size: 1.02rem;
+}
+
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-footer {
+  gap: 0.85rem 3rem;
+  margin-top: 0;
+  padding-block: 1.9rem 2.1rem;
+}
+
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-disclosure p {
+  margin: 0 0 0.35rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+@media (min-width: 801px) {
+  [data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-footer {
+    grid-template-columns: minmax(0, 0.7fr) minmax(0, 2fr);
+    align-items: start;
+  }
+
+  [data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-footer nav {
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  [data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-footer .vm-disclosure {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}
+
+@media (max-width: 800px) {
+  [data-visual-system="visual-master-v1"] .vm-core {
+    width: min(100% - 2rem, 40rem);
+  }
+
+  [data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-hero {
+    grid-template-columns: 1fr;
+    min-height: 0;
+    padding: 1.25rem 1rem 2.25rem;
+  }
+
+  [data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-product-hero {
+    width: min(90%, 21rem);
+  }
+
+  [data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-pause,
+  [data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-pause:has([data-visual-role="photographicPause"] img) {
+    height: 4.25rem;
+    aspect-ratio: auto;
+  }
+
+  [data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-product-cue {
+    width: min(70%, 16rem);
+  }
+
+  [data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-photo-frame.vm-photo-core {
+    aspect-ratio: 5 / 4;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   FAQ band. Presentation-scoped card resets elsewhere zero the band and row
+   padding, so the band restates its own rhythm at matching specificity.
+   --------------------------------------------------------------------------- */
+
+[data-visual-system="visual-master-v1"] .vm-faq.ps-faq-band,
+[data-visual-system="visual-master-v1"][data-content-density] .vm-faq.ps-faq-band {
+  width: min(52rem, calc(100% - 8vw));
+  padding: clamp(3.25rem, 6vw, 5rem) 0 clamp(2.75rem, 5vw, 4rem);
+}
+
+[data-visual-system="visual-master-v1"] .vm-faq-title {
+  margin: 0 0 clamp(1.1rem, 2vw, 1.6rem);
+  font-family: var(--vm-serif), "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: clamp(1.9rem, 3.2vw, 2.6rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+
+[data-presell-presentation] .presell-canvas [data-visual-system="visual-master-v1"] .vm-faq summary,
+[data-visual-system="visual-master-v1"] .vm-faq summary {
+  width: 100%;
+  max-width: none;
+  padding: 1.2rem 0;
+}
+
+[data-presell-presentation] .presell-canvas [data-visual-system="visual-master-v1"] .vm-faq summary::after,
+[data-visual-system="visual-master-v1"] .vm-faq summary::after {
+  flex: none;
+  margin-left: auto;
+}
+
+[data-presell-presentation] .presell-canvas [data-visual-system="visual-master-v1"] .vm-faq details p {
+  margin: 0 0 1.3rem;
+  padding: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   One-statement sections render as type beside their image, not as a padded card.
+   --------------------------------------------------------------------------- */
+
+[data-visual-system="visual-master-v1"] .vm-usage[data-statement="short"] {
+  grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+  padding-block: clamp(2rem, 4vw, 3.5rem);
+}
+
+[data-visual-system="visual-master-v1"] .vm-usage.vm-split-solo[data-statement="short"] {
+  grid-template-columns: minmax(0, 46rem);
+}
+
+[data-visual-system="visual-master-v1"] .vm-usage[data-statement="short"] .vm-photo-frame.vm-photo-usage {
+  max-height: 20rem;
+}
+
+[data-presell-presentation] [data-visual-system="visual-master-v1"] .vm-usage[data-statement="short"] .ps-usage-card {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+[data-presell-presentation] [data-visual-system="visual-master-v1"] .vm-usage[data-statement="short"] .ps-body-lg {
+  margin: 0;
+  font-family: var(--vm-serif), "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: clamp(1.45rem, 2.4vw, 2rem);
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+
+[data-visual-system="visual-master-v1"] .ps-feature-copy p.vm-kicker,
+[data-visual-system="visual-master-v1"] .ps-usage-card p.vm-kicker {
+  margin: 0 0 0.9rem;
+  color: var(--vm-muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+/* A core with no grouped notes is one statement and its material: side by side, image bounded. */
+[data-visual-system="visual-master-v1"] .vm-core[data-core-columns="0"]:has(.vm-core-grid) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);
+  gap: clamp(1.5rem, 4vw, 4rem);
+  align-items: center;
+}
+
+[data-visual-system="visual-master-v1"] .vm-core[data-core-columns="0"] .vm-core-lead {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+[data-visual-system="visual-master-v1"] .vm-core[data-core-columns="0"] .vm-core-grid {
+  display: block;
+}
+
+[data-visual-system="visual-master-v1"] .vm-core[data-core-columns="0"] .vm-photo-frame.vm-photo-core {
+  aspect-ratio: 4 / 3;
+  max-height: 18rem;
+}
+
+/* The compact hero product never pushes the hero past one screen. */
+[data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-product-hero {
+  max-height: max(22rem, calc(100vh - 12rem));
+}
+
+/* ---------------------------------------------------------------------------
+   Footer: readable links on the dark band.
+   --------------------------------------------------------------------------- */
+
+[data-visual-system="visual-master-v1"] .vm-footer nav a,
+[data-visual-system="visual-master-v1"] .vm-footer .vm-legal-links a {
+  color: #e8e2d7;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+[data-visual-system="visual-master-v1"] .vm-footer nav a:hover,
+[data-visual-system="visual-master-v1"] .vm-footer nav a:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+[data-visual-system="visual-master-v1"] .vm-disclosure,
+[data-visual-system="visual-master-v1"][data-content-density] .vm-disclosure p {
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+[data-visual-system="visual-master-v1"] .vm-disclosure .vm-disclosure-heading {
+  color: #e8e2d7;
+  font-weight: 500;
+}
+
+[data-visual-system="visual-master-v1"] .vm-disclosure .vm-legal-links,
+[data-visual-system="visual-master-v1"][data-content-density] .vm-footer nav.vm-legal-links {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.3rem;
+  margin: 0.4rem 0 0.8rem;
+}
+
+[data-visual-system="visual-master-v1"] .vm-disclosure .vm-site-name {
+  margin: 0;
+  color: #b7b1a6;
+}
+
+@media (max-width: 800px) {
+  [data-visual-system="visual-master-v1"] .vm-faq.ps-faq-band,
+  [data-visual-system="visual-master-v1"][data-content-density] .vm-faq.ps-faq-band {
+    width: min(100% - 2rem, 40rem);
+    padding-block: 2.5rem 2.25rem;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-usage[data-statement="short"],
+  [data-visual-system="visual-master-v1"] .vm-core[data-core-columns="0"]:has(.vm-core-grid) {
+    grid-template-columns: 1fr;
+    padding-block: 1.75rem;
+  }
+
+  [data-visual-system="visual-master-v1"] .vm-core[data-core-columns="0"] .vm-photo-frame.vm-photo-core {
+    max-height: 14rem;
+  }
+
+  [data-visual-system="visual-master-v1"][data-content-density="compact"] .vm-product-hero {
+    max-height: 22rem;
+  }
+}
+
+/* Low density is a compact page. Rich pages keep the existing skeleton. */
+[data-visual-system="visual-master-v1"][data-page-density="low"] .vm-hero {
+  align-items: center;
+  min-height: 0;
+  padding-block: clamp(1.4rem, 3vw, 2.4rem);
+}
+
+[data-visual-system="visual-master-v1"][data-page-density="low"] .vm-hero-stage {
+  min-height: 0;
+}
+
+[data-visual-system="visual-master-v1"][data-page-density="low"] .vm-display {
+  max-width: 14ch;
+  font-size: clamp(2.4rem, 4.6vw, 4.2rem);
+}
+
+[data-visual-system="visual-master-v1"][data-page-density="low"] .vm-split,
+[data-visual-system="visual-master-v1"][data-page-density="low"] .vm-feature-band,
+[data-visual-system="visual-master-v1"][data-page-density="low"] .vm-ingredients,
+[data-visual-system="visual-master-v1"][data-page-density="low"] .vm-residual {
+  width: min(1180px, calc(100% - 8vw));
+  margin-inline: auto;
+  padding-block: clamp(1rem, 2vw, 1.6rem);
+}
+
+[data-visual-system="visual-master-v1"][data-page-density="low"] .vm-close,
+[data-visual-system="visual-master-v1"][data-page-density="low"] .vm-close-copy,
+[data-visual-system="visual-master-v1"][data-closing="collapsed"] .vm-close,
+[data-visual-system="visual-master-v1"][data-closing="collapsed"] .vm-close-copy {
+  min-height: 0;
+  padding-block: clamp(1.6rem, 3vw, 2.6rem);
+}
+
+[data-visual-system="visual-master-v1"] .vm-feature-band,
+[data-visual-system="visual-master-v1"] .vm-ingredients {
+  width: min(1180px, calc(100% - 8vw));
+  margin-inline: auto;
+  padding-block: clamp(1.25rem, 2.4vw, 2rem);
+}
+
+[data-visual-system="visual-master-v1"] .vm-feature-units,
+[data-visual-system="visual-master-v1"] .vm-feature-chips,
+[data-visual-system="visual-master-v1"] .vm-ingredient-units {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  gap: 0.75rem;
+}
+
+[data-visual-system="visual-master-v1"] [data-feature-presentation="strip"] .vm-feature-units,
+[data-visual-system="visual-master-v1"] [data-feature-presentation="highlight"] .vm-feature-units,
+[data-visual-system="visual-master-v1"] [data-feature-presentation="list"] .vm-feature-units {
+  grid-template-columns: minmax(0, 40rem);
+}
+
+[data-visual-system="visual-master-v1"] [data-feature-presentation="strip"] .vm-feature-units li,
+[data-visual-system="visual-master-v1"] [data-feature-presentation="highlight"] .vm-feature-units li,
+[data-visual-system="visual-master-v1"] [data-feature-presentation="list"] .vm-feature-units li {
+  margin: 0;
+  padding: 0.9rem 0;
+  border-top: 1px solid var(--vm-line);
+  border-bottom: 1px solid var(--vm-line);
+  font-size: 1.2rem;
+  line-height: 1.45;
+}
+
+[data-visual-system="visual-master-v1"] [data-feature-presentation="cards"] .vm-feature-units {
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+[data-visual-system="visual-master-v1"] [data-feature-presentation="cards"] .vm-feature-units li,
+[data-visual-system="visual-master-v1"] .vm-feature-chips li {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--vm-line);
+  border-radius: 2px;
+  background: rgba(255, 252, 247, 0.55);
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+[data-visual-system="visual-master-v1"] .vm-feature-chips {
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  margin-top: 1.1rem;
+}
+
+[data-visual-system="visual-master-v1"] [data-feature-presentation="grid"] .vm-feature-units,
+[data-visual-system="visual-master-v1"] [data-feature-presentation="mosaic"] .vm-feature-units {
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+[data-visual-system="visual-master-v1"] [data-feature-presentation="grid"] .vm-feature-units li,
+[data-visual-system="visual-master-v1"] [data-feature-presentation="mosaic"] .vm-feature-units li {
+  margin: 0;
+  min-height: 7.5rem;
+  padding: 1.15rem 1.2rem;
+  border-top: 2px solid var(--vm-ink);
+  background: rgba(255, 252, 247, 0.7);
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+[data-visual-system="visual-master-v1"] [data-ingredient-presentation="editorial"] .vm-ingredient-units,
+[data-visual-system="visual-master-v1"] [data-ingredient-presentation="grid"] .vm-ingredient-units {
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+[data-visual-system="visual-master-v1"] [data-ingredient-presentation="compact"] .vm-ingredient-units {
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
+[data-visual-system="visual-master-v1"] [data-ingredient-presentation="editorial"] .vm-ingredient-units li,
+[data-visual-system="visual-master-v1"] [data-ingredient-presentation="grid"] .vm-ingredient-units li {
+  display: grid;
+  gap: 0.35rem;
+  min-height: 6.5rem;
+  margin: 0;
+  padding: 1.15rem 1.2rem 1rem;
+  border: 1px solid var(--vm-line);
+  background: #fffdf9;
+  font-family: var(--vm-serif), "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+[data-visual-system="visual-master-v1"] [data-ingredient-presentation="dense"] .vm-ingredient-units {
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+}
+
+[data-visual-system="visual-master-v1"] [data-ingredient-presentation="dense"] .vm-ingredient-units li,
+[data-visual-system="visual-master-v1"] [data-ingredient-presentation="compact"] .vm-ingredient-units li {
+  margin: 0;
+  padding: 0.7rem 0.15rem;
+  border-bottom: 1px solid var(--vm-line);
+  font-size: 0.98rem;
+  line-height: 1.35;
+}
+
+[data-visual-system="visual-master-v1"] .vm-ingredient-units small {
+  color: var(--vm-muted);
+  font-family: var(--vm-sans), sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 800px) {
+  [data-visual-system="visual-master-v1"][data-page-density="low"] .vm-hero {
+    grid-template-columns: 1fr;
+    padding: 1.1rem 1rem 1.6rem;
+  }
+
+  [data-visual-system="visual-master-v1"][data-page-density="low"] .vm-feature-band,
+  [data-visual-system="visual-master-v1"][data-page-density="low"] .vm-ingredients,
+  [data-visual-system="visual-master-v1"][data-page-density="low"] .vm-residual {
+    width: min(100% - 2rem, 40rem);
+  }
+
+  [data-visual-system="visual-master-v1"] [data-ingredient-presentation="editorial"] .vm-ingredient-units,
+  [data-visual-system="visual-master-v1"] [data-ingredient-presentation="grid"] .vm-ingredient-units,
+  [data-visual-system="visual-master-v1"] [data-ingredient-presentation="compact"] .vm-ingredient-units,
+  [data-visual-system="visual-master-v1"] [data-feature-presentation="grid"] .vm-feature-units,
+  [data-visual-system="visual-master-v1"] [data-feature-presentation="mosaic"] .vm-feature-units,
+  [data-visual-system="visual-master-v1"] [data-pricing-variant="grid"] .vm-offer-units,
+  [data-visual-system="visual-master-v1"] [data-pricing-variant="comparison"] .vm-offer-units {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  [data-visual-system="visual-master-v1"] [data-pricing-variant="single"] .vm-offer-units {
+    grid-template-columns: 1fr;
+  }
+}
+
+[data-visual-system="visual-master-v1"] .vm-ingredient-mark {
+  display: grid;
+  width: 2.4rem;
+  height: 2.4rem;
+  place-items: center;
+  color: var(--vm-muted);
+}
+
+[data-visual-system="visual-master-v1"] .vm-ingredient-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+[data-visual-system="visual-master-v1"] .vm-pricing,
+[data-visual-system="visual-master-v1"][data-spacing="compact"] .vm-split,
+[data-visual-system="visual-master-v1"][data-spacing="compact"] .vm-ingredients,
+[data-visual-system="visual-master-v1"][data-spacing="compact"] .vm-pricing {
+  width: min(1180px, calc(100% - 8vw));
+  margin-inline: auto;
+}
+
+[data-visual-system="visual-master-v1"] .vm-offer-units {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+[data-visual-system="visual-master-v1"] [data-pricing-variant="single"] .vm-offer-units {
+  grid-template-columns: minmax(0, 28rem);
+}
+
+[data-visual-system="visual-master-v1"] [data-pricing-variant="comparison"] .vm-offer-units,
+[data-visual-system="visual-master-v1"] [data-pricing-variant="grid"] .vm-offer-units {
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+[data-visual-system="visual-master-v1"] .vm-offer-units li {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--vm-line);
+  background: rgba(255, 252, 247, 0.7);
+}
+
+[data-visual-system="visual-master-v1"] [data-faq-variant="cards"] details {
+  margin-bottom: 0.75rem;
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--vm-line);
+}
+
+[data-visual-system="visual-master-v1"] [data-faq-variant="compact"] summary,
+[data-visual-system="visual-master-v1"] [data-faq-variant="compact"] details p {
+  padding-block: 0.45rem;
+}
+
+[data-visual-system="visual-master-v1"] [data-faq-variant="editorial"] summary {
+  font-family: var(--vm-serif), "Iowan Old Style", Palatino, Georgia, serif;
+}
+
+[data-visual-system="visual-master-v1"] [data-usage-variant="compact"] .ps-usage-card {
+  padding-block: 0.4rem;
+}
+
+[data-visual-system="visual-master-v1"] [data-usage-variant="editorial"] .ps-body-lg {
+  font-family: var(--vm-serif), "Iowan Old Style", Palatino, Georgia, serif;
+}
+
+[data-visual-system="visual-master-v1"] [data-guarantee-variant="emphasis"] {
+  border-top: 2px solid var(--vm-ink);
+}
+
+[data-visual-system="visual-master-v1"] [data-guarantee-variant="editorial"] .ps-guarantee-copy {
+  font-family: var(--vm-serif), "Iowan Old Style", Palatino, Georgia, serif;
+}
+
+[data-visual-system="visual-master-v1"][data-spacing="airy"] .vm-split,
+[data-visual-system="visual-master-v1"][data-spacing="airy"] .vm-ingredients,
+[data-visual-system="visual-master-v1"][data-spacing="airy"] .vm-pricing,
+[data-visual-system="visual-master-v1"][data-spacing="airy"] .vm-faq {
+  padding-block: clamp(3.5rem, 7vw, 6.5rem);
+}

@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { readFileSync } from "node:fs";
 import Database from "better-sqlite3";
-import { migrate, resetDbForTests } from "../src/lib/db.ts";
+import { getDbPath, migrate, resetDbForTests } from "../src/lib/db.ts";
 import {
   createCampaign,
   deleteCampaign,
@@ -26,6 +26,19 @@ import type { Campaign } from "../src/lib/campaigns.ts";
 function assert(cond: boolean, msg: string) {
   if (!cond) throw new Error("FALHOU: " + msg);
   console.log("OK: " + msg);
+}
+
+const callerDbOverride = process.env.PRESELL_OS_DB;
+const defaultDbPath = path.join(process.cwd(), "data", "presell-os.db");
+
+function restoreCallerDbOverride() {
+  if (callerDbOverride === undefined) delete process.env.PRESELL_OS_DB;
+  else process.env.PRESELL_OS_DB = callerDbOverride;
+}
+
+/** HTTP fixtures are written through the caller's DB override; never the default production file. */
+function httpDbIsolated(): boolean {
+  return callerDbOverride !== undefined && path.resolve(getDbPath()) !== path.resolve(defaultDbPath);
 }
 
 function joinSrc(rel: string): string {
@@ -104,7 +117,12 @@ function asCampaign(overrides: Partial<Campaign> = {}): Campaign {
   };
 }
 
-// --- gate (no DB) ---
+// Gate checks use an isolated database because resolved facts are loaded per campaign.
+const gateDb = path.join(os.tmpdir(), `afiliado-ia-phase25-gate-${process.pid}.db`);
+process.env.PRESELL_OS_DB = gateDb;
+resetDbForTests();
+
+// --- gate ---
 
 assert(decidePublish("READY", false) === "allow", "READY can publish");
 assert(decidePublish("BLOCKED", false) === "block", "BLOCKED cannot publish");
@@ -272,8 +290,8 @@ const migrated = oldDb.prepare("SELECT publicationStatus, publishedAt FROM campa
   publicationStatus: string;
   publishedAt: string | null;
 };
-assert(migrated.publicationStatus === "published", "existing campaigns migrate to published");
-assert(migrated.publishedAt === stamp, "existing publishedAt backfilled from createdAt");
+assert(migrated.publicationStatus === "draft", "existing campaigns without source facts stay draft");
+assert(migrated.publishedAt === null, "source-less backfill is not a public publication");
 oldDb.close();
 try {
   fs.unlinkSync(tmpOld);
@@ -287,8 +305,22 @@ const tmpNew = path.join(os.tmpdir(), `afiliado-ia-phase25-new-${process.pid}.db
 if (fs.existsSync(tmpNew)) fs.unlinkSync(tmpNew);
 process.env.PRESELL_OS_DB = tmpNew;
 resetDbForTests();
+try {
+  fs.unlinkSync(gateDb);
+} catch {
+  /* Windows may keep a lock briefly */
+}
 
-const created = createCampaign(input({ slug: "phase25-new-draft" }));
+const missingPresentation = tryPublish(
+  asCampaign({ body: " ", pageComposition: null, productionPageComposition: null }),
+  true,
+);
+assert(!missingPresentation.ok && missingPresentation.gate === "BLOCKED", "missing presentation cannot publish");
+
+const missingTracking = tryPublish(asCampaign({ affiliateUrl: "not a url" }), true);
+assert(!missingTracking.ok && missingTracking.gate === "BLOCKED", "missing tracking destination cannot publish");
+
+const created = createCampaign(input({ slug: "phase25-new-draft", sourceFactsJson: jacketFactsJson() }));
 assert(created.publicationStatus === "draft", "new campaign defaults to draft");
 assert(created.publishedAt === null, "new campaign has no publishedAt");
 assert(getPublishedCampaignBySlug("phase25-new-draft") === undefined, "draft is not a published slug");
@@ -298,8 +330,14 @@ const published = publishCampaign(created.id);
 assert(published.publicationStatus === "published", "publish sets published");
 assert(typeof published.publishedAt === "string" && published.publishedAt.length > 0, "publish sets publishedAt");
 assert(getPublishedCampaignBySlug("phase25-new-draft")?.id === created.id, "published slug is public");
+const republished = publishCampaign(created.id);
+assert(republished.publishedAt === published.publishedAt, "publishing twice does not write a second publication");
+assert(getPublishedCampaignBySlug("phase25-new-draft")?.id === created.id, "a second publish keeps the same public row");
 
-const edited = updateCampaign(created.id, input({ slug: "phase25-new-draft", name: "Edited name" }));
+const edited = updateCampaign(
+  created.id,
+  input({ slug: "phase25-new-draft", name: "Edited name", sourceFactsJson: jacketFactsJson() }),
+);
 assert(edited.publicationStatus === "draft", "editing published campaign → draft");
 assert(edited.publishedAt === null, "edit clears publishedAt");
 assert(getPublishedCampaignBySlug("phase25-new-draft") === undefined, "edited live page is no longer public");
@@ -319,14 +357,14 @@ const aiCreated = createCampaign(input({ name: "AI path", slug: "phase25-ai-draf
 assert(aiCreated.publicationStatus === "draft", "AI-created campaign (createCampaign) → draft");
 
 resetDbForTests();
-delete process.env.PRESELL_OS_DB;
+restoreCallerDbOverride();
 try {
   fs.unlinkSync(tmpNew);
 } catch {
   /* ignore */
 }
 
-// --- HTTP against the running app (production SQLite, unique slugs, cleaned up) ---
+// --- HTTP against the running app (caller's isolated PRESELL_OS_DB, unique slugs, cleaned up) ---
 
 const base = (process.env.PHASE1_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
 
@@ -342,6 +380,14 @@ async function fetchPage(urlPath: string): Promise<{ status: number; body: strin
 const ids: number[] = [];
 
 async function main() {
+  if (!httpDbIsolated()) {
+    console.log(
+      "SKIP: HTTP section requires PRESELL_OS_DB pointing at the isolated DB used by the app server at PHASE1_BASE_URL.",
+    );
+    console.log("\nTodos os testes da Fase 2.5 (publication workflow) passaram (HTTP section skipped).");
+    return;
+  }
+  console.log(`HTTP section DB: ${getDbPath()}`);
   const token = String(Date.now());
   const draftSlug = `phase25-http-draft-${token}`;
   const publishedSlug = `phase25-http-pub-${token}`;

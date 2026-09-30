@@ -1,10 +1,12 @@
 import "@/app/presell-design.css";
+import type { CSSProperties } from "react";
 import type { Campaign } from "@/lib/campaigns";
 import { parseDesignPlan, type DesignPlan, type VisualTheme } from "@/lib/design/plan";
 import { createDesignPlan } from "@/lib/design/planner";
 import { parsePresellPage } from "@/lib/presell-page";
 import { parseCreativeCompositionPlan } from "@/lib/creative/plan";
 import type { CreativeCompositionPlan } from "@/lib/creative/types";
+import type { SourceVisual } from "@/lib/visual-identity/types";
 
 export function designPlanForCampaign(campaign: Campaign): DesignPlan | null {
   const page = parsePresellPage(campaign.pageComposition);
@@ -19,18 +21,24 @@ export function PresellThemeRoot({
   campaign,
   children,
   creative,
+  sourceVisual = null,
 }: {
   campaign: Campaign;
   children: React.ReactNode;
   creative?: CreativeCompositionPlan | null;
+  sourceVisual?: SourceVisual | null;
 }) {
   const plan = designPlanForCampaign(campaign);
   const theme = plan?.visualTheme || "PREMIUM";
   const composition = creative ?? parseCreativeCompositionPlan(campaign.creativeCompositionJson);
+  const identityStyle = sourceVisual ? (sourceVisual.style as CSSProperties) : undefined;
   return (
     <div
       className="presell-canvas relative min-h-screen"
       data-visual-theme={theme}
+      data-visual-identity={sourceVisual ? "source" : undefined}
+      data-visual-character={sourceVisual?.character}
+      style={identityStyle}
       data-width={plan?.contentWidth || "wide"}
       data-hero={plan?.heroVariant || "MAGAZINE_PRODUCT"}
       data-hero-scale={plan?.tokens.heroScale || "editorial"}

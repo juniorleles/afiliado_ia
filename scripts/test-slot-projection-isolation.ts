@@ -92,7 +92,7 @@ assert(!visibleSemanticTopics(closingText).includes("guarantee"), "E: FINAL_THOU
 const fFacts = baseFacts();
 fFacts.usageInformation = ["Take one capsule daily."];
 fFacts.confidence.usageInformation = "DIRECT_SOURCE";
-fFacts.guaranteeInformation = "Returns accepted within 60 days.";
+fFacts.guaranteeInformation = "The seller publishes a return policy with returns accepted within 60 days.";
 fFacts.confidence.guaranteeInformation = "DIRECT_SOURCE";
 fFacts.manufacturer = "The product is manufactured by Company Beta.";
 fFacts.confidence.manufacturer = "DIRECT_SOURCE";
@@ -150,6 +150,24 @@ assert(!visibleSemanticTopics(c1DescFaq).includes("guarantee"), "IDENTITY_FAQ_SE
 assert(visibleSemanticTopics(projected(c1.slotPlan, "USAGE")).includes("usage"), "USAGE_SEES_USAGE=YES");
 assert(visibleSemanticTopics(projected(c1.slotPlan, "GUARANTEE")).includes("guarantee"), "GUARANTEE_SEES_GUARANTEE=YES");
 assert(JSON.stringify(c1Facts.features) === rawFeatures, "C1 raw features preserved");
+
+const mixedFacts = baseFacts();
+mixedFacts.ingredientsOrComponents = ["Contains ExampleLeaf. Take one capsule each morning."];
+mixedFacts.confidence.ingredientsOrComponents = "DIRECT_SOURCE";
+mixedFacts.usageInformation = ["Take one capsule each morning."];
+mixedFacts.confidence.usageInformation = "DIRECT_SOURCE";
+const mixed = planFor(mixedFacts);
+const mixedIngredients = projected(mixed.slotPlan, "INGREDIENTS");
+const mixedIngredientFaq = projected(mixed.slotPlan, "FAQ", "ingredients");
+assert(!/take one capsule/i.test(mixedIngredients), "K: ingredients slot does not render a usage instruction");
+assert(!/take one capsule/i.test(mixedIngredientFaq), "K: ingredients FAQ does not render a usage instruction");
+assert(/exampleleaf/i.test(mixedIngredients), "K: ingredients slot keeps the ingredient statement");
+assert(/take one capsule/i.test(projected(mixed.slotPlan, "USAGE")), "K: usage slot keeps the instruction");
+assert(collectSlotProjectionViolations(mixed.slotPlan.slots).length === 0, "K: mixed ingredient evidence has no authority violation");
+assert(
+  mixedFacts.ingredientsOrComponents[0] === "Contains ExampleLeaf. Take one capsule each morning.",
+  "K: raw ingredient evidence unchanged",
+);
 
 console.log("PRE_MODEL_SLOT_VIOLATIONS", c1Violations.length);
 for (const slot of c1.slotPlan.slots) {

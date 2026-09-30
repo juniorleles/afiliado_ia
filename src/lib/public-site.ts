@@ -11,6 +11,8 @@ export const PUBLIC_FOOTER_LINKS = [
 /** Affiliate CTA: same-tab navigation, labeled as sponsored. No target=_blank. */
 export const AFFILIATE_CTA_REL = "nofollow sponsored";
 
+export const AFFILIATE_DISCLOSURE_TEXT = "Disclosure: I may earn a commission if you purchase through links on this page.";
+
 export const HEALTH_DISCLAIMER_TEXT =
   "This content is for informational purposes and is not a substitute for professional medical advice.";
 
@@ -19,9 +21,25 @@ export function getPublicSiteName(): string {
   return fromEnv && fromEnv.length > 0 ? fromEnv : "Product Reviews";
 }
 
-export function getPublicContactEmail(): string {
+/** Portal navigation. PUBLIC_FOOTER_LINKS stays the legal set the presell footer renders. */
+export const PORTAL_NAV_LINKS = [
+  { href: "/", label: "Home" },
+  { href: "/reviews", label: "Reviews" },
+  { href: "/about", label: "About" },
+  { href: "/editorial-policy", label: "Editorial Policy" },
+] as const;
+
+export const PORTAL_LEGAL_LINKS = [
+  { href: "/affiliate-disclosure", label: "Affiliate Disclosure" },
+  { href: "/privacy", label: "Privacy Policy" },
+  { href: "/terms", label: "Terms" },
+  { href: "/contact", label: "Contact" },
+] as const;
+
+/** Null when the operator has not configured an address; never substitute a placeholder. */
+export function getPublicContactEmail(): string | null {
   const fromEnv = process.env.PUBLIC_CONTACT_EMAIL?.trim();
-  return fromEnv && fromEnv.length > 0 ? fromEnv : "contact@example.com";
+  return fromEnv && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fromEnv) ? fromEnv : null;
 }
 
 /**

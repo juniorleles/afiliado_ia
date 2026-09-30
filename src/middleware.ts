@@ -8,7 +8,8 @@ import {
   SESSION_MAX_AGE_SEC,
 } from "@/lib/analytics";
 import { ADMIN_COOKIE, INTERNAL_FRAME_HEADER, verifyAdminSession, verifyInternalFrameHeader } from "@/lib/admin-session";
-import { getAppEnv, isProduction, configuredOrigin } from "@/lib/env";
+import { adminAuthBypassed, labRoutesOpenWithoutCredential } from "@/lib/access-policy";
+import { isProduction, configuredOrigin } from "@/lib/env";
 import { applyHeaders, securityHeaders } from "@/lib/security-headers";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 
@@ -48,8 +49,7 @@ function originOk(request: NextRequest): boolean {
 }
 
 async function adminAllowed(request: NextRequest): Promise<boolean> {
-  if (getAppEnv() === "test" && process.env.AIA_REQUIRE_ADMIN !== "1") return true;
-  if (getAppEnv() === "development" && !process.env.ADMIN_PASSWORD?.trim()) return true;
+  if (adminAuthBypassed()) return true;
   const token = request.cookies.get(ADMIN_COOKIE)?.value;
   return verifyAdminSession(token);
 }
@@ -84,7 +84,7 @@ export async function middleware(request: NextRequest) {
   if (kind === "INTERNAL") {
     const internalOk = verifyInternalFrameHeader(request.headers.get(INTERNAL_FRAME_HEADER));
     const sessionOk = await adminAllowed(request);
-    const openDev = getAppEnv() !== "production";
+    const openDev = labRoutesOpenWithoutCredential();
     if (!internalOk && !sessionOk && !openDev) {
       return new NextResponse("Not found", { status: 404 });
     }

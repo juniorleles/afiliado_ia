@@ -11,7 +11,8 @@ const css = readFileSync(path.join(process.cwd(), "src/app/presell-design.css"),
 const scenes = readFileSync(path.join(process.cwd(), "src/components/presell/scene-render.tsx"), "utf8");
 const pageView = readFileSync(path.join(process.cwd(), "src/components/presell/presell-page-view.tsx"), "utf8");
 
-assert(scenes.includes("export function OverviewVisualBridge()"), "overview transition has no factual copy props");
+assert(scenes.includes("export function OverviewVisualBridge("), "overview transition has no factual copy props");
+assert(!/OverviewVisualBridge\([\s\S]{0,180}page/.test(scenes), "overview does not receive page copy");
 assert(!scenes.includes("ps-overview-bridge-pull"), "overview does not repeat the hero summary");
 assert(scenes.includes("ClosingProductScene"), "closing product scene exists");
 assert(scenes.includes("data-closing-scene"), "closing scene is marked for QA");
@@ -19,7 +20,8 @@ assert(scenes.includes('data-feature-grid="2x2"'), "features use a 2x2 editorial
 assert(scenes.includes("ps-feature-num"), "feature numerals are graphic anchors");
 assert(scenes.includes("ps-faq-band"), "FAQ is a separate visual band");
 assert(scenes.includes("ps-trust-editorial"), "methodology remains its own band");
-assert(pageView.includes("<OverviewVisualBridge />"), "overview chrome is injected without copy/image");
+assert(pageView.includes("<OverviewVisualBridge"), "overview chrome is injected without copy/image");
+assert(!pageView.includes("OverviewVisualBridge page") && !pageView.includes("OverviewVisualBridge image"), "overview chrome receives no page or image");
 assert(pageView.includes("ClosingProductScene"), "closing scene is wired before FAQ");
 assert(pageView.includes('scene.kind === "CTA_TRANSITION_SCENE") return null'), "redundant middle CTA is omitted");
 assert(!pageView.includes("Doctor Formulated"), "vendor photo pixels are not extracted");

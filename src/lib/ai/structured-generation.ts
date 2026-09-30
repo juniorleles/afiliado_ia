@@ -32,9 +32,11 @@ import {
 } from "@/lib/ai/ingredient-claims";
 import { validateFaqQuestion } from "@/lib/ai/faq-question-semantics";
 import { semanticClosureViolations } from "@/lib/ai/semantic-closure";
+import { createEvidenceSlotPlan, type EvidenceSlotPlan } from "@/lib/ai/evidence-slot-plan";
 import {
   composePublicationGate,
   validateGrounding,
+  type FaqAuthorityBinding,
   type GroundingResult,
 } from "@/lib/ai/grounding-validator";
 import { lintCampaign, type PublicationGate } from "@/lib/policy-linter";
@@ -51,6 +53,13 @@ export type StructuredFaqItem = {
   answer: string;
   topic: string;
   evidenceIds: string[];
+  /** Pre-assigned evidence field. Not inferred from the question. */
+  field?: string;
+  /** Pre-assigned semantic authority for this item only. */
+  semanticAuthority?: string;
+  slotId?: string;
+  /** Assigned evidence text already used by local FAQ validation. */
+  supportText?: string;
 };
 
 export type StructuredBlock = {
@@ -58,6 +67,8 @@ export type StructuredBlock = {
   type: string;
   evidenceIds: string[];
   content: string;
+  /** Independently realized items. Composition must not rejoin these into one paragraph. */
+  lines?: string[];
   items?: StructuredFaqItem[];
 };
 
@@ -113,6 +124,8 @@ const BLOCK_FIELD_COMPAT: Record<string, string[]> = {
   PRICING: ["pricingInformation"],
   GUARANTEE: ["guaranteeInformation"],
   MANUFACTURER: ["manufacturer"],
+  RETURNS: ["returnsInformation"],
+  SHIPPING: ["shippingInformation"],
   FINAL_THOUGHTS: ["productName", "description", "features"],
 };
 
@@ -129,6 +142,9 @@ const FAQ_TOPIC_FIELDS: Record<string, string> = {
   results_timeline: "usageInformation",
   category_classification: "description",
   background_science: "description",
+  product_format: "productFormat",
+  returns: "returnsInformation",
+  shipping: "shippingInformation",
 };
 
 export function faqTopicField(topic: string): string | null {
@@ -144,6 +160,8 @@ const BLOCK_HEADINGS: Record<string, string> = {
   PRICING: "Pricing",
   GUARANTEE: "Guarantee",
   MANUFACTURER: "Manufacturer",
+  RETURNS: "Returns",
+  SHIPPING: "Shipping",
   FAQ: "FAQ",
   FINAL_THOUGHTS: "Final Thoughts",
 };
@@ -351,6 +369,20 @@ export function factsFromEvidenceIds(
     } else if (item.field === "manufacturer") {
       scoped.manufacturer = item.value;
       scoped.confidence.manufacturer = provenance;
+    } else if (item.field === "productFormat" && base.productFormat) {
+      scoped.productFormat = { ...base.productFormat, statement: item.value, provenance, copyEligibility: "YES" };
+    } else if (item.field === "returnsInformation" || item.field === "shippingInformation") {
+      const fact = {
+        statement: item.value,
+        kind: "OTHER" as const,
+        provenance,
+        copyEligibility: "YES" as const,
+        policyFindings: [],
+        sourceUrl: item.sourceUrl,
+        sourcePageCategory: item.field === "returnsInformation" ? ("RETURNS" as const) : ("SHIPPING" as const),
+      };
+      if (item.field === "returnsInformation") scoped.returnsInformation = [...(scoped.returnsInformation ?? []), fact];
+      else scoped.shippingInformation = [...(scoped.shippingInformation ?? []), fact];
     }
   }
   return scoped;
@@ -469,9 +501,11 @@ function validateEvidenceIds(
 export function validateStructuredPage(
   page: StructuredGenerationPage,
   facts: ProductFacts,
+  slotPlan?: EvidenceSlotPlan,
 ): { violations: StructuralViolation[]; plan: GenerationPlan; manifest: GenerationFactManifest } {
   const plan = createGenerationPlan(facts);
   const manifest = buildGenerationFactManifest(facts);
+  const resolvedSlotPlan = slotPlan ?? createEvidenceSlotPlan(facts, plan, manifest);
   const violations: StructuralViolation[] = [];
   const allowedTypes = allowedTypeSet(plan);
   const support = `${plan.descriptionText}\n${plan.featurePhrases.join("\n")}`;
@@ -527,7 +561,11 @@ export function validateStructuredPage(
                       ? plan.wordBudget.guarantee
                       : type === "MANUFACTURER"
                         ? plan.wordBudget.manufacturer
-                        : 120;
+                        : type === "RETURNS"
+                          ? plan.wordBudget.returns
+                          : type === "SHIPPING"
+                            ? plan.wordBudget.shipping
+                            : 120;
     if (type !== "FAQ" && countWords(block.content) > budget) {
       pushViolation(violations, "WORD_BUDGET", block.content, `${type} exceeds ${budget} words`);
     }
@@ -703,7 +741,7 @@ export function validateStructuredPage(
   if (!hasCore) {
     pushViolation(violations, "MALFORMED", "blocks", "required OVERVIEW or FEATURES block is missing");
   }
-  if (!seenTypes.has("FINAL_THOUGHTS")) {
+  if (resolvedSlotPlan.slots.some((slot) => slot.type === "FINAL_THOUGHTS") && !seenTypes.has("FINAL_THOUGHTS")) {
     pushViolation(violations, "MALFORMED", "FINAL_THOUGHTS", "required FINAL_THOUGHTS block is missing");
   }
 
@@ -749,6 +787,14 @@ export function adaptStructuredToVariantCopy(
       lines.push("");
       continue;
     }
+    if (block.lines && block.lines.length > 0) {
+      const items = block.lines.map((line) => line.trim()).filter(Boolean);
+      if (items.length === 0) continue;
+      lines.push(`## ${heading}`, "");
+      for (const item of items) lines.push(`- ${item}`);
+      lines.push("");
+      continue;
+    }
     if (!block.content.trim()) continue;
     lines.push(`## ${heading}`, "", block.content.trim(), "");
   }
@@ -760,6 +806,36 @@ export function adaptStructuredToVariantCopy(
     body: lines.join("\n").trim(),
     ctaLabel: cta,
   };
+}
+
+export function pageFaqAuthorityBindings(
+  page: StructuredGenerationPage,
+  options: {
+    closedTopics: readonly string[];
+    supportForEvidenceIds?: (ids: readonly string[]) => string;
+  },
+): FaqAuthorityBinding[] {
+  const bindings: FaqAuthorityBinding[] = [];
+  for (const block of page.blocks) {
+    if (block.type !== "FAQ") continue;
+    for (const item of block.items || []) {
+      const question = item.question.trim();
+      if (!question) continue;
+      const topic = item.topic.trim();
+      const fromEvidence = options.supportForEvidenceIds?.(item.evidenceIds) || "";
+      bindings.push({
+        question: question.endsWith("?") ? question : `${question}?`,
+        field: item.field,
+        topic: topic || undefined,
+        semanticAuthority: item.semanticAuthority,
+        authorizedTopics: topic ? [topic] : undefined,
+        supportText: item.supportText?.trim() || fromEvidence,
+        closedTopics: options.closedTopics,
+        slotId: item.slotId,
+      });
+    }
+  }
+  return bindings;
 }
 
 function mergeGrounding(results: GroundingResult[]): GroundingResult {
@@ -812,6 +888,14 @@ export function evaluateStructuredPage(
 
   const { violations, plan, manifest } = validateStructuredPage(page, facts);
   const inspectionCopy = adaptStructuredToVariantCopy(page, plan);
+  const faqAuthorities = pageFaqAuthorityBindings(page, {
+    closedTopics: plan.closedTopics,
+    supportForEvidenceIds: (ids) =>
+      ids
+        .map((id) => manifest.items.find((row) => row.id === id)?.value || "")
+        .filter(Boolean)
+        .join("\n"),
+  });
   const traces: EvidenceTrace[] = [];
   const scopedResults: GroundingResult[] = [];
 
@@ -857,7 +941,9 @@ export function evaluateStructuredPage(
         const itemId = `${block.id}:${index + 1}`;
         const text = `${item.question} ${item.answer}`.trim();
         const scoped = factsFromEvidenceIds(facts, item.evidenceIds, manifest);
-        const ground = text ? validateGrounding(text, scoped) : { status: "GROUNDED" as const, unsupportedClaims: [] };
+        const ground = text
+          ? validateGrounding(text, scoped, { faqAuthorities })
+          : { status: "GROUNDED" as const, unsupportedClaims: [] };
         scopedResults.push(ground);
         traces.push({
           blockId: itemId,
@@ -894,7 +980,11 @@ export function evaluateStructuredPage(
     });
   }
 
-  const fullGrounding = validateGrounding(`${inspectionCopy.headline}\n${inspectionCopy.body}\n${inspectionCopy.ctaLabel}`, facts);
+  const fullGrounding = validateGrounding(
+    `${inspectionCopy.headline}\n${inspectionCopy.body}\n${inspectionCopy.ctaLabel}`,
+    facts,
+    { faqAuthorities },
+  );
   const grounding = mergeGrounding([...scopedResults, fullGrounding]);
   const policy = lintCampaign({
     id: 0,

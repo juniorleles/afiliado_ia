@@ -1,18 +1,24 @@
 import Link from "next/link";
-import { PublicFooter } from "@/components/public-footer";
+import { PortalShell } from "@/components/portal/portal-shell";
 
 export default function NotFound() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center gap-4 px-6">
-      <p className="text-sm uppercase tracking-widest text-zinc-500">404</p>
-      <h1 className="text-3xl font-semibold">Page not found</h1>
-      <p className="text-zinc-400">That address is not a published page.</p>
-      <p>
-        <Link href="/" className="text-emerald-400 hover:underline">
-          Home
-        </Link>
-      </p>
-      <PublicFooter />
-    </main>
+    <PortalShell>
+      <header className="pt-page-head">
+        <div className="pt-wrap">
+          <p className="pt-kicker">404</p>
+          <h1 className="pt-display">Page not found</h1>
+          <p className="pt-lede">That address is not a published page.</p>
+          <div className="pt-actions">
+            <Link href="/reviews" className="pt-button">
+              Browse reviews
+            </Link>
+            <Link href="/" className="pt-textlink">
+              Home →
+            </Link>
+          </div>
+        </div>
+      </header>
+    </PortalShell>
   );
 }

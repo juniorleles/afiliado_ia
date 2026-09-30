@@ -1,3 +1,6 @@
+import { withNormalizedNumerals } from "@/lib/ai/operational-relations";
+import { isIngredientIdentityName, isUsageInstruction } from "@/lib/import-heuristics";
+
 /**
  * ProductFacts — Phase 3 content engine.
  *
@@ -31,6 +34,29 @@ export type FactField =
   | "guaranteeInformation"
   | "manufacturer";
 
+export type CopyEligibilityFlag = "YES" | "NO";
+
+export type IngredientContextRelation = "SUPPORTS" | "CONTAINS" | "DESCRIBED_AS" | "OTHER";
+
+export type IngredientContextKind = "HEALTH_EFFICACY" | "NEUTRAL_CONTEXT" | "SELLER_ATTRIBUTED";
+
+export type SourcePageCategory =
+  | "PRIMARY"
+  | "RETURNS"
+  | "REFUNDS"
+  | "SHIPPING"
+  | "USAGE"
+  | "PRODUCT_DETAILS"
+  | "FAQ"
+  | "PRIVACY"
+  | "TERMS"
+  | "GENERAL_LEGAL"
+  | "BLOG"
+  | "TESTIMONIALS"
+  | "REVIEWS"
+  | "UNRELATED_SUPPORT"
+  | "AMBIGUOUS_SOURCE_CATEGORY";
+
 export type SourceFact = {
   field: string;
   text: string;
@@ -38,9 +64,85 @@ export type SourceFact = {
   confidence: FactConfidence;
   question?: string;
   context?: string;
+  sourcePageCategory?: SourcePageCategory;
+  sourceUnit?: string;
+  sourceLocation?: string;
+  retrievedAt?: string;
+};
+
+/**
+ * Seller- or source-attributed statement about a named ingredient.
+ * Distinct from ingredientsOrComponents (identity only). DIRECT_SOURCE here
+ * means the seller/source stated the text — it is not independent verification.
+ */
+export type IngredientContextEntry = {
+  ingredient: string;
+  statement: string;
+  relation: IngredientContextRelation;
+  attribution: "SELLER";
+  provenance: FactConfidence;
+  kind: IngredientContextKind;
+  copyEligibility: CopyEligibilityFlag;
+  policyFindings: string[];
+  sourceUrl: string;
+  sourcePageCategory: SourcePageCategory;
+  sourceUnit?: string;
+  sourceLocation?: string;
+  retrievedAt?: string;
+};
+
+export type ReturnsFactKind = "RETURN_WINDOW" | "REFUND_MECHANISM" | "RETURN_CONDITION" | "RETURN_PROCESS" | "OTHER";
+
+export type ShippingFactKind = "DESTINATION" | "PROCESSING" | "DELIVERY_ESTIMATE" | "METHOD" | "OTHER";
+
+export type OperationalFact<K extends string> = {
+  statement: string;
+  kind: K;
+  provenance: FactConfidence;
+  copyEligibility: CopyEligibilityFlag;
+  policyFindings: string[];
+  sourceUrl: string;
+  sourcePageCategory: SourcePageCategory;
+  sourceUnit?: string;
+  sourceLocation?: string;
+  /** The source question this statement answers, when it is an FAQ answer. */
+  question?: string;
+  retrievedAt?: string;
+};
+
+export type ReturnsInformationFact = OperationalFact<ReturnsFactKind>;
+export type ShippingInformationFact = OperationalFact<ShippingFactKind>;
+
+export type ProductFormatFact = {
+  value: string;
+  statement: string;
+  provenance: FactConfidence;
+  copyEligibility: CopyEligibilityFlag;
+  policyFindings: string[];
+  sourceUrl: string;
+  sourcePageCategory: SourcePageCategory;
+  sourceUnit?: string;
+  sourceLocation?: string;
+  retrievedAt?: string;
 };
 
 export type FieldConfidence = Record<FactField, FactConfidence>;
+
+/** Verbatim commercial fields from one source offer card. Absent fields were not stated. */
+export type OfferFact = {
+  packageName: string;
+  unitPrice: string;
+  quantity?: string;
+  totalPrice?: string;
+  originalPrice?: string;
+  savings?: string;
+  shipping?: string;
+  bonuses?: string;
+  popularityLabel?: string;
+  imageUrl?: string;
+  sourceUrl: string;
+  confidence: "DIRECT_SOURCE";
+};
 
 export type ProductFacts = {
   productName: string;
@@ -52,8 +154,17 @@ export type ProductFacts = {
   usageInformation: string[];
   cautions: string[];
   pricingInformation?: string;
+  offerFacts?: OfferFact[];
   guaranteeInformation?: string;
   manufacturer?: string;
+  /**
+   * Seller-attributed statements about named ingredients. Not identity.
+   * Presence does not imply copy eligibility.
+   */
+  ingredientContext?: IngredientContextEntry[];
+  returnsInformation?: ReturnsInformationFact[];
+  shippingInformation?: ShippingInformationFact[];
+  productFormat?: ProductFormatFact;
   sourceSnippets: SourceFact[];
   importWarnings: string[];
   confidence: FieldConfidence;
@@ -161,12 +272,42 @@ function fieldCounts(facts: ProductFacts, field: FactField, hasValue: boolean): 
   return (facts.confidence?.[field] ?? "NOT_FOUND") !== "NOT_FOUND";
 }
 
+/**
+ * Set only when the fetched source visibly contained that structure and
+ * extraction still returned nothing. Absent sections must not set these.
+ * A hit blocks SUFFICIENT so description plus two other fields cannot hide
+ * a material extraction miss. Ingredients and usage count only when the
+ * stored values still classify as those fields.
+ */
+export const IMPORT_QUALITY_GAPS = {
+  ingredients: "Ingredient or component cards were visible in the source but were not extracted.",
+  features: "Feature or benefit cards were visible in the source but were not extracted.",
+  pricing: "Offer prices were visible in the source but were not extracted.",
+} as const;
+
+function hidesVisibleExtractionLoss(facts: ProductFacts): boolean {
+  const warnings = facts.importWarnings ?? [];
+  return (
+    warnings.includes(IMPORT_QUALITY_GAPS.ingredients) ||
+    warnings.includes(IMPORT_QUALITY_GAPS.features) ||
+    warnings.includes(IMPORT_QUALITY_GAPS.pricing)
+  );
+}
+
 export function assessImportQuality(facts: ProductFacts): ImportQuality {
   const hasName = Boolean(facts.productName.trim());
   const hasDescription = fieldCounts(facts, "description", Boolean(facts.description?.trim()));
   const hasFeatures = fieldCounts(facts, "features", facts.features.length > 0);
-  const hasIngredients = fieldCounts(facts, "ingredientsOrComponents", facts.ingredientsOrComponents.length > 0);
-  const hasUsage = fieldCounts(facts, "usageInformation", facts.usageInformation.length > 0);
+  const hasIngredients = fieldCounts(
+    facts,
+    "ingredientsOrComponents",
+    facts.ingredientsOrComponents.some((item) => isIngredientIdentityName(item)),
+  );
+  const hasUsage = fieldCounts(
+    facts,
+    "usageInformation",
+    facts.usageInformation.some((item) => isUsageInstruction(item)),
+  );
   const hasGuarantee = fieldCounts(facts, "guaranteeInformation", Boolean(facts.guaranteeInformation?.trim()));
   const hasCautions = fieldCounts(facts, "cautions", facts.cautions.length > 0);
   const hasPricing = fieldCounts(facts, "pricingInformation", Boolean(facts.pricingInformation?.trim()));
@@ -181,8 +322,8 @@ export function assessImportQuality(facts: ProductFacts): ImportQuality {
   if (major === 0 && extra === 0) return "INSUFFICIENT";
   if (!hasDescription && major <= 1 && extra === 0) return "INSUFFICIENT";
 
-  if (hasDescription && major >= 3) return "SUFFICIENT";
-  if (major >= 4) return "SUFFICIENT";
+  const sufficient = (hasDescription && major >= 3) || major >= 4;
+  if (sufficient) return hidesVisibleExtractionLoss(facts) ? "PARTIAL" : "SUFFICIENT";
   return "PARTIAL";
 }
 
@@ -207,6 +348,9 @@ export function emptyProductFacts(
     ingredientsOrComponents: [],
     usageInformation: [],
     cautions: [],
+    ingredientContext: [],
+    returnsInformation: [],
+    shippingInformation: [],
     sourceSnippets: [],
     importWarnings: warnings,
     productImageProvenance: "NOT_FOUND",
@@ -436,8 +580,171 @@ export type ConsumerCopyEligibleFacts = {
   pricingInformation: string;
   guaranteeInformation: string;
   manufacturer: string;
+  /** Source statement that carries the product format; "" when absent. */
+  productFormat: string;
+  /** Short format value (for example "tablet"); "" when absent. */
+  productFormatValue: string;
+  returnsInformation: string[];
+  shippingInformation: string[];
   sourceUrl: string;
 };
+
+export type OperationalCopyField = "productFormat" | "returnsInformation" | "shippingInformation";
+
+export type OperationalCopyItem = {
+  field: OperationalCopyField;
+  statement: string;
+  kind: string;
+  provenance: FactConfidence;
+  sourceUrl: string;
+};
+
+/** Mis-decoded text (replacement characters or UTF-8 read as Latin-1). */
+export function hasEncodingCorruption(text: string): boolean {
+  return /\uFFFD|â€|Ã[\u0080-\u00BF]|Â[\u00A0-\u00BF]/.test(text);
+}
+
+const CONTACT_DETAIL =
+  /[\w.+-]+@[\w-]+\.[\w.]+|\[email[^\]]{0,8}protected\]|\+?\d[\d\s().-]{8,}\d|\b(?:p\.?\s?o\.?\s+box|suite|ste\.?)\s*\d+|\b\d{1,6}\s+[A-Za-z0-9 .'-]{2,40}\b(?:street|st|avenue|ave|road|rd|boulevard|blvd|drive|dr|lane|ln|way|court|ct|highway|hwy)\b\.?,?|\b[A-Z]{2}\s+\d{5}(?:-\d{4})?\b/i;
+
+/** Contact or postal details are evidence, not consumer copy. */
+export function hasContactDetail(text: string): boolean {
+  return CONTACT_DETAIL.test(text);
+}
+
+function cleanOperationalStatement(text: string): string {
+  return text
+    .replace(/^\s*[*•\-–]\s*/, "")
+    .replace(/\s*\b(?:read more|learn more|click here)(?:\s+here)?\s*\.?\s*$/i, "")
+    .replace(/\s+([.,;:!?])/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const MEASURE = /\b\d+(?:\.\d+)?\s*(?:-|to|–)?\s*\d*\s*(?:hours?|days?|working days|business days|weeks?|months?)\b|\$\s?\d+(?:\.\d{2})?/gi;
+
+function measuresOf(text: string): string[] {
+  return [...withNormalizedNumerals(text).matchAll(MEASURE)].map((match) => match[0].toLowerCase().replace(/\s+/g, " ")).sort();
+}
+
+function contentWordSet(text: string): Set<string> {
+  return new Set(
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((word) => word.length > 3),
+  );
+}
+
+/**
+ * Same fact stated twice: identical text, or a policy sentence and its FAQ
+ * answer with the same measures. Short rows (for example one destination per
+ * table row) are never merged, so geographic distinctions survive.
+ */
+function isEquivalentOperationalStatement(
+  a: { statement: string; kind: string },
+  b: { statement: string; kind: string },
+): boolean {
+  const na = a.statement.toLowerCase().replace(/[^a-z0-9$]+/g, " ").trim();
+  const nb = b.statement.toLowerCase().replace(/[^a-z0-9$]+/g, " ").trim();
+  if (na === nb) return true;
+  if (a.kind === "DESTINATION" || b.kind === "DESTINATION") return false;
+  const sourceWords = (text: string) => text.trim().split(/\s+/).length;
+  if (Math.min(sourceWords(a.statement), sourceWords(b.statement)) < 8) return false;
+  return equivalentMeasuredStatements(a.statement, b.statement);
+}
+
+/**
+ * Material relationships a statement can carry beyond its measures. Two
+ * statements that differ in any of them state different facts, however many
+ * words they share.
+ */
+const MATERIAL_RELATIONS: Array<[string, RegExp]> = [
+  ["requirement", /\b(?:must|required?|requires|requirement|need(?:s|ed)? to|mandatory|only)\b/i],
+  ["authorization", /\b(?:authori[sz]\w*|approv\w*|rma|permission)\b/i],
+  ["condition", /\b(?:if|unless|provided that|as long as|subject to|in the event)\b/i],
+  ["exception", /\b(?:not|no|never|cannot|can't|won't|except|excluding|exclusions?)\b/i],
+  ["fee", /\b(?:fees?|costs?|charges?|charged|pay|paid|deduct\w*|restocking)\b|\$/i],
+  ["optionality", /\b(?:optional|may|if available|where available)\b/i],
+  ["return_action", /\b(?:return(?:s|ed|ing)?|send(?:s|ing)?\s+(?:\w+\s+){0,2}back|sent\s+back|ship(?:s|ped|ping)?\s+(?:\w+\s+){0,2}back)\b/i],
+  ["refund_action", /\b(?:refund\w*|reimburs\w*|money back|credit(?:ed)? (?:back|to))\b/i],
+  ["exchange_action", /\b(?:exchang\w*|replac\w*)\b/i],
+  ["cancel_action", /\bcancel\w*\b/i],
+  ["first_party_actor", /\b(?:we|us|our)\b/i],
+  ["customer_actor", /\b(?:you|your|customers?)\b/i],
+];
+
+function materialRelations(text: string): string {
+  return MATERIAL_RELATIONS.filter(([, pattern]) => pattern.test(text))
+    .map(([name]) => name)
+    .join("|");
+}
+
+function equivalentMeasuredStatements(a: string, b: string): boolean {
+  const ma = measuresOf(a);
+  const mb = measuresOf(b);
+  if (ma.length === 0 || ma.join("|") !== mb.join("|")) return false;
+  if (materialRelations(a) !== materialRelations(b)) return false;
+  const wa = contentWordSet(a);
+  const wb = contentWordSet(b);
+  const shared = [...wa].filter((word) => wb.has(word)).length;
+  return shared / Math.max(1, Math.min(wa.size, wb.size)) >= 0.5;
+}
+
+function operationalCopyEligible(fact: {
+  statement: string;
+  provenance: FactConfidence;
+  copyEligibility: CopyEligibilityFlag;
+}): boolean {
+  return (
+    fact.copyEligibility === "YES" &&
+    isCopyEligibleConfidence(fact.provenance) &&
+    !hasEncodingCorruption(fact.statement) &&
+    !hasContactDetail(fact.statement)
+  );
+}
+
+function operationalItems(
+  field: OperationalCopyField,
+  facts: Array<OperationalFact<string>>,
+): OperationalCopyItem[] {
+  const out: OperationalCopyItem[] = [];
+  for (const fact of facts) {
+    if (!operationalCopyEligible(fact)) continue;
+    let statement = cleanOperationalStatement(fact.statement);
+    if (fact.question && /^(?:yes|no)\b/i.test(statement)) {
+      const question = cleanOperationalStatement(fact.question);
+      if (hasEncodingCorruption(question) || hasContactDetail(question)) continue;
+      statement = `${question} ${statement}`;
+    }
+    if (statement.split(/\s+/).length < 3) continue;
+    if (out.some((item) => isEquivalentOperationalStatement(item, { statement, kind: fact.kind }))) continue;
+    out.push({ field, statement, kind: fact.kind, provenance: fact.provenance, sourceUrl: fact.sourceUrl });
+  }
+  return out;
+}
+
+/**
+ * Copy-eligible operational evidence (format, returns, shipping). Each item is
+ * a verbatim source statement; contact and postal details stay evidence only.
+ */
+export function copyEligibleOperationalItems(facts: ProductFacts): OperationalCopyItem[] {
+  const items: OperationalCopyItem[] = [];
+  const format = facts.productFormat;
+  if (format && format.value.trim() && operationalCopyEligible(format)) {
+    items.push({
+      field: "productFormat",
+      statement: cleanOperationalStatement(format.statement),
+      kind: format.value.trim().toLowerCase(),
+      provenance: format.provenance,
+      sourceUrl: format.sourceUrl,
+    });
+  }
+  items.push(...operationalItems("returnsInformation", facts.returnsInformation ?? []));
+  items.push(...operationalItems("shippingInformation", facts.shippingInformation ?? []));
+  return items;
+}
 
 export type GenerationFactManifestItem = {
   id: string;
@@ -496,7 +803,21 @@ export function getConsumerCopyEligibleFacts(facts: ProductFacts): ConsumerCopyE
       facts.confidence.guaranteeInformation,
     ),
     manufacturer: copyEligibleScalar(facts.manufacturer, facts.confidence.manufacturer),
+    ...operationalEligible(facts),
     sourceUrl: (facts.sourceUrl ?? "").trim(),
+  };
+}
+
+function operationalEligible(
+  facts: ProductFacts,
+): Pick<ConsumerCopyEligibleFacts, "productFormat" | "productFormatValue" | "returnsInformation" | "shippingInformation"> {
+  const items = copyEligibleOperationalItems(facts);
+  const format = items.find((item) => item.field === "productFormat");
+  return {
+    productFormat: format?.statement ?? "",
+    productFormatValue: format?.kind ?? "",
+    returnsInformation: items.filter((item) => item.field === "returnsInformation").map((item) => item.statement),
+    shippingInformation: items.filter((item) => item.field === "shippingInformation").map((item) => item.statement),
   };
 }
 
@@ -590,6 +911,9 @@ export function buildGenerationFactManifest(facts: ProductFacts): GenerationFact
     sourceUrl,
     true,
   );
+  for (const item of copyEligibleOperationalItems(facts)) {
+    pushManifestValue(items, item.field, item.statement, item.provenance, item.sourceUrl || sourceUrl, true);
+  }
 
   return {
     items,

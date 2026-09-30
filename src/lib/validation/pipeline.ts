@@ -1,13 +1,17 @@
 import type { VariantApproach } from "@/lib/ai/generate-variants";
 import { generateVariants, lintVariant, VARIANT_APPROACHES } from "@/lib/ai/generate-variants";
+import { validateGrounding } from "@/lib/ai/grounding-validator";
+import type { EvidenceTrace } from "@/lib/ai/structured-generation";
 import { createCreativeCompositionPlan } from "@/lib/creative/planner";
 import { createDesignPlan } from "@/lib/design/planner";
 import type { PageTemplateId } from "@/lib/presell-page";
 import {
   applyProductImageToPage,
   composePresellPage,
+  consumerVisibleText,
   serializePresellPage,
 } from "@/lib/presell-page";
+import { buildGateTrace, snapshotGroundingStage } from "@/lib/validation/gate-trace";
 import { evaluateProductAsset } from "@/lib/assets/status";
 import type { ProductFacts } from "@/lib/product-facts";
 import { isCopyEligibleImageProvenance } from "@/lib/product-facts";
@@ -107,6 +111,8 @@ export function composeCandidateFromVariant(input: {
   body: string;
   ctaLabel: string;
   strategyMeta?: ValidationCandidate["strategyMeta"];
+  /** Slot traces from the generation lint, when that path produced them. */
+  evidenceTrace?: readonly EvidenceTrace[];
 }): Omit<ValidationCandidate, "id" | "createdAt" | "updatedAt" | "publicationStatus" | "humanReview" | "humanNotes"> {
   let stages = initialStages();
   stages = markStage(stages, "IMPORT", "OK", `origin=${input.facts.origin} quality=${input.facts.importQuality}`);
@@ -134,7 +140,7 @@ export function composeCandidateFromVariant(input: {
     stages,
     "POLICY_LINTER",
     policyOutcome,
-    `gate=${linted.finalGate} warnings=${linted.lint.warningCount} blocking=${linted.lint.blockingCount}`,
+    `policy=${linted.lint.gate} publication=${linted.finalGate} warnings=${linted.lint.warningCount} blocking=${linted.lint.blockingCount}`,
   );
 
   const template = approachToTemplate(input.approach);
@@ -167,6 +173,34 @@ export function composeCandidateFromVariant(input: {
     approach: input.approach,
   });
 
+  const evaluatedAt = new Date().toISOString();
+  const preRepresentation = `${input.headline}\n${input.body}\n${input.ctaLabel}`;
+  const finalRepresentation = consumerVisibleText(page);
+  const finalGrounding = validateGrounding(finalRepresentation, input.facts);
+  const gateTrace = buildGateTrace({
+    evaluatedAt,
+    preComposition: snapshotGroundingStage({
+      stage: "PRE_COMPOSITION_GROUNDING",
+      representation: preRepresentation,
+      grounding: linted.grounding,
+      facts: input.facts,
+      evidenceTrace: input.evidenceTrace,
+      evaluatedAt,
+    }),
+    finalComposition: snapshotGroundingStage({
+      stage: "FINAL_COMPOSITION_GROUNDING",
+      representation: finalRepresentation,
+      grounding: finalGrounding,
+      facts: input.facts,
+      evaluatedAt,
+    }),
+    policyGate: linted.lint.gate,
+    publicationGate: linted.finalGate,
+    blockingRules: linted.lint.majorFindings.filter((f) => f.status === "fail").map((f) => `${f.ruleId}: ${f.message}`),
+    warnings: linted.lint.majorFindings.filter((f) => f.status === "warn").map((f) => `${f.ruleId}: ${f.message}`),
+    authorityViolations: linted.generationPlanViolations,
+  });
+
   const draft: Omit<ValidationCandidate, "id" | "createdAt" | "updatedAt" | "publicationStatus" | "humanReview" | "humanNotes"> = {
     runId: input.runId,
     productKey: input.productKey,
@@ -186,6 +220,7 @@ export function composeCandidateFromVariant(input: {
       blockingRules: linted.lint.majorFindings
         .filter((f) => f.status === "fail")
         .map((f) => `${f.ruleId}: ${f.message}`),
+      gateTrace,
     },
     sourceQa,
     assetQa,

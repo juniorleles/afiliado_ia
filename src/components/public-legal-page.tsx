@@ -1,7 +1,9 @@
-import Link from "next/link";
 import type { Metadata } from "next";
-import { PublicFooter } from "@/components/public-footer";
+import { PortalShell } from "@/components/portal/portal-shell";
 import { getPublicSiteName, publicAbsoluteUrl } from "@/lib/public-site";
+
+/** Date these policy texts were last revised in the codebase. */
+export const POLICY_LAST_UPDATED = "September 25, 2026";
 
 export function publicPageMetadata(path: string, title: string, description: string): Metadata {
   const site = getPublicSiteName();
@@ -10,36 +12,43 @@ export function publicPageMetadata(path: string, title: string, description: str
     description,
     alternates: { canonical: publicAbsoluteUrl(path) },
     robots: { index: true, follow: true },
+    openGraph: { title: `${title} · ${site}`, description, url: publicAbsoluteUrl(path), siteName: site, type: "website" },
   };
 }
 
 export function PublicLegalLayout({
   title,
+  path,
+  kicker = "Site information",
+  showUpdated = true,
   children,
 }: {
   title: string;
+  path?: string;
+  kicker?: string;
+  showUpdated?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col">
-      <article className="mx-auto w-full max-w-2xl flex-1 px-6 py-14">
-        <p className="text-sm font-medium uppercase tracking-widest text-emerald-400">
-          <Link href="/" className="hover:underline">
-            {getPublicSiteName()}
-          </Link>
-        </p>
-        <h1 className="mt-2 text-4xl font-bold leading-tight text-zinc-50">{title}</h1>
-        <div className="mt-8 space-y-4 text-base leading-relaxed text-zinc-300">{children}</div>
-      </article>
-      <PublicFooter />
-    </div>
+    <PortalShell current={path}>
+      <header className="pt-page-head">
+        <div className="pt-wrap">
+          <p className="pt-kicker">{kicker}</p>
+          <h1 className="pt-display">{title}</h1>
+          {showUpdated ? <p className="pt-updated">Last updated {POLICY_LAST_UPDATED}</p> : null}
+        </div>
+      </header>
+      <div className="pt-wrap">
+        <article className="pt-prose">{children}</article>
+      </div>
+    </PortalShell>
   );
 }
 
 export function LegalSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-3">
-      <h2 className="pt-4 text-2xl font-semibold text-zinc-50">{title}</h2>
+    <section>
+      <h2>{title}</h2>
       {children}
     </section>
   );

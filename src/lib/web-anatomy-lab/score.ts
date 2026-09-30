@@ -209,37 +209,6 @@ const CATEGORY_WEIGHTS: Record<string, number> = {
   "Design & UX": 1.0,
 };
 
-/** Frozen Joint Genesis authorized-copy judgments. Experiment A must not change these. */
-export const FROZEN_TEXT_STATUS: Record<string, SkillStatus> = {
-  "hero.audience_clarity": "fail",
-  "hero.outcome_focus": "pass",
-  "hero.differentiation": "fail",
-  "value_prop.specific_promise": "fail",
-  "value_prop.promise_alignment": "pass",
-  "value_prop.evidence_backed": "fail",
-  "value_prop.problem_clarity": "fail",
-  "value_prop.message_simplicity": "pass",
-  "value_prop.unlike_framing": "fail",
-  "value_prop.feature_outcome": "pass",
-  "copy.action_cta": "pass",
-  "copy.objection_handling": "fail",
-  "copy.narrative": "fail",
-  "copy.transformation": "fail",
-  "copy.benefit_headings": "fail",
-  "copy.plain_language": "pass",
-  "copy.consistent_cta": "pass",
-  "copy.secondary_cta": "fail",
-  "copy.you_centric": "fail",
-  "trust.quantified_proof": "fail",
-  "trust.before_after_testimonial": "fail",
-  "trust.content_quality": "pass",
-  "trust.niche_testimonials": "fail",
-  "trust.linked_proof": "fail",
-  "conversion.pricing_visibility": "fail",
-  "conversion.low_commitment_cta": "pass",
-  "conversion.post_submit_clarity": "n/a",
-};
-
 export type SkillDomSignals = {
   h1InFold: boolean;
   ctaInFold: boolean;
@@ -317,8 +286,7 @@ export type SkillScore = {
 
 export function scoreSkillPack(signals: SkillDomSignals): SkillScore {
   const items = SKILL_ITEMS.map((item) => {
-    const status =
-      item.mode === "text" ? (FROZEN_TEXT_STATUS[item.id] ?? "fail") : visualStatus(item.id, signals);
+    const status = item.mode === "text" ? "n/a" : visualStatus(item.id, signals);
     return { ...item, status };
   });
 

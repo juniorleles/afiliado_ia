@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { LintedVariant } from "@/lib/ai/generate-variants";
 import type { CampaignInput } from "@/lib/campaigns";
 import type { FactConfidence, ProductFacts } from "@/lib/product-facts";
@@ -12,10 +12,14 @@ import {
   provenanceLabel,
   snippetsForField,
 } from "@/lib/product-facts";
-import { generateVariantsAction, importProductAction, getImportProgressAction, cancelImportAction, researchAndRecommendAction, generateRecommendedLpAction } from "./actions";
+import { generateVariantsAction, importProductAction, getImportProgressAction, cancelImportAction, researchAndRecommendAction, generateRecommendedLpAction, getAiProviderStatusAction } from "./actions";
 import { CampaignForm } from "@/app/admin/campaign-form";
 import { createCampaignAction } from "@/app/admin/actions";
 import { slugify } from "@/lib/slug";
+import { CompletenessCard } from "@/components/admin/completeness-card";
+import { LpQualityCard } from "@/components/admin/lp-quality-card";
+import { analyzeImportCompleteness } from "@/lib/completeness-engine";
+import { predictLpQuality } from "@/lib/lp-quality-predictor";
 import type { PublicationGate } from "@/lib/policy-linter";
 import {
   authorizedCopyFromVariant,
@@ -59,6 +63,11 @@ type Step =
       previewPath: string;
       usedFallback: boolean;
       blocked: boolean;
+      gateInspection: {
+        preComposition: string;
+        finalComposition: string;
+        failures: Array<{ proposition: string; reason: string; section: string | null; slotId: string | null }>;
+      } | null;
     }
   | {
       kind: "picking";
@@ -102,6 +111,25 @@ export function GenerateClient() {
   const [allowManualLastResort, setAllowManualLastResort] = useState(false);
   const [activeImportId, setActiveImportId] = useState<string | null>(null);
   const [timedOut, setTimedOut] = useState(false);
+  const [providerStatus, setProviderStatus] = useState("Generating recommendation...");
+  const [providerAttempt, setProviderAttempt] = useState(1);
+  const [providerRemaining, setProviderRemaining] = useState(3);
+
+  useEffect(() => {
+    if (step.kind !== "loading") return;
+    setProviderStatus("Generating recommendation...");
+    setProviderAttempt(1);
+    setProviderRemaining(3);
+    const poll = window.setInterval(() => {
+      void getAiProviderStatusAction().then((status) => {
+        if (!status?.message) return;
+        setProviderStatus(status.message);
+        setProviderAttempt(status.attempt);
+        setProviderRemaining(status.remainingAttempts);
+      });
+    }, 400);
+    return () => window.clearInterval(poll);
+  }, [step.kind]);
 
   async function handleImport() {
     if (!sourceUrl.trim()) {
@@ -254,6 +282,7 @@ export function GenerateClient() {
       previewPath: result.previewPath,
       usedFallback: result.usedFallback,
       blocked: result.blocked,
+      gateInspection: result.gateInspection,
     });
   }
 
@@ -441,6 +470,9 @@ export function GenerateClient() {
         facts={facts}
         loading={loading}
         error={error}
+        providerStatus={providerStatus}
+        providerAttempt={providerAttempt}
+        providerRemaining={providerRemaining}
         onCancel={() => setStep({ kind: "input" })}
         onGenerate={(next) => handleGenerate(next)}
       />
@@ -497,6 +529,12 @@ export function GenerateClient() {
               CONTENT_GATE is BLOCKED. Do not publish. AI recommendation does not bypass grounding, policy, asset, visual, or performance QA.
             </p>
           ) : null}
+          {step.gateInspection ? (
+            <p className="mt-2 text-xs text-zinc-300">
+              PRE_COMPOSITION_GROUNDING={step.gateInspection.preComposition} · FINAL_COMPOSITION_GROUNDING=
+              {step.gateInspection.finalComposition}
+            </p>
+          ) : null}
           <p className="mt-3 text-xs uppercase tracking-wide text-zinc-500">Local preview</p>
           <p className="font-mono text-sm text-zinc-100">{step.previewUrl}</p>
           <div className="mt-3 flex flex-wrap gap-3">
@@ -508,6 +546,14 @@ export function GenerateClient() {
             >
               OPEN LP
             </a>
+            {builderHrefFromPreview(step.previewPath) ? (
+              <a
+                href={builderHrefFromPreview(step.previewPath) ?? "/admin/lp-builder"}
+                className="rounded-md border border-emerald-700 px-4 py-2 text-sm font-medium text-emerald-100"
+              >
+                Open LP Builder
+              </a>
+            ) : null}
             <button
               type="button"
               onClick={() => void navigator.clipboard.writeText(step.previewUrl)}
@@ -765,7 +811,7 @@ export function GenerateClient() {
             Mobile
           </button>
         </div>
-        <div className="overflow-x-auto rounded-xl border border-zinc-800">
+        <div className="max-w-full rounded-xl border border-zinc-800">
           <div style={{ width: step.viewport === "mobile" ? 390 : "100%" }} className="mx-auto">
             <CampaignTemplate campaign={previewCampaign} disableAffiliateNavigation />
           </div>
@@ -802,6 +848,14 @@ export function GenerateClient() {
   );
 }
 
+function builderHrefFromPreview(previewPath: string): string | null {
+  const recommended = previewPath.match(/^\/preview\/[^/]+\/([^/?#]+)/);
+  if (recommended?.[1]) return `/admin/lp-builder/candidate/${decodeURIComponent(recommended[1])}`;
+  const adminPreview = previewPath.match(/^\/admin\/preview\/([^/?#]+)/);
+  if (adminPreview?.[1]) return `/admin/lp-builder/slug/${decodeURIComponent(adminPreview[1])}`;
+  return null;
+}
+
 function Alert({ children }: { children: string }) {
   return (
     <p className="rounded-md border border-red-500/40 bg-red-950/40 px-3 py-2 text-sm text-red-200" role="alert">
@@ -836,12 +890,18 @@ function FactsForm({
   facts,
   loading,
   error,
+  providerStatus,
+  providerAttempt,
+  providerRemaining,
   onCancel,
   onGenerate,
 }: {
   facts: ProductFacts;
   loading: boolean;
   error: string | null;
+  providerStatus: string;
+  providerAttempt: number;
+  providerRemaining: number;
   onCancel: () => void;
   onGenerate: (facts: ProductFacts) => void;
 }) {
@@ -870,6 +930,14 @@ function FactsForm({
     manufacturer,
   });
   const quality = assessImportQuality(draft);
+  const completeness = analyzeImportCompleteness({
+    facts: draft,
+    headline: null,
+    imageUrl: draft.productImageUrl,
+    imageProvenance: draft.productImageProvenance,
+    visualAssetCount: 0,
+  });
+  const lpQuality = predictLpQuality({ facts: draft, report: completeness });
   const qualityClass =
     quality === "SUFFICIENT" ? "text-emerald-400" : quality === "PARTIAL" ? "text-amber-400" : "text-red-400";
 
@@ -892,6 +960,8 @@ function FactsForm({
           Import quality: {quality}
         </p>
       </div>
+      <LpQualityCard prediction={lpQuality} />
+      <CompletenessCard report={completeness} />
       {facts.sourceUrl ? (
         <p className="font-mono text-xs text-zinc-500">Source: {facts.sourceUrl}</p>
       ) : (
@@ -928,6 +998,7 @@ function FactsForm({
       ) : null}
 
       <FactField
+        id="identity"
         label="Product"
         confidence={draft.confidence.productName}
         snippets={snippetsForField(facts, "productName")}
@@ -941,6 +1012,7 @@ function FactsForm({
         />
       </FactField>
       <FactField
+        id="description"
         label="Description"
         confidence={draft.confidence.description}
         snippets={snippetsForField(facts, "description")}
@@ -954,6 +1026,7 @@ function FactsForm({
         />
       </FactField>
       <FactField
+        id="features"
         label="Features (one per line)"
         confidence={draft.confidence.features}
         snippets={snippetsForField(facts, "features")}
@@ -967,6 +1040,7 @@ function FactsForm({
         />
       </FactField>
       <FactField
+        id="ingredients"
         label="Ingredients / components"
         confidence={draft.confidence.ingredientsOrComponents}
         snippets={snippetsForField(facts, "ingredientsOrComponents")}
@@ -980,6 +1054,7 @@ function FactsForm({
         />
       </FactField>
       <FactField
+        id="usage"
         label="Usage / how it works"
         confidence={draft.confidence.usageInformation}
         snippets={snippetsForField(facts, "usageInformation")}
@@ -993,6 +1068,7 @@ function FactsForm({
         />
       </FactField>
       <FactField
+        id="warnings"
         label="Warnings"
         confidence={draft.confidence.cautions}
         snippets={snippetsForField(facts, "cautions")}
@@ -1006,6 +1082,7 @@ function FactsForm({
         />
       </FactField>
       <FactField
+        id="pricing"
         label="Pricing"
         confidence={draft.confidence.pricingInformation}
         snippets={snippetsForField(facts, "pricingInformation")}
@@ -1018,6 +1095,7 @@ function FactsForm({
         />
       </FactField>
       <FactField
+        id="guarantee"
         label="Guarantee"
         confidence={draft.confidence.guaranteeInformation}
         snippets={snippetsForField(facts, "guaranteeInformation")}
@@ -1030,6 +1108,7 @@ function FactsForm({
         />
       </FactField>
       <FactField
+        id="manufacturer"
         label="Manufacturer"
         confidence={draft.confidence.manufacturer}
         snippets={snippetsForField(facts, "manufacturer")}
@@ -1042,6 +1121,14 @@ function FactsForm({
         />
       </FactField>
 
+      {loading ? (
+        <div role="status" className="space-y-1 text-sm text-zinc-300">
+          <p>{providerStatus}</p>
+          <p>
+            Attempt {providerAttempt} of 3. Remaining attempts: {providerRemaining}.
+          </p>
+        </div>
+      ) : null}
       <div className="flex flex-wrap gap-3">
         <button
           type="button"
@@ -1065,18 +1152,20 @@ function FactsForm({
 }
 
 function FactField({
+  id,
   label,
   confidence,
   snippets,
   children,
 }: {
+  id?: string;
   label: string;
   confidence: FactConfidence;
   snippets: Array<{ text: string }>;
   children: ReactNode;
 }) {
   return (
-    <label className="block">
+    <label id={id} className="block scroll-mt-8">
       <span className="mb-1 flex flex-wrap items-baseline justify-between gap-2 text-sm font-medium text-zinc-300">
         {label}
         <span className="text-xs font-normal uppercase tracking-wide text-zinc-500">

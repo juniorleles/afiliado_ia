@@ -223,6 +223,17 @@ export function mergeAcceptedFacts(input: {
     (page) => page.confidence.cautions,
   );
 
+  const ingredientContext = unique(
+    input.pages.flatMap((page) => page.ingredientContext ?? []).map((entry) => JSON.stringify(entry)),
+  ).map((item) => JSON.parse(item) as NonNullable<ProductFacts["ingredientContext"]>[number]);
+  const returnsInformation = unique(
+    input.pages.flatMap((page) => page.returnsInformation ?? []).map((entry) => JSON.stringify(entry)),
+  ).map((item) => JSON.parse(item) as NonNullable<ProductFacts["returnsInformation"]>[number]);
+  const shippingInformation = unique(
+    input.pages.flatMap((page) => page.shippingInformation ?? []).map((entry) => JSON.stringify(entry)),
+  ).map((item) => JSON.parse(item) as NonNullable<ProductFacts["shippingInformation"]>[number]);
+  const productFormat = input.pages.find((page) => page.productFormat)?.productFormat;
+
   warnings.push(...conflictWarnings(input.pages));
 
   const merged: ProductFacts = {
@@ -236,6 +247,10 @@ export function mergeAcceptedFacts(input: {
     pricingInformation: pricing,
     guaranteeInformation: guarantee,
     manufacturer,
+    ingredientContext,
+    returnsInformation,
+    shippingInformation,
+    productFormat,
     sourceSnippets: snippets,
     importWarnings: unique(warnings),
     productImageUrl: imageUrl,

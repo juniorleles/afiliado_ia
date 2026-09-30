@@ -82,6 +82,7 @@ export default async function CampaignAnalyticsPage({ params, searchParams }: Pr
             </tr>
           </thead>
           <tbody>
+            <tr><td className="py-1">Header</td><td>{stats.byPosition.header}</td></tr>
             <tr><td className="py-1">Hero</td><td>{stats.byPosition.hero}</td></tr>
             <tr><td className="py-1">Middle</td><td>{stats.byPosition.middle}</td></tr>
             <tr><td className="py-1">Final</td><td>{stats.byPosition.final}</td></tr>

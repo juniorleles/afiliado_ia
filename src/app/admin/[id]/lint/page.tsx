@@ -7,6 +7,7 @@ import {
   type LintStatus,
   type PublicationGate,
 } from "@/lib/policy-linter";
+import { withResolvedCampaign } from "@/lib/manual-overrides";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -42,7 +43,7 @@ export default async function LintPage({ params }: Props) {
     notFound();
   }
 
-  const result = lintCampaign(campaign);
+  const result = lintCampaign(withResolvedCampaign(campaign));
   const groups = findingsByCategory(result);
   const blockingFails = result.findings.filter((f) => f.status === "fail" && f.blocking);
 

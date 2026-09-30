@@ -13,6 +13,7 @@ import {
   type ProductFacts,
   type SourceFact,
 } from "@/lib/product-facts";
+import { providerFetch } from "@/lib/ai/resilience";
 import {
   evidenceInSource,
   isFactualGuarantee,
@@ -219,20 +220,24 @@ export async function classifyMissingFactsWithAi(
     "Use null or [] when NOT_FOUND. Never invent.",
   ].join("\n");
 
-  const response = await fetch(ANTHROPIC_API_URL, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
+  const response = await providerFetch(
+    ANTHROPIC_API_URL,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: ANTHROPIC_MODEL,
+        max_tokens: 2048,
+        system: SYSTEM,
+        messages: [{ role: "user", content: user }],
+      }),
     },
-    body: JSON.stringify({
-      model: ANTHROPIC_MODEL,
-      max_tokens: 2048,
-      system: SYSTEM,
-      messages: [{ role: "user", content: user }],
-    }),
-  });
+    { provider: "anthropic", model: ANTHROPIC_MODEL, promptId: "classify-product-facts" },
+  );
   if (!response.ok) return facts;
   const data = (await response.json()) as { content: Array<{ type: string; text?: string }> };
   const textBlock = data.content.find((block) => block.type === "text");

@@ -4,6 +4,8 @@ import { DuplicateButton } from "@/app/admin/duplicate-button";
 import { UnpublishButton } from "@/app/admin/unpublish-button";
 import { listCampaigns } from "@/lib/campaigns";
 import { lintCampaign, type PublicationGate } from "@/lib/policy-linter";
+import { parseCampaignFacts, withResolvedCampaign } from "@/lib/manual-overrides";
+import { analyzeImportCompleteness } from "@/lib/completeness-engine";
 
 const GATE_CLASS: Record<PublicationGate, string> = {
   READY: "text-emerald-400",
@@ -73,8 +75,16 @@ export default async function AdminPage({
       ) : (
         <ul className="divide-y divide-zinc-800 rounded-md border border-zinc-800">
           {campaigns.map((campaign) => {
-            const gate = lintCampaign(campaign).gate;
+            const gate = lintCampaign(withResolvedCampaign(campaign)).gate;
             const published = campaign.publicationStatus === "published";
+            const facts = parseCampaignFacts(campaign.sourceFactsJson, campaign.affiliateUrl);
+            const completeness = analyzeImportCompleteness({
+              facts,
+              headline: campaign.headline,
+              imageUrl: campaign.productImageSrc || facts.productImageUrl,
+              imageProvenance: campaign.productImageProvenance || facts.productImageProvenance,
+              visualAssetCount: campaign.productAssetStatus === "READY" ? 1 : 0,
+            });
             return (
               <li
                 key={campaign.id}
@@ -91,6 +101,12 @@ export default async function AdminPage({
                   </p>
                   <p className={`text-xs font-medium uppercase tracking-wide ${GATE_CLASS[gate]}`}>
                     Policy: {gate.replaceAll("_", " ")}
+                  </p>
+                  <p className="text-xs text-zinc-300">
+                    Completeness:{" "}
+                    <Link href={`/admin/product-editor/${campaign.id}#completeness`} className="text-emerald-300 hover:underline">
+                      {completeness.score}%
+                    </Link>
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
@@ -110,6 +126,12 @@ export default async function AdminPage({
                     </Link>
                   )}
                   <Link
+                    href={`/admin/visual-concepts/${campaign.slug}`}
+                    className="text-sm text-zinc-300 hover:underline"
+                  >
+                    Visual concepts
+                  </Link>
+                  <Link
                     href={`/admin/${campaign.id}/analytics`}
                     className="text-sm text-zinc-300 hover:underline"
                   >
@@ -120,6 +142,48 @@ export default async function AdminPage({
                     className="text-sm font-medium text-emerald-400 hover:underline"
                   >
                     Policy Check
+                  </Link>
+                  <Link
+                    href={`/admin/product-health/${campaign.id}`}
+                    className="text-sm text-emerald-400 hover:underline"
+                  >
+                    Product Health
+                  </Link>
+                  <Link
+                    href={`/admin/product-editor/${campaign.id}`}
+                    className="text-sm text-emerald-400 hover:underline"
+                  >
+                    Product Editor
+                  </Link>
+                  <Link
+                    href={`/admin/lp-builder/${campaign.id}`}
+                    className="text-sm text-emerald-400 hover:underline"
+                  >
+                    LP Builder
+                  </Link>
+                  <Link
+                    href={`/admin/lp-visual/${campaign.id}`}
+                    className="text-sm text-emerald-400 hover:underline"
+                  >
+                    Visual Editor
+                  </Link>
+                  <Link
+                    href={`/admin/lp-media/${campaign.id}`}
+                    className="text-sm text-emerald-400 hover:underline"
+                  >
+                    Media Manager
+                  </Link>
+                  <Link
+                    href={`/admin/lp-layout/${campaign.id}`}
+                    className="text-sm text-emerald-400 hover:underline"
+                  >
+                    Layout Builder
+                  </Link>
+                  <Link
+                    href={`/admin/lp-versions/${campaign.id}`}
+                    className="text-sm text-emerald-400 hover:underline"
+                  >
+                    History
                   </Link>
                   <Link
                     href={`/admin/${campaign.id}/edit`}

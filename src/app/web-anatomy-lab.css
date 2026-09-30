@@ -162,30 +162,37 @@
 
 /* WA_CRO_DECISION_B — inherits Experiment A via data-wa-lab="v1".
    Presentation-only CRO / decision architecture. No factual copy. */
-[data-wa-exp="b"] .ps-hero::before {
+[data-wa-exp="b"] .ps-hero::before ,
+[data-wa-exp="c"] .ps-hero::before {
   opacity: 0.4;
 }
-[data-wa-exp="b"] .ps-hero .ps-geo {
+[data-wa-exp="b"] .ps-hero .ps-geo ,
+[data-wa-exp="c"] .ps-hero .ps-geo {
   opacity: 0.5;
 }
-[data-wa-exp="b"] .ps-hero-cta {
+[data-wa-exp="b"] .ps-hero-cta ,
+[data-wa-exp="c"] .ps-hero-cta {
   margin-top: 1.15rem;
 }
-[data-wa-exp="b"] .presell-canvas a[data-cta-position="hero"] {
+[data-wa-exp="b"] .presell-canvas a[data-cta-position="hero"] ,
+[data-wa-exp="c"] .presell-canvas a[data-cta-position="hero"] {
   min-height: 56px;
   min-width: 15rem;
 }
-[data-wa-exp="b"] .ps-hero-disclosure {
+[data-wa-exp="b"] .ps-hero-disclosure ,
+[data-wa-exp="c"] .ps-hero-disclosure {
   margin-top: 0.85rem;
   max-width: 28rem;
 }
-[data-wa-exp="b"] .ps-scene-overview-bridge {
+[data-wa-exp="b"] .ps-scene-overview-bridge ,
+[data-wa-exp="c"] .ps-scene-overview-bridge {
   padding-block: clamp(1.15rem, 2.2vw, 1.7rem);
   background: transparent;
   border-block: 0;
   border-top: 1px solid color-mix(in srgb, var(--ps-border) 70%, transparent);
 }
-[data-wa-exp="b"] .ps-closing-scene {
+[data-wa-exp="b"] .ps-closing-scene ,
+[data-wa-exp="c"] .ps-closing-scene {
   max-width: 34rem;
   width: 100%;
   margin-inline: auto;
@@ -195,51 +202,69 @@
   border: 1px solid color-mix(in srgb, var(--ps-border) 82%, transparent);
   border-radius: var(--ps-radius-lg);
 }
-[data-wa-exp="b"] .ps-scene-closing-product {
+[data-wa-exp="b"] .ps-scene-closing-product ,
+[data-wa-exp="c"] .ps-scene-closing-product {
   padding-block: clamp(3.1rem, 6.4vw, 5.4rem) clamp(2.6rem, 5vw, 4.1rem);
 }
-[data-wa-exp="b"] .ps-closing-visual {
+[data-wa-exp="b"] .ps-closing-visual ,
+[data-wa-exp="c"] .ps-closing-visual {
   max-width: 18.5rem;
 }
-[data-wa-exp="b"] .presell-canvas a[data-cta-position="final"] {
+[data-wa-exp="b"] .presell-canvas a[data-cta-position="final"] ,
+[data-wa-exp="c"] .presell-canvas a[data-cta-position="final"] {
   min-width: min(100%, 22rem);
   min-height: 58px;
 }
-[data-wa-exp="b"] .ps-rhythm-trust {
+[data-wa-exp="b"] .ps-rhythm-trust ,
+[data-wa-exp="c"] .ps-rhythm-trust {
   padding-top: clamp(1.7rem, 3.4vw, 2.6rem);
 }
 
 @media (min-width: 901px) {
   [data-wa-exp="b"] .ps-hero-magazine,
+[data-wa-exp="c"] .ps-hero-magazine,
   [data-wa-exp="b"] .ps-hero-luxury,
+[data-wa-exp="c"] .ps-hero-luxury,
   [data-wa-exp="b"] .ps-hero-stage,
-  [data-wa-exp="b"] .ps-hero-canvas {
+[data-wa-exp="c"] .ps-hero-stage,
+  [data-wa-exp="b"] .ps-hero-canvas ,
+[data-wa-exp="c"] .ps-hero-canvas {
     padding-bottom: 4.35rem;
   }
-  [data-wa-exp="b"] .ps-hero-v3 .ps-hero-visual {
+  [data-wa-exp="b"] .ps-hero-v3 .ps-hero-visual ,
+[data-wa-exp="c"] .ps-hero-v3 .ps-hero-visual {
     align-self: end;
   }
   [data-wa-exp="b"] .ps-hero-v3 .ps-product-stage,
-  [data-wa-exp="b"] .ps-hero-v3 .ps-product-stage-lg {
+[data-wa-exp="c"] .ps-hero-v3 .ps-product-stage,
+  [data-wa-exp="b"] .ps-hero-v3 .ps-product-stage-lg ,
+[data-wa-exp="c"] .ps-hero-v3 .ps-product-stage-lg {
     min-height: 0;
   }
-  [data-wa-exp="b"] .ps-hero-v3 .ps-product-hero .ps-product-stage-img {
+  [data-wa-exp="b"] .ps-hero-v3 .ps-product-hero .ps-product-stage-img ,
+[data-wa-exp="c"] .ps-hero-v3 .ps-product-hero .ps-product-stage-img {
     max-height: 22.5rem;
   }
 }
 
 @media (max-width: 900px) {
   [data-wa-exp="b"] .ps-hero-magazine,
+[data-wa-exp="c"] .ps-hero-magazine,
   [data-wa-exp="b"] .ps-hero-luxury,
+[data-wa-exp="c"] .ps-hero-luxury,
   [data-wa-exp="b"] .ps-hero-stage,
-  [data-wa-exp="b"] .ps-hero-canvas {
+[data-wa-exp="c"] .ps-hero-stage,
+  [data-wa-exp="b"] .ps-hero-canvas ,
+[data-wa-exp="c"] .ps-hero-canvas {
     padding-bottom: 2.35rem;
   }
-  [data-wa-exp="b"] .ps-hero-v3 .ps-product-hero .ps-product-stage-img {
+  [data-wa-exp="b"] .ps-hero-v3 .ps-product-hero .ps-product-stage-img ,
+[data-wa-exp="c"] .ps-hero-v3 .ps-product-hero .ps-product-stage-img {
     max-height: 13.5rem;
     min-height: 9.5rem;
   }
-  [data-wa-exp="b"] .ps-closing-scene {
+  [data-wa-exp="b"] .ps-closing-scene ,
+[data-wa-exp="c"] .ps-closing-scene {
     padding: 1.55rem 1.1rem 1.7rem;
   }
 }
@@ -267,4 +292,20 @@
   [data-wa-lab="v1"] .ps-closing-visual .ps-product-stage-img {
     max-height: 13rem;
   }
+}
+
+/* EXPERIMENT_C inherits Experiment B above.
+   Contain the guarantee band that V4 adds so it stays inside the viewport. */
+[data-wa-exp="c"] .ps-guarantee {
+  margin-inline: 0;
+  width: 100%;
+  max-width: 100%;
+  padding-inline: clamp(1.25rem, 4vw, 2.4rem);
+}
+[data-wa-exp="c"] .ps-usage-card,
+[data-wa-exp="c"] .ps-guarantee-copy {
+  max-width: 40rem;
+}
+[data-wa-exp="c"] .ps-feature-module {
+  min-height: 0;
 }

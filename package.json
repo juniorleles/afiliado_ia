@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "npx tsx scripts/dev-server-manager.ts",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "node scripts/run-all-tests.mjs",
+    "qa:visual": "node scripts/run-visual-qa-v2.mjs",
     "backup": "npx tsx scripts/backup-presell-os.ts"
   },
   "dependencies": {
@@ -18,11 +19,14 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@applitools/eyes-playwright": "1.49.1",
+    "@playwright/test": "1.55.0",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.20",
+    "lighthouse": "13.5.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.16",
     "typescript": "^5.7.0"

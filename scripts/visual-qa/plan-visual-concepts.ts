@@ -1,0 +1,20 @@
+import { getCampaignBySlug } from "../../src/lib/campaigns.ts";
+import { resolvePublicationGate } from "../../src/lib/publication.ts";
+import { buildVisualBrief } from "../../src/lib/visual-concept/brief.ts";
+import { planVisualConceptGeneration } from "../../src/lib/visual-concept/engine.ts";
+
+const stored = getCampaignBySlug("joint-genesis-controlled-ready-13");
+if (!stored) throw new Error("campaign missing");
+const brief = buildVisualBrief(stored);
+const plan = planVisualConceptGeneration(stored);
+console.log("PUBLICATION_STATUS=" + stored.publicationStatus);
+console.log("PRESENTATION=" + stored.productionPresentation);
+console.log("GATE=" + resolvePublicationGate(stored));
+console.log("ASSETS=" + (brief?.availableAssets.length ?? 0));
+console.log("ASSET_ROLES=" + (brief?.availableAssets.map((asset) => asset.role).join(",") || "none"));
+console.log("OPERATION=" + plan?.operation);
+console.log("MODEL=" + plan?.model);
+console.log("QUALITY=" + plan?.quality);
+console.log("SIZE=" + plan?.size);
+console.log("ESTIMATED_CALL_COUNT=" + plan?.estimatedCallCount);
+console.log("OPENAI_API_KEY_CONFIGURED=" + (process.env.OPENAI_API_KEY?.trim() ? "YES" : "NO"));

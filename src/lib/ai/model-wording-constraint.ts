@@ -10,6 +10,7 @@
 import type { EvidenceSlot } from "@/lib/ai/evidence-slot-plan";
 import { fieldForTopic } from "@/lib/ai/model-slot-authority";
 import type { StructuralViolation } from "@/lib/ai/structured-generation";
+import { causalRelationInEvidence, unsupportedOperationalMerges } from "@/lib/ai/operational-relations";
 
 export const MODEL_WORDING_ALLOWED = [
   "LEXICAL_PARAPHRASE",
@@ -304,8 +305,12 @@ export function checkModelWordingConstraint(input: {
   }
 
   for (const rule of PATTERN_RULES) {
-    for (const hit of unentailedPatternHits(generated, support, rule)) push(hit.span, hit.type);
+    for (const hit of unentailedPatternHits(generated, support, rule)) {
+      if (hit.type === "NEW_CAUSALITY" && causalRelationInEvidence(sentenceContaining(generated, hit.span), support)) continue;
+      push(hit.span, hit.type);
+    }
   }
+  for (const merge of unsupportedOperationalMerges(generated, support)) push(merge.sentence, "NEW_RELATIONSHIP");
   for (const hit of unentailedEditorial(generated, support)) push(hit.span, hit.type);
   for (const hit of unentailedRegimen(generated, support)) push(hit.span, hit.type);
 
@@ -364,6 +369,7 @@ export function countModelWordingConstraintViolations(violations: StructuralViol
 export function formatModelWordingConstraintForPrompt(): string {
   return [
     "MODEL WORDING CONSTRAINT — entailment-preserving wording only.",
+    "Prefer a faithful grammatical restatement, then conservative compression, then source-close lexical paraphrase. A broader paraphrase is allowed only when the predicates stay identical.",
     `Allowed: ${MODEL_WORDING_ALLOWED.join(", ")}.`,
     "Forbidden unless the assigned slot evidence already contains the meaning:",
     MODEL_WORDING_FORBIDDEN.join(", ") + ".",

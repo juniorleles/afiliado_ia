@@ -400,3 +400,63 @@ assert(malformedKept.productName === "Joint Support Pro", "malformed AI JSON kee
 const thin = extractProductFacts(`<html><body><h1>Named Product</h1></body></html>`);
 assert(shouldTryAiFallback(thin, `${"word ".repeat(300)} extra product copy`) === true, "AI fallback considered when page text is substantial and facts are thin");
 assert(shouldTryAiFallback(sufficient, `${"word ".repeat(300)}`) === false, "AI fallback is not mandatory when deterministic facts are SUFFICIENT");
+
+const boundary = extractProductFacts(`
+<html><head>
+<meta name="description" content="Harbor Daily Capsule is a daily capsule with a mineral blend for ordinary use." />
+</head><body>
+<h1>Harbor Daily Capsule</h1>
+<h2>Brand New Ingredients Specially Designed For Daily Use</h2>
+<p><b>Try Harbor:</b> a unique blend of nutrients for an ordinary morning.</p>
+<p><b>That's why we created</b></p>
+<p><b>Harbor Daily Capsule</b> is <b>unlike anything</b> tried before.</p>
+<p>Every Harbor capsule you take will get you 1 step closer to this.</p>
+<h2>Inside every Harbor you'll find:</h2>
+<p>A blend of minerals that are part of the capsule.<br> Blend of 12 herbs.</p>
+<div>
+  <p><b>Red Bark</b></p>
+  <ul><li>May support an ordinary morning</li></ul>
+</div>
+<div>
+  <p><b>Blue Salt</b></p>
+  <ul><li>May support a calm weekday</li></ul>
+</div>
+<h4><b>Blend of 4 minerals</b></h4>
+<ul><li><b>Red Bark</b> might support a routine</li></ul>
+<h3>What is the best way to take it?</h3>
+<p>Simply take Harbor with water and you are ready.</p>
+</body></html>
+`);
+assert(
+  boundary.ingredientsOrComponents.length === 2 &&
+    boundary.ingredientsOrComponents.every((item) => item === "Red Bark" || item === "Blue Salt"),
+  "ingredient cards stay, pitch bold and blend captions do not",
+);
+assert(
+  !boundary.ingredientsOrComponents.some((item) => /try harbor|blend of|unlike anything|why we created/i.test(item)),
+  "structural leakage is not an ingredient",
+);
+assert(
+  boundary.usageInformation.some((item) => /take harbor with water/i.test(item)),
+  "a with-water direction is usage without a quantity",
+);
+assert(
+  boundary.usageInformation.every((item) => !/step closer/i.test(item)),
+  "promotional take-plus-capsule copy is not usage",
+);
+
+const leakedQuality = emptyProductFacts("Harbor Daily Capsule", "https://example.test/harbor", "IMPORTED");
+leakedQuality.description = "Harbor Daily Capsule is a daily capsule with a mineral blend for ordinary use.";
+leakedQuality.confidence.description = "DIRECT_SOURCE";
+leakedQuality.ingredientsOrComponents = ["Try Harbor:", "Blend of 12 herbs."];
+leakedQuality.confidence.ingredientsOrComponents = "DIRECT_SOURCE";
+leakedQuality.usageInformation = ["Every Harbor capsule you take will get you 1 step closer to this."];
+leakedQuality.confidence.usageInformation = "DIRECT_SOURCE";
+leakedQuality.guaranteeInformation = "Return unused bottles within 60 days for a refund.";
+leakedQuality.confidence.guaranteeInformation = "DIRECT_SOURCE";
+assert(
+  assessImportQuality(leakedQuality) === "PARTIAL",
+  "rejected leakage and promotional usage do not count toward SUFFICIENT",
+);
+
+console.log("ALL IMPORT PRODUCT TESTS PASSED");

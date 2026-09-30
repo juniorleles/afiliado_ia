@@ -13,6 +13,7 @@ import { emptyProductFacts, formatFactsForPrompt, buildGenerationFactManifest } 
 import type { Campaign } from "@/lib/campaigns";
 import { lintCampaign, type LintResult, type PublicationGate } from "@/lib/policy-linter";
 import { extractJsonText, JsonExtractError } from "@/lib/ai/parse-ai-json";
+import { providerFetch } from "@/lib/ai/resilience";
 import { slugify } from "@/lib/slug";
 import {
   composePublicationGate,
@@ -35,6 +36,7 @@ import {
   type StructuredGenerationPage,
 } from "@/lib/ai/structured-generation";
 import {
+  assertSlotBudgetFeasibility,
   createEvidenceSlotPlan,
   formatEvidenceSlotPlanForPrompt,
   type EvidenceSlotPlan,
@@ -47,6 +49,17 @@ import {
   formatModelSlotAuthorityForPrompt,
 } from "@/lib/ai/model-slot-authority";
 import { formatModelWordingConstraintForPrompt } from "@/lib/ai/model-wording-constraint";
+import { deterministicFaqQuestion } from "@/lib/ai/faq-question-semantics";
+import {
+  authorizedPropositionGroups,
+  formatAuthorizedPropositionGroups,
+} from "@/lib/ai/authorized-propositions";
+import {
+  captureModelInputTrace,
+  commitTracedProviderCall,
+  type AnthropicMessageBody,
+  type ModelInputTraceRequest,
+} from "@/lib/ai/model-input-trace";
 import {
   hydrateSlotFillsToPage,
   parseSlotFills,
@@ -89,6 +102,12 @@ export type GenerateVariantsInput = {
   targetApproach?: VariantApproach;
   marketResearch?: MarketResearchReport;
   recommendedStrategy?: StrategyFamily;
+  /**
+   * Controlled MODEL runs only. Omitted in production.
+   * When set, the exact provider body is written before the provider call.
+   * A failed write aborts before that call.
+   */
+  modelInputTrace?: ModelInputTraceRequest;
 };
 
 export type VariantLintSummary = {
@@ -116,7 +135,7 @@ export type LintedVariant = Variant & {
   evidenceTrace?: EvidenceTrace[];
 };
 
-const ANTHROPIC_MODEL = "claude-sonnet-4-5-20250929";
+export const ANTHROPIC_MODEL = "claude-sonnet-4-5-20250929";
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 
 const SYSTEM_PROMPT = `You are a native English-speaking editorial writer filling
@@ -201,18 +220,45 @@ Approaches:
    facts (not a fake ranking, not unsourced safety checklists).
 Do not use artificial urgency as a generation angle.`;
 
-const MODEL_SYSTEM_PROMPT = `You are a conservative wording engine filling preassigned evidence slots.
+const MODEL_SYSTEM_PROMPT = `You are a conservative linguistic realization engine.
+Your job is CONSERVATIVE_LINGUISTIC_REALIZATION.
+Your job is not copywriting, editorial expansion, benefit inference, purpose inference, or relationship inference.
 CODE owns authority. You own wording only.
 
-You may compress, paraphrase conservatively, combine grammar-compatible
-claims assigned to the SAME slot, improve readability, and use the product
-name as a grammatical subject.
+You may use lexical paraphrase, grammatical transformation, compression,
+reordering, pronoun resolution, and safe hedging already allowed by the
+wording constraint. You may combine authorized propositions assigned to
+the SAME slot when every predicate stays authorized, except in RETURNS
+and SHIPPING slots: there each wording cites exactly one propositionId
+and never combines propositions.
 
-You may NOT invent predicates, invent relationships, infer manufacturer
-authority, infer audience, infer purpose, infer recommendation, infer
-comparison, infer superiority, invent editorial characterization, promote
-evidence across fields, combine unrelated fields, introduce closed-topic
-facts, or treat product identity as ingredient/composition evidence.
+You may NOT add a semantic predicate. You may NOT invent relationships,
+infer manufacturer authority, infer audience, infer purpose, infer
+recommendation, infer comparison, infer differentiation, infer strategy,
+infer evaluation, infer a result, invent editorial characterization,
+promote evidence across fields, combine unrelated fields, introduce
+closed-topic facts, or treat product identity as ingredient/composition
+evidence.
+
+Every factual predicate in the wording must already exist in one of the
+propositionIds assigned to that output. Do not add purpose, causation,
+mechanism, synergy, comparison, differentiation, audience, recommendation,
+strategy, evaluation, result, or a new relationship unless that predicate
+is an authorized proposition for the slot.
+
+Do not add an explanatory tail after an authorized restatement. A second
+sentence is allowed only when it realizes a different authorized
+proposition for that same slot. Do not continue with an unauthorized
+"this means", "this helps", "this allows", "this creates", "this makes",
+"this relates to", "together", or "therefore".
+
+Prefer, in this order: a faithful grammatical restatement, conservative
+compression, source-close lexical paraphrase, and only then a broader
+paraphrase whose predicates stay identical. Do not match the source
+byte for byte. Do not add words to fill a word budget.
+
+FAQ questions are assigned by CODE. Return answerPropositions only.
+Do not write, replace, or strengthen the question.
 
 Hard rules:
 - Write in natural, native English.
@@ -254,12 +300,17 @@ export function factsFromInput(input: GenerateVariantsInput): ProductFacts {
   return facts;
 }
 
-export function buildPrompt(input: GenerateVariantsInput): { system: string; user: string } {
+function loadGeneration(input: GenerateVariantsInput) {
   const facts = factsFromInput(input);
   const plan = createGenerationPlan(facts);
   const manifest = buildGenerationFactManifest(facts);
   const projection = projectEvidenceClaims(facts, plan, manifest);
   const slotPlan = createEvidenceSlotPlan(facts, plan, manifest, projection);
+  return { facts, plan, projection, slotPlan };
+}
+
+function renderPrompt(input: GenerateVariantsInput, loaded: ReturnType<typeof loadGeneration>) {
+  const { facts, plan, projection, slotPlan } = loaded;
   const projectedDescription = projection.authorized
     .filter((claim) => claim.field === "description")
     .map((claim) => claim.generationText)
@@ -270,8 +321,21 @@ export function buildPrompt(input: GenerateVariantsInput): { system: string; use
     ),
   ];
   const lines: string[] = [];
+  let modelProviderContext:
+    | {
+        closedTopics: string[];
+        authorities: ReturnType<typeof createModelSlotAuthority>[];
+        propositionGroups: ReturnType<typeof authorizedPropositionGroups>;
+      }
+    | undefined;
   if (plan.generationRoute === "MODEL") {
     const authorities = slotPlan.slots.map((slot) => createModelSlotAuthority(slot, plan));
+    const propositionGroups = authorizedPropositionGroups(slotPlan.slots);
+    modelProviderContext = {
+      closedTopics: [...plan.closedTopics],
+      authorities,
+      propositionGroups,
+    };
     lines.push(
       `Product identity (grammatical subject only; not ingredient or composition evidence): ${facts.productName}`,
       "",
@@ -280,6 +344,17 @@ export function buildPrompt(input: GenerateVariantsInput): { system: string; use
       formatEvidenceSlotPlanForPrompt(slotPlan),
       "",
       formatModelSlotAuthorityForPrompt(authorities),
+      "",
+      formatAuthorizedPropositionGroups(propositionGroups),
+      "",
+      ...slotPlan.slots
+        .filter((slot) => slot.type === "FAQ")
+        .map((slot) => {
+          const question = deterministicFaqQuestion(slot, facts.productName);
+          return question
+            ? `FAQ QUESTION ${slot.slotId} is assigned by CODE: ${question} Return answerPropositions only.`
+            : `FAQ ${slot.slotId} has no authorized question. Omit the slot.`;
+        }),
       "",
       formatModelWordingConstraintForPrompt(),
       "",
@@ -323,7 +398,28 @@ export function buildPrompt(input: GenerateVariantsInput): { system: string; use
   return {
     system: plan.generationRoute === "MODEL" ? MODEL_SYSTEM_PROMPT : SYSTEM_PROMPT,
     user: lines.join("\n"),
+    modelProviderContext,
   };
+}
+
+export function buildPrompt(input: GenerateVariantsInput): { system: string; user: string } {
+  const rendered = renderPrompt(input, loadGeneration(input));
+  return { system: rendered.system, user: rendered.user };
+}
+
+/** Exact MODEL provider body. Does not send it. */
+export function buildModelProviderBoundRequest(input: GenerateVariantsInput) {
+  const loaded = loadGeneration(input);
+  if (loaded.plan.generationRoute !== "MODEL") {
+    throw new Error("MODEL provider request is only built for the MODEL route.");
+  }
+  const rendered = renderPrompt(input, loaded);
+  if (!rendered.modelProviderContext) {
+    throw new Error("MODEL provider context missing.");
+  }
+  const schema = slotFillSchema(loaded.slotPlan);
+  const body = buildAnthropicMessageBody(rendered.system, rendered.user, true, schema);
+  return { loaded, rendered, schema, body };
 }
 
 export class VariantParseError extends Error {
@@ -632,18 +728,13 @@ type AnthropicTextResult = {
   stopReason: string | null;
 };
 
-async function callAnthropic(
+export function buildAnthropicMessageBody(
   system: string,
   user: string,
   structured: boolean,
   schema: object = VARIANT_JSON_SCHEMA,
-): Promise<AnthropicTextResult> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    throw new Error("ANTHROPIC_API_KEY não configurada. Coloque em .env.local (ver .env.example).");
-  }
-
-  const body: Record<string, unknown> = {
+): AnthropicMessageBody {
+  const body: AnthropicMessageBody = {
     model: ANTHROPIC_MODEL,
     max_tokens: 16384,
     system,
@@ -657,16 +748,34 @@ async function callAnthropic(
       },
     };
   }
+  return body;
+}
 
-  const response = await fetch(ANTHROPIC_API_URL, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
+async function sendAnthropicBody(
+  body: AnthropicMessageBody,
+  system: string,
+  user: string,
+  schema: object,
+): Promise<AnthropicTextResult> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new Error("ANTHROPIC_API_KEY não configurada. Coloque em .env.local (ver .env.example).");
+  }
+  const structured = Boolean(body.output_config);
+
+  const response = await providerFetch(
+    ANTHROPIC_API_URL,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify(body),
     },
-    body: JSON.stringify(body),
-  });
+    { provider: "anthropic", model: ANTHROPIC_MODEL, promptId: "generate-variants" },
+  );
 
   if (!response.ok) {
     const errorBody = await response.text().catch(() => "");
@@ -687,12 +796,19 @@ async function callAnthropic(
   return { text: textBlock.text, stopReason: data.stop_reason ?? null };
 }
 
+async function callAnthropic(
+  system: string,
+  user: string,
+  structured: boolean,
+  schema: object = VARIANT_JSON_SCHEMA,
+): Promise<AnthropicTextResult> {
+  const body = buildAnthropicMessageBody(system, user, structured, schema);
+  return sendAnthropicBody(body, system, user, schema);
+}
+
 export async function generateVariants(input: GenerateVariantsInput): Promise<Variant[]> {
-  const facts = factsFromInput(input);
-  const plan = createGenerationPlan(facts);
-  const manifest = buildGenerationFactManifest(facts);
-  const projection = projectEvidenceClaims(facts, plan, manifest);
-  const slotPlan = createEvidenceSlotPlan(facts, plan, manifest, projection);
+  const loaded = loadGeneration(input);
+  const { plan, projection, slotPlan } = loaded;
   const route = resolveGenerationRoute(plan);
   const approach = (input.targetApproach || "REVIEW") as VariantApproach;
 
@@ -717,12 +833,35 @@ export async function generateVariants(input: GenerateVariantsInput): Promise<Va
   }
 
   assertModelSlotProjectionIsolation(slotPlan.slots);
+  assertSlotBudgetFeasibility(slotPlan);
+  const rendered = renderPrompt(input, loaded);
+  if (!rendered.modelProviderContext) {
+    throw new Error("MODEL provider context missing.");
+  }
   const schema = slotFillSchema(slotPlan);
-  const { system, user } = buildPrompt(input);
-  const first = await callAnthropic(system, user, true, schema);
+  const body = buildAnthropicMessageBody(rendered.system, rendered.user, true, schema);
+  const trace = captureModelInputTrace({
+    body,
+    generationRoute: "MODEL",
+    closedTopics: rendered.modelProviderContext.closedTopics,
+    authorities: rendered.modelProviderContext.authorities,
+    propositionGroups: rendered.modelProviderContext.propositionGroups,
+  });
+  const first = await commitTracedProviderCall({
+    trace,
+    body,
+    traceRequest: input.modelInputTrace,
+    send: (bound) => sendAnthropicBody(bound, rendered.system, rendered.user, schema),
+  });
   const parsed = parseSlotFills(first.text);
   if (!parsed) {
     throw new VariantParseError("A resposta estruturada é inválida.");
+  }
+  for (const fill of parsed.fills) {
+    const slot = slotPlan.slots.find((item) => item.slotId === fill.slotId);
+    if (slot?.type !== "FAQ") continue;
+    const question = deterministicFaqQuestion(slot, loaded.facts.productName);
+    if (question) fill.question = question;
   }
   const page = hydrateSlotFillsToPage(parsed.fills, slotPlan, parsed.ctaLabel, input.targetApproach);
   const adapted = adaptStructuredToVariantCopy(page, plan);

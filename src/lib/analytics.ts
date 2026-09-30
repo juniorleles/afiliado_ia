@@ -16,7 +16,7 @@ export const VIEW_DEDUPE_MS = 2000;
 export const ATTR_MAX_LEN = 200;
 export const REFERRER_MAX_LEN = 300;
 
-export const CTA_POSITIONS = ["hero", "middle", "final", "guarantee", "sticky"] as const;
+export const CTA_POSITIONS = ["header", "hero", "middle", "final", "guarantee", "sticky"] as const;
 export type CtaPosition = (typeof CTA_POSITIONS)[number];
 
 export const ATTRIBUTION_KEYS = [

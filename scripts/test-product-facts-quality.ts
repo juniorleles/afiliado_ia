@@ -288,4 +288,139 @@ assert(
   "TEST Q: factual product description is accepted",
 );
 
+const lowerHeadingPage = extractProductFacts(`
+<html><head>
+<meta name="description" content="Northwind Daily Capsule is a daily capsule for ordinary nutrient support." />
+</head><body>
+<h1>Northwind Daily Capsule</h1>
+<h2>What changes with daily use</h2>
+<h5>Steady daytime comfort</h5>
+<p>The capsule is shaped for an ordinary morning routine without a large tablet.</p>
+<h5>Single daily serving</h5>
+<p>Each serving is one capsule, packed for a weekday carry case.</p>
+<h4>Selected Ingredients</h4>
+<h4>Daytime Matrix</h4>
+<h5>Bilberry Extract</h5>
+<p>A berry extract listed on the formula card.</p>
+<h5>Lutein Ester (from Marigold)</h5>
+<p>A carotenoid ester listed beside the berry extract.</p>
+<h5>Zinc (11mg)</h5>
+<p>A mineral amount printed on the same formula card.</p>
+<h3>BASIC</h3>
+<h4 class="text-decoration-line-through">$40</h4>
+<h2>$29</h2>
+<p>per bottle</p>
+<h3>FAMILY</h3>
+<h4 class="text-decoration-line-through">$40</h4>
+<h2>$19</h2>
+<p>per bottle</p>
+<h3>Total: $58</h3>
+<h6>After purchase</h6>
+<p>Savings: $12</p>
+<footer><p>Example Retailer is the retailer of products on this site. Copyright Northwind Daily Capsule.</p></footer>
+</body></html>
+`);
+assert(
+  lowerHeadingPage.ingredientsOrComponents.some((item) => /bilberry extract/i.test(item)),
+  "TEST R: h5 ingredient card under an h4 ingredient heading is extracted",
+);
+assert(
+  lowerHeadingPage.ingredientsOrComponents.some((item) => /lutein ester \(from marigold\)/i.test(item)),
+  "TEST R: parenthetical ingredient card is kept",
+);
+assert(
+  !lowerHeadingPage.ingredientsOrComponents.some((item) => /daytime matrix/i.test(item)),
+  "TEST R: group heading without its own card paragraph is not an ingredient",
+);
+assert(lowerHeadingPage.confidence.ingredientsOrComponents === "DIRECT_SOURCE", "TEST R: ingredient cards stay DIRECT_SOURCE");
+assert(
+  lowerHeadingPage.features.some((item) => /ordinary morning routine/i.test(item)),
+  "TEST S: h5 benefit card paragraph is a feature",
+);
+assert(
+  lowerHeadingPage.features.some((item) => /weekday carry case/i.test(item)),
+  "TEST S: second h5 benefit card is a feature",
+);
+assert(lowerHeadingPage.confidence.features === "DIRECT_SOURCE", "TEST S: benefit cards stay DIRECT_SOURCE");
+assert(lowerHeadingPage.pricingInformation?.includes("BASIC") && /\$29/.test(lowerHeadingPage.pricingInformation), "TEST T: package price is recovered without a pricing heading");
+assert(lowerHeadingPage.pricingInformation?.includes("FAMILY") && /\$19/.test(lowerHeadingPage.pricingInformation ?? ""), "TEST T: second package price is recovered");
+assert(!/\$40/.test(lowerHeadingPage.pricingInformation ?? ""), "TEST T: struck compare-at price is not the offer price");
+assert(
+  !lowerHeadingPage.features.some((item) => /^savings\b/i.test(item)),
+  "TEST T: a savings line under a total heading is not a feature",
+);
+assert(!lowerHeadingPage.manufacturer, "TEST U: retailer boilerplate is not a manufacturer");
+assert(lowerHeadingPage.confidence.manufacturer === "NOT_FOUND", "TEST U: absent manufacturer stays NOT_FOUND");
+assert(
+  !lowerHeadingPage.importWarnings.includes("Ingredient or component cards were visible in the source but were not extracted."),
+  "TEST V: extracted ingredient cards do not count as a missed section",
+);
+
+const absentIngredients = extractProductFacts(`
+<html><head>
+<meta name="description" content="Harbor Trail Shell is a rain jacket with a water-resistant shell for daily wear." />
+</head><body>
+<h1>Harbor Trail Shell</h1>
+<h2>Key Features</h2>
+<ul>
+  <li>Water-resistant shell for daily rain</li>
+  <li>Packable hood for weekday travel</li>
+</ul>
+<h2>60-Day Money Back Guarantee</h2>
+<p>Return the jacket within 60 days for a refund.</p>
+</body></html>
+`);
+assert(absentIngredients.confidence.ingredientsOrComponents === "NOT_FOUND", "TEST V: a page with no ingredient section stays NOT_FOUND");
+assert(assessImportQuality(absentIngredients) === "SUFFICIENT", "TEST V: missing ingredients are not required when the source has none");
+assert(!absentIngredients.manufacturer, "TEST U: jacket page does not invent a manufacturer");
+
+const sloganOnlyIngredients = extractProductFacts(`
+<html><head>
+<meta name="description" content="Northwind Daily Capsule is a daily capsule for ordinary nutrient support." />
+</head><body>
+<h1>Northwind Daily Capsule</h1>
+<h2>How To Use</h2>
+<p>Take one capsule daily with water.</p>
+<h2>60-Day Money Back Guarantee</h2>
+<p>Return unused bottles within 60 days for a refund.</p>
+<h4>Selected Ingredients</h4>
+<h5>Reclaim Your Freedom Today</h5>
+<p>This scientifically proven formula is 100% natural and non-GMO.</p>
+</body></html>
+`);
+assert(sloganOnlyIngredients.ingredientsOrComponents.length === 0, "TEST V: a slogan under an ingredient heading is not a component");
+assert(
+  !sloganOnlyIngredients.importWarnings.some((warning) => /visible in the source but were not extracted/i.test(warning)),
+  "TEST V: a slogan is not treated as a visible component that extraction missed",
+);
+assert(assessImportQuality(sloganOnlyIngredients) === "SUFFICIENT", "TEST V: description plus two real fields stay SUFFICIENT when no component exists");
+
+const hiddenLoss = emptyProductFacts("Northwind Daily Capsule", "https://example.test/northwind", "IMPORTED");
+hiddenLoss.description = "Northwind Daily Capsule is a daily capsule for ordinary nutrient support.";
+hiddenLoss.confidence.description = "HEURISTIC_EXTRACTION";
+hiddenLoss.usageInformation = ["Take one capsule daily with water."];
+hiddenLoss.confidence.usageInformation = "DIRECT_SOURCE";
+hiddenLoss.guaranteeInformation = "Return unused bottles within 60 days for a refund.";
+hiddenLoss.confidence.guaranteeInformation = "DIRECT_SOURCE";
+assert(assessImportQuality(hiddenLoss) === "SUFFICIENT", "TEST V: the same three fields are SUFFICIENT before a visible miss");
+hiddenLoss.importWarnings = [
+  "Ingredient or component cards were visible in the source but were not extracted.",
+];
+assert(assessImportQuality(hiddenLoss) === "PARTIAL", "TEST V: a visible unextracted ingredient section cannot score SUFFICIENT");
+assert(hiddenLoss.confidence.description === "HEURISTIC_EXTRACTION", "TEST V: the quality cap does not promote heuristic description");
+
+const heuristicStays = extractProductFacts(`
+<html><body>
+<h1>Northwind Daily Capsule</h1>
+<p>Northwind Daily Capsule is a daily capsule designed for ordinary nutrient support and weekday use.</p>
+<h2>What changes with daily use</h2>
+<h5>Steady daytime comfort</h5>
+<p>The shell of the capsule is smooth enough for an ordinary morning swallow.</p>
+<h5>Single daily serving</h5>
+<p>Each serving is one capsule packed for a weekday carry case.</p>
+</body></html>
+`);
+assert(heuristicStays.confidence.description === "HEURISTIC_EXTRACTION", "TEST W: card extraction does not promote a heuristic description to DIRECT_SOURCE");
+assert(heuristicStays.confidence.features === "DIRECT_SOURCE", "TEST W: the benefit card itself remains DIRECT_SOURCE");
+
 console.log("ALL PRODUCT FACTS QUALITY TESTS PASSED");

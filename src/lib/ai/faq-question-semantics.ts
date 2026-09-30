@@ -9,6 +9,7 @@
 
 import type { GenerationTopic } from "@/lib/ai/generation-plan";
 import { hasGuaranteeReferenceLanguage, hasUsageAuthorityLanguage } from "@/lib/ai/generation-plan";
+import { evidenceTextShape } from "@/lib/ai/authorized-propositions";
 import { hasCompositionPromotionLanguage } from "@/lib/ai/ingredient-claims";
 
 export const FAQ_QUESTION_CLASSES = [
@@ -63,6 +64,26 @@ const USAGE_QUESTION =
 const PLAIN_USAGE_ASK =
   /^(?:how|when) (?:should|do|does|can|to) (?:you |i |one )?(?:take|use|dose)\b[^?]{0,80}\?$/i;
 
+/** A listing question, not a containment, efficacy, or medical composition claim. */
+const LISTED_COMPONENT_ASK =
+  /^(?:which|what) (?:ingredients?|components?) (?:is|are) listed\b[^?]{0,48}\?$/i;
+
+/**
+ * Topics a plain FAQ presupposition may use when no slot binding is present.
+ * Only a how-to-take question with usage evidence, or a listed-component
+ * question with ingredient evidence. Other presuppositions stay closed.
+ */
+export function evidenceBackedFaqTopics(
+  question: string,
+  evidence: { usage?: string; ingredients?: string },
+): string[] {
+  const asked = question.trim();
+  const topics: string[] = [];
+  if (PLAIN_USAGE_ASK.test(asked) && (evidence.usage || "").trim()) topics.push("usage");
+  if (LISTED_COMPONENT_ASK.test(asked) && (evidence.ingredients || "").trim()) topics.push("ingredients");
+  return topics;
+}
+
 const GUARANTEE_QUESTION =
   /\b(?:how long (?:is|does) (?:the )?(?:guarantee|refund|warranty)|guarantee last|refund (?:period|policy|window)|money[- ]back|return policy|refund policy)\b/i;
 
@@ -87,9 +108,15 @@ const FIELD_TOPIC: Record<string, GenerationTopic> = {
   pricingInformation: "pricing",
   guaranteeInformation: "guarantee",
   manufacturer: "manufacturer",
+  productFormat: "product_format",
+  returnsInformation: "returns",
+  shippingInformation: "shipping",
 };
 
 const AUTHORITY_TOPIC: Record<string, GenerationTopic> = {
+  PRODUCT_FORMAT: "product_format",
+  RETURNS: "returns",
+  SHIPPING: "shipping",
   IDENTITY: "identity",
   DESCRIPTION: "description",
   FEATURE_DESCRIPTION: "features",
@@ -183,13 +210,23 @@ function collectMissing(question: string, support: string, pattern: RegExp): str
   return missing;
 }
 
-function supportContains(support: string, snippet: string): boolean {
+/** Product identity is the grammatical subject, never evidence that a question's predicate is sourced. */
+function identityTokens(productName: string | undefined): Set<string> {
+  const words = (productName || "")
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word) => word.replace(/[^a-z0-9-]+/g, ""));
+  return new Set([...words, ...words.flatMap((word) => word.split("-"))].filter(Boolean));
+}
+
+function supportContains(support: string, snippet: string, productName?: string): boolean {
   const hay = support.toLowerCase();
+  const identity = identityTokens(productName);
   const tokens = snippet
     .toLowerCase()
     .replace(/[?.,!;:]+/g, " ")
     .split(/\s+/)
-    .filter((token) => token.length > 3 && !/^(does|what|this|that|with|from|your|about|joint|genesis)$/i.test(token));
+    .filter((token) => token.length > 3 && !/^(does|what|this|that|with|from|your|about)$/i.test(token) && !identity.has(token));
   if (tokens.length === 0) return hay.includes(snippet.toLowerCase().slice(0, 24));
   const hits = tokens.filter((token) => hay.includes(token)).length;
   return hits >= Math.min(2, tokens.length) || (tokens.length === 1 && hits === 1);
@@ -258,6 +295,56 @@ function classifyCore(question: string): { questionClass: FaqQuestionClass; fact
   return { questionClass: "OTHER_FACTUAL_PRESUPPOSITION", factual: [q], comparative };
 }
 
+/**
+ * Topics whose evidence may be a bare label. The question then asks which item
+ * the source lists, so a bare label is already a complete answer and the model
+ * is not pushed into inventing a predicate to finish a sentence. "listed" states
+ * only that the source lists the item: no presence in the formulation, quantity,
+ * function, benefit, or importance.
+ */
+const ENTITY_ANSWER_NOUN: Partial<Record<GenerationTopic, { one: string; many: string }>> = {
+  ingredients: { one: "ingredient", many: "ingredients" },
+  features: { one: "feature", many: "features" },
+  cautions: { one: "caution", many: "cautions" },
+};
+
+/**
+ * CODE-owned FAQ question. The MODEL route may realize the answer only.
+ * The result is not exempt from validateFaqQuestion.
+ */
+export function deterministicFaqQuestion(
+  slot: { topic: string; semanticAuthority: string; evidence: Array<{ value: string }> },
+  productName: string,
+): string | null {
+  const name = productName.trim() || "this product";
+  const support = slot.evidence.map((item) => item.value).join(" ");
+  const authority = slot.semanticAuthority;
+  const entityTopic = AUTHORITY_TOPIC[authority] ?? (slot.topic as GenerationTopic);
+  const entityNoun = ENTITY_ANSWER_NOUN[entityTopic];
+  if (
+    entityNoun &&
+    slot.evidence.length > 0 &&
+    slot.evidence.every((item) => evidenceTextShape(item.value) === "ENTITY_ONLY")
+  ) {
+    return slot.evidence.length === 1 ? `Which ${entityNoun.one} is listed?` : `Which ${entityNoun.many} are listed?`;
+  }
+  if (authority === "USAGE" || slot.topic === "usage") return `How do you take ${name}?`;
+  if (authority === "GUARANTEE" || slot.topic === "guarantee") {
+    if (/\breturn policy\b/i.test(support)) return "Does the seller publish a return policy?";
+    if (/\brefund policy\b/i.test(support)) return "Does the seller publish a refund policy?";
+    return null;
+  }
+  if (authority === "FEATURE_DESCRIPTION" || slot.topic === "features") return `What features are described for ${name}?`;
+  if (authority === "DESCRIPTION" || slot.topic === "description") return `What does ${name} focus on?`;
+  if (authority === "IDENTITY" || slot.topic === "identity") return `What is ${name}?`;
+  if (authority === "INGREDIENTS" || slot.topic === "ingredients") return "What ingredients are described?";
+  if (authority === "CAUTIONS" || slot.topic === "cautions") return "What cautions are described?";
+  if (authority === "PRICING" || slot.topic === "pricing") return "What pricing is described?";
+  if (authority === "MANUFACTURER" || slot.topic === "manufacturer") return `Who makes ${name}?`;
+  if (authority === "PRODUCT_FORMAT" || slot.topic === "product_format") return `What form does ${name} come in?`;
+  return null;
+}
+
 export function isInterrogativeSentence(text: string): boolean {
   const trimmed = text.trim();
   if (!trimmed) return false;
@@ -306,7 +393,7 @@ export function validateFaqQuestion(input: FaqQuestionContext): FaqQuestionValid
     failCodes.push("UNSUPPORTED_MEDICAL_PRESUPPOSITION");
   } else if (core.questionClass === "FACTUAL_PRESUPPOSITION") {
     const rest = question.replace(/^does\s+.+\s+support\s+/i, "").replace(/^is\s+.+\s+designed for\s+/i, "").replace(/\?$/, "");
-    if (!supportContains(supportText, rest)) {
+    if (!supportContains(supportText, rest, input.productName)) {
       failCodes.push("UNSUPPORTED_FACTUAL_PRESUPPOSITION");
     }
   } else if (core.questionClass === "OTHER_FACTUAL_PRESUPPOSITION") {

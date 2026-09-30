@@ -2,9 +2,16 @@ import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getPublishedCampaignBySlug } from "@/lib/campaigns";
+import { isReleasePublication } from "@/lib/publication";
+import { withResolvedCampaign } from "@/lib/manual-overrides";
+import { withBuilderContent } from "@/lib/lp-content-render";
+import { withBuilderMedia } from "@/lib/lp-media-render";
 import { CampaignTemplate } from "@/components/campaign-template";
+import { ThemeFrame } from "@/components/presell/theme-frame";
+import { LayoutFrame } from "@/components/presell/layout-frame";
 import { PublicFooter } from "@/components/public-footer";
 import { PresellThemeRoot } from "@/components/presell/presell-theme";
+import { campaignRendersSiteFooter } from "@/components/presell/presell-page-view";
 import { presellMetaDescription } from "@/lib/presell-meta";
 import { publicAbsoluteUrl } from "@/lib/public-site";
 import { parsePresellPage } from "@/lib/presell-page";
@@ -18,6 +25,17 @@ import {
   SESSION_HEADER,
 } from "@/lib/analytics";
 import { recordVisitSafe } from "@/lib/analytics-store";
+import { resolvePresellRenderAssets } from "@/lib/presell-render-assets-server";
+import { sourceVisualForUrl } from "@/lib/visual-identity/persist";
+import type { ProductFacts } from "@/lib/product-facts";
+import type { SourceVisual } from "@/lib/visual-identity/types";
+import {
+  applyProductionCandidate,
+  hasProductionCandidate,
+  PRODUCTION_PRESENTATION_ID,
+} from "@/lib/production-candidate";
+import "@/app/premium-final-candidate-public.css";
+import "@/app/premium-final-candidate-v2.css";
 
 /**
  * Rota PÚBLICA — a URL de verdade que vai pro anúncio do Google/Meta.
@@ -43,12 +61,13 @@ type PageParams = {
 
 export async function generateMetadata({ params }: Omit<PageParams, "searchParams">): Promise<Metadata> {
   const { slug } = await params;
-  const campaign = getPublishedCampaignBySlug(slug);
+  const stored = getPublishedCampaignBySlug(slug);
 
-  if (!campaign) {
+  if (!stored || !isReleasePublication(stored)) {
     return { title: "Not found", robots: { index: false, follow: false } };
   }
 
+  const campaign = withBuilderMedia(withBuilderContent(withResolvedCampaign(applyProductionCandidate(stored)))).campaign;
   const page = parsePresellPage(campaign.pageComposition);
   const description = page?.hero.summary || presellMetaDescription(campaign.headline, campaign.body);
   const image = page?.hero.image.src && page.hero.image.provenance !== "PLACEHOLDER" ? page.hero.image.src : undefined;
@@ -83,10 +102,22 @@ function toUrlSearchParams(
 
 export default async function PublicPresellPage({ params, searchParams }: PageParams) {
   const { slug } = await params;
-  const campaign = getPublishedCampaignBySlug(slug);
+  const stored = getPublishedCampaignBySlug(slug);
 
-  if (!campaign) {
+  if (!stored || !isReleasePublication(stored)) {
     notFound();
+  }
+
+  const contentCampaign = withBuilderContent(withResolvedCampaign(applyProductionCandidate(stored)));
+  const presented = withBuilderMedia(contentCampaign, resolvePresellRenderAssets(contentCampaign));
+  const campaign = presented.campaign;
+  const presentation = hasProductionCandidate(stored) ? PRODUCTION_PRESENTATION_ID : undefined;
+  let sourceVisual: SourceVisual | null = null;
+  try {
+    const facts = campaign.sourceFactsJson ? (JSON.parse(campaign.sourceFactsJson) as ProductFacts) : null;
+    sourceVisual = sourceVisualForUrl(facts?.sourceUrl);
+  } catch {
+    sourceVisual = null;
   }
 
   const incomingParams = toUrlSearchParams(await searchParams);
@@ -120,17 +151,23 @@ export default async function PublicPresellPage({ params, searchParams }: PagePa
   // preview do admin, pra não disparar tracking de conversão/visualização
   // enquanto alguém só está editando a campanha internamente.
   return (
-    <PresellThemeRoot campaign={campaign}>
-      <div className="flex min-h-screen flex-col">
+    <PresellThemeRoot campaign={campaign} sourceVisual={sourceVisual}>
+      <div className="flex min-h-screen flex-col" data-presell-presentation={presentation}>
         <div className="flex-1">
-          <CampaignTemplate
-            campaign={campaign}
-            incomingQuery={incomingParams.toString()}
-            renderPixel
-            trackClicks
-          />
+          <LayoutFrame campaignId={campaign.id}>
+            <ThemeFrame campaignId={campaign.id}>
+              <CampaignTemplate
+                campaign={campaign}
+                incomingQuery={incomingParams.toString()}
+                renderPixel
+                trackClicks
+                renderAssets={presented.assets}
+                sourceVisual={sourceVisual}
+              />
+            </ThemeFrame>
+          </LayoutFrame>
         </div>
-        <PublicFooter />
+        {campaignRendersSiteFooter(campaign) ? null : <PublicFooter />}
       </div>
     </PresellThemeRoot>
   );

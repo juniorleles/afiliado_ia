@@ -21,6 +21,11 @@ assert(classifyHeading("How to Take") === "usage", "How to Take is usage");
 assert(classifyHeading("Who May Consider It") === "overview", "audience heading is not mixed into cautions");
 assert(classifyHeading("Things to Consider") === "considerations", "Things to Consider stays considerations");
 assert(classifyHeading("Warnings") === "considerations", "Warnings stay considerations");
+assert(classifyHeading("Pricing") === "skip", "Pricing does not fall through to overview");
+assert(classifyHeading("Returns") === "skip", "Returns do not fall through to overview");
+assert(classifyHeading("Shipping") === "skip", "Shipping does not fall through to overview");
+assert(classifyHeading("Order Processing") === "skip", "Order processing does not fall through to overview");
+assert(classifyHeading("Guarantee") === "guarantee", "Guarantee still has a supported destination");
 
 const facts = emptyProductFacts("Sample Support Capsule", "https://example.com/p", "IMPORTED");
 facts.description = "a daily capsule described on the product page";

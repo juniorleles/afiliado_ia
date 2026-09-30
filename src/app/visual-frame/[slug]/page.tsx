@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCampaignBySlug } from "@/lib/campaigns";
+import { withResolvedCampaign } from "@/lib/manual-overrides";
 import { CampaignTemplate } from "@/components/campaign-template";
 import { PublicFooter } from "@/components/public-footer";
 import { PresellThemeRoot } from "@/components/presell/presell-theme";
+import { resolvePresellRenderAssets } from "@/lib/presell-render-assets-server";
 
 /**
  * Chrome-free rendered presell for Visual QA (Phase 7).
@@ -24,14 +26,21 @@ export default async function VisualFramePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const campaign = getCampaignBySlug(slug);
-  if (!campaign) notFound();
+  const stored = getCampaignBySlug(slug);
+  if (!stored) notFound();
+  const campaign = withResolvedCampaign(stored);
 
   return (
     <PresellThemeRoot campaign={campaign}>
       <div data-visual-qa-frame="1">
         <style>{`nextjs-portal,[data-next-badge-root]{display:none!important;}`}</style>
-        <CampaignTemplate campaign={campaign} renderPixel={false} trackClicks={false} disableAffiliateNavigation />
+        <CampaignTemplate
+          campaign={campaign}
+          renderPixel={false}
+          trackClicks={false}
+          disableAffiliateNavigation
+          renderAssets={resolvePresellRenderAssets(campaign)}
+        />
         <PublicFooter />
       </div>
     </PresellThemeRoot>

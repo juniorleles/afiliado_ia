@@ -97,6 +97,7 @@ export async function generateRecommendedLp(input: {
       headline: variant.headline,
       body: variant.body,
       ctaLabel: variant.ctaLabel,
+      evidenceTrace: variant.evidenceTrace,
       strategyMeta: {
         recommended: used === input.recommendation.recommendedStrategy,
         confidence: input.recommendation.confidence,

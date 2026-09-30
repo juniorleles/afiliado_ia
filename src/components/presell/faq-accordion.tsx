@@ -9,7 +9,7 @@ export function FAQAccordion({ items }: { items: PresellFaqItem[] }) {
           <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-[color:var(--ps-text,#fafafa)] marker:content-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ps-accent,#34d399)]">
             <span className="flex items-start justify-between gap-3">
               <span>{item.question}</span>
-              <span className="text-[color:var(--ps-accent,#34d399)] group-open:rotate-45" aria-hidden="true">
+              <span className="ps-faq-mark group-open:rotate-45" aria-hidden="true">
                 +
               </span>
             </span>

@@ -1,48 +1,69 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { LegalSection, PublicLegalLayout, publicPageMetadata } from "@/components/public-legal-page";
 import { getPublicSiteName } from "@/lib/public-site";
 
 export const metadata: Metadata = publicPageMetadata(
   "/about",
   "About",
-  "Who publishes these product reviews and how this site is meant to be used.",
+  "Who publishes these independent product reviews, what the site covers, and what it does not claim.",
 );
 
 export default function AboutPage() {
   const site = getPublicSiteName();
 
   return (
-    <PublicLegalLayout title="About">
+    <PublicLegalLayout title={`About ${site}`} path="/about" kicker="About" showUpdated={false}>
       <p>
-        {site} publishes independent product reviews, educational buying
-        information, and comparison-style write-ups. The goal is to help
-        readers understand what a product claims to do, what to look for, and
-        where to go next if they decide to buy.
+        {site} publishes independent product reviews: plain-language pages that explain what a product is, what
+        its seller says about it, and what the available public information does and does not show.
       </p>
+
+      <LegalSection title="Who we are">
+        <p>
+          {site} is run by an independent publisher. We are not the manufacturer, brand owner, or seller of any
+          product we write about, and we do not process orders. When you decide to buy, you buy from the seller on
+          the seller&apos;s own website.
+        </p>
+      </LegalSection>
 
       <LegalSection title="What you will find here">
         <p>
-          Review pages summarize publicly available product information, typical
-          use cases, and practical caveats. They are written so a page can stand
-          on its own as reading material, not only as a doorway to a checkout
-          link.
+          Each review page summarizes publicly available product information: what the product is, the features
+          and ingredients or components the seller lists, how the seller says to use it, and operational details
+          such as the published return policy. Pages are written to stand on their own as reading material, not
+          only as a doorway to a checkout link.
+        </p>
+        <p>
+          Browse every current review on the <Link href="/reviews">Reviews</Link> page.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="How pages are made">
+        <p>
+          Reviews are built from recorded source material, checked automatically for unsupported or prohibited
+          claims, and published only when a person decides a page is ready. The full process is described in
+          our <Link href="/editorial-policy">Editorial Policy</Link>.
         </p>
       </LegalSection>
 
       <LegalSection title="What we do not claim">
-        <p>
-          We do not claim certifications, laboratory testing, medical
-          qualifications, brand partnerships, or “expert” status unless a
-          specific page states evidence for that claim. If a page does not
-          document a test, study, or credential, assume it is not there.
-        </p>
+        <ul>
+          <li>We do not test products hands-on or in a laboratory.</li>
+          <li>We do not provide medical, nutritional, or other professional advice.</li>
+          <li>We do not hold brand partnerships, certifications, or awards, and we do not score or rank products.</li>
+          <li>
+            A seller&apos;s statement is presented as the seller&apos;s statement. It is not independently verified
+            unless a page says what verification was done.
+          </li>
+        </ul>
       </LegalSection>
 
       <LegalSection title="Affiliate links">
         <p>
-          Some pages include affiliate links. If you buy through those links,
-          the site may receive a commission. That relationship is described on
-          the Affiliate Disclosure page and again on each review.
+          Review pages include affiliate links. If you buy through one, the site may receive a commission. See
+          the <Link href="/affiliate-disclosure">Affiliate Disclosure</Link> for how that works. The same notice
+          appears at the top of every review.
         </p>
       </LegalSection>
     </PublicLegalLayout>

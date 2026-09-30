@@ -45,9 +45,17 @@ export function looksLikeLogo(text: string): boolean {
 }
 
 export function looksLikeIconOrBadge(text: string): boolean {
-  return /\bicon\b|badge|payment|visa|mastercard|paypal|amex|ssl|lock[-_]?icon|social|facebook|instagram|twitter|youtube|tiktok|pinterest|credit[-_ ]?cards?|checkmark/i.test(
+  return /\bicon\b|badge|payment|visa|mastercard|paypal|amex|ssl|lock[-_]?icon|social|facebook|instagram|twitter|youtube|tiktok|pinterest|credit[-_ ]?cards?|checkmark|star[-_ ]?marker|\bmarker\b|\bbullet\b|\bglyph\b|\bchevron\b/i.test(
     text,
   );
+}
+
+/** Raster file whose name identifies a product or package, not a UI glyph. */
+export function looksLikePackageRaster(url: string): boolean {
+  const file = (url.split("?")[0]?.split("/").pop() || "").toLowerCase();
+  if (!/\.(?:png|jpe?g|webp)$/.test(file)) return false;
+  if (looksLikeIconOrBadge(file) || looksLikeLogo(file)) return false;
+  return /\b(?:product|package|packshot|bottle|jar|tub|pouch|carton)\b/.test(file);
 }
 
 export function looksLikeNavOrFooter(text: string): boolean {
@@ -86,7 +94,7 @@ export function classifyAssetCandidate(input: ClassifyInput): ClassifyResult {
   if ((width > 0 && width < 80) || (height > 0 && height < 80)) {
     return { role: "UNUSABLE", packshotScore: 0, rejected: true, rejectReason: "too-small", classificationMethod: method };
   }
-  if (looksLikePromoCta(visual) || /(?:^|[^\w])(?:cta|banner)(?:[^\w]|$)/i.test(`${input.url} ${input.alt || ""} ${input.className || ""}`)) {
+  if (looksLikePromoCta(visual) || /(?:^|[^\w])cta(?:[^\w]|$)/i.test(`${input.url} ${input.alt || ""} ${input.className || ""}`)) {
     return { role: "UNUSABLE", packshotScore: 0, rejected: true, rejectReason: "promo-banner", classificationMethod: method };
   }
   if (/\bbutton\b/i.test(`${input.className || ""} ${input.alt || ""} ${input.url}`)) {
@@ -118,8 +126,9 @@ export function classifyAssetCandidate(input: ClassifyInput): ClassifyResult {
     };
   }
 
+  const packageRaster = looksLikePackageRaster(input.url);
   let score = 16;
-  if (looksLikePackshot(visual)) score += 42;
+  if (looksLikePackshot(visual) || packageRaster) score += 42;
   if (input.source === "og") score += 18;
   if (input.source === "jsonld") score += 22;
   if (input.source === "twitter") score += 10;
@@ -130,7 +139,7 @@ export function classifyAssetCandidate(input: ClassifyInput): ClassifyResult {
   }
   if (looksLikeLifestyle(visual)) score += 8;
 
-  if (looksLikePackshot(visual) && score >= 40) {
+  if ((looksLikePackshot(visual) || packageRaster) && score >= 40) {
     const composed = looksLikeIngredientVisual(visual) || looksLikeLifestyle(visual);
     return {
       role: composed ? "PRODUCT_LIFESTYLE" : "PRODUCT_PACKSHOT",

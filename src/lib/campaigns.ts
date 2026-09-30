@@ -1,7 +1,9 @@
 import { getDb } from "@/lib/db";
-import { PUBLICATION_STATUS, type PublicationStatus } from "@/lib/publication";
+import { recordImportRefresh } from "@/lib/evidence-manager";
+import type { PublicationGate } from "@/lib/policy-linter";
+import { PUBLICATION_STATUS, tryPublish, type PublicationStatus } from "@/lib/publication";
 
-const CAMPAIGN_COLUMNS = `id, name, slug, headline, body, ctaLabel, affiliateUrl, headScript, adHeadline, publicationStatus, publishedAt, createdAt, updatedAt, pageTemplate, pageComposition, productImageSrc, productImageProvenance, subheadline, sourceFactsJson, designPlanJson, visualTheme, designVersion, productAssetStatus, productAssetMetadata, creativeCompositionJson, creativeCompositionVersion`;
+const CAMPAIGN_COLUMNS = `id, name, slug, headline, body, ctaLabel, affiliateUrl, headScript, adHeadline, publicationStatus, publishedAt, createdAt, updatedAt, pageTemplate, pageComposition, productImageSrc, productImageProvenance, subheadline, sourceFactsJson, designPlanJson, visualTheme, designVersion, productAssetStatus, productAssetMetadata, creativeCompositionJson, creativeCompositionVersion, productionPageComposition, productionCreativeCompositionJson, productionPresentation`;
 
 export type Campaign = {
   id: number;
@@ -30,6 +32,10 @@ export type Campaign = {
   productAssetMetadata?: string | null;
   creativeCompositionJson?: string | null;
   creativeCompositionVersion?: number | null;
+  /** Frozen public candidate. Lab routes keep reading pageComposition. */
+  productionPageComposition?: string | null;
+  productionCreativeCompositionJson?: string | null;
+  productionPresentation?: string | null;
 };
 
 export type CampaignInput = {
@@ -96,6 +102,9 @@ function normalizeCampaign(row: Campaign): Campaign {
     productAssetMetadata: row.productAssetMetadata ?? null,
     creativeCompositionJson: row.creativeCompositionJson ?? null,
     creativeCompositionVersion: row.creativeCompositionVersion ?? null,
+    productionPageComposition: row.productionPageComposition ?? null,
+    productionCreativeCompositionJson: row.productionCreativeCompositionJson ?? null,
+    productionPresentation: row.productionPresentation ?? null,
   };
 }
 
@@ -268,6 +277,10 @@ export function updateCampaign(id: number, input: CampaignInput): Campaign {
     if (!updated) {
       throw new Error("Failed to read the campaign after update.");
     }
+    const writtenFacts = input.sourceFactsJson !== undefined ? input.sourceFactsJson : existing.sourceFactsJson;
+    if ((existing.sourceFactsJson ?? null) !== (writtenFacts ?? null)) {
+      recordImportRefresh(id, existing.sourceFactsJson ?? null, writtenFacts ?? null);
+    }
     return updated;
   } catch (err) {
     if (isUniqueSlugError(err)) {
@@ -400,35 +413,54 @@ export function updateCampaignProductAsset(
   return updated;
 }
 
+export class PublicationRefusedError extends Error {
+  readonly gate: PublicationGate;
+
+  constructor(message: string, gate: PublicationGate) {
+    super(message);
+    this.name = "PublicationRefusedError";
+    this.gate = gate;
+  }
+}
+
 export function publishCampaign(id: number): Campaign {
-  // Persistence-only. Production UI must call tryPublish first
-  // (publishCampaignAction). Tests may use this primitive directly.
-  const existing = getCampaignById(id);
-  if (!existing) {
-    throw new Error("Campaign not found.");
-  }
+  const write = getDb().transaction(() => {
+    const existing = getCampaignById(id);
+    if (!existing) {
+      throw new Error("Campaign not found.");
+    }
+    const verdict = tryPublish(existing, false);
+    if (!verdict.ok) {
+      throw new PublicationRefusedError(verdict.error, verdict.gate);
+    }
+    if (existing.publicationStatus === PUBLICATION_STATUS.PUBLISHED) {
+      return existing;
+    }
 
-  const now = new Date().toISOString();
-  getDb()
-    .prepare(
-      `UPDATE campaigns
-       SET publicationStatus = @publicationStatus,
-           publishedAt = @publishedAt,
-           updatedAt = @updatedAt
-       WHERE id = @id`,
-    )
-    .run({
-      publicationStatus: PUBLICATION_STATUS.PUBLISHED,
-      publishedAt: now,
-      updatedAt: now,
-      id,
-    });
+    const now = new Date().toISOString();
+    getDb()
+      .prepare(
+        `UPDATE campaigns
+         SET publicationStatus = @publicationStatus,
+             publishedAt = @publishedAt,
+             updatedAt = @updatedAt
+         WHERE id = @id AND publicationStatus = @expectedStatus`,
+      )
+      .run({
+        publicationStatus: PUBLICATION_STATUS.PUBLISHED,
+        publishedAt: now,
+        updatedAt: now,
+        id,
+        expectedStatus: PUBLICATION_STATUS.DRAFT,
+      });
 
-  const updated = getCampaignById(id);
-  if (!updated) {
-    throw new Error("Failed to read the campaign after publish.");
-  }
-  return updated;
+    const updated = getCampaignById(id);
+    if (!updated || updated.publicationStatus !== PUBLICATION_STATUS.PUBLISHED) {
+      throw new Error("Failed to read the campaign after publish.");
+    }
+    return updated;
+  });
+  return write();
 }
 
 export function unpublishCampaign(id: number): Campaign {

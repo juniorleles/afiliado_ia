@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
+import { getPublicSiteName } from "@/lib/public-site";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "Afiliado IA",
-  description: "English-first affiliate presell factory. Same URL for ads and visitors.",
-};
+export function generateMetadata(): Metadata {
+  return { title: getPublicSiteName(), description: "Independent product reviews." };
+}
 
 export const viewport: Viewport = {
   width: "device-width",

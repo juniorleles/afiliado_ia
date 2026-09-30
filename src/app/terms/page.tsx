@@ -1,82 +1,89 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { LegalSection, PublicLegalLayout, publicPageMetadata } from "@/components/public-legal-page";
-import { getPublicContactEmail, getPublicSiteName } from "@/lib/public-site";
+import { getPublicSiteName } from "@/lib/public-site";
 
 export const metadata: Metadata = publicPageMetadata(
   "/terms",
-  "Terms",
-  "Terms of use for this product-review website.",
+  "Terms of Use",
+  "Terms of use for this independent product-review website.",
 );
 
 export default function TermsPage() {
   const site = getPublicSiteName();
-  const email = getPublicContactEmail();
 
   return (
-    <PublicLegalLayout title="Terms of Use">
+    <PublicLegalLayout title="Terms of Use" path="/terms" kicker="Policies">
       <p>
-        These terms describe how you may use {site}. They are a practical
-        website notice, not legal advice, and they do not create warranties
-        beyond what the law already requires.
+        These terms describe how you may use {site}. They are a practical website notice, not legal advice, and
+        they do not create warranties beyond what the law already requires.
       </p>
 
       <LegalSection title="Informational purpose">
         <p>
-          Review pages are for general information. They are not personalized
-          advice, a diagnosis, a professional recommendation, or a promise that
-          a product will work for you.
+          Review pages are for general informational purposes. They are not personalized advice, a diagnosis, a
+          professional recommendation, or a promise that a product will work for you.
         </p>
       </LegalSection>
 
-      <LegalSection title="Third-party products">
+      <LegalSection title="Health information">
         <p>
-          Products described here are sold by other companies. Names, prices,
-          availability, shipping, warranties, and return policies belong to
-          those companies and can change without notice on this site.
+          Some reviews describe supplements or wellness products. That information restates what sellers and public
+          sources say. It is not medical advice and is not a substitute for a qualified professional. Consult one
+          before starting a supplement, especially if you are pregnant, nursing, taking medication, or managing a
+          health condition.
         </p>
       </LegalSection>
 
-      <LegalSection title="External links">
+      <LegalSection title="Accuracy">
         <p>
-          Call-to-action buttons and other links may send you to merchant or
-          affiliate-network websites. We are not responsible for the content,
-          security, or practices of those destinations.
+          We work to restate sources accurately, as described in our{" "}
+          <Link href="/editorial-policy">Editorial Policy</Link>. Sellers can change their products, claims, prices,
+          and policies at any time, so a page may become outdated. Confirm details on the seller&apos;s website
+          before you buy.
         </p>
       </LegalSection>
 
-      <LegalSection title="No guarantee of availability or pricing">
+      <LegalSection title="Third-party products and websites">
         <p>
-          A price, stock status, or offer mentioned in a review may be outdated
-          by the time you visit the merchant. Confirm details on the
-          destination site before you buy.
+          Products described here are sold by other companies. Prices, availability, shipping, warranties,
+          subscriptions, and return policies belong to those companies. Links may take you to seller or
+          affiliate-network websites; we are not responsible for their content, security, or practices.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="Affiliate links">
+        <p>
+          Some links are affiliate links and may earn the site a commission. See the{" "}
+          <Link href="/affiliate-disclosure">Affiliate Disclosure</Link>.
         </p>
       </LegalSection>
 
       <LegalSection title="Intellectual property">
         <p>
-          Text published on this site is owned by the operator unless a page
-          says otherwise. You may not copy it for commercial reuse without
-          permission. Product names and logos belong to their respective
-          owners.
+          Text published on this site belongs to its operator unless a page says otherwise. You may not copy it for
+          commercial reuse without permission. Product names, logos, and trademarks belong to their respective
+          owners and are used only to identify the products discussed.
         </p>
       </LegalSection>
 
       <LegalSection title="Limitation of responsibility">
         <p>
-          To the extent permitted by law, the operator is not liable for
-          losses that result from relying on a review, from a third-party
-          purchase, or from downtime. If you do not agree with these terms, do
-          not use the site.
+          To the extent permitted by law, the operator is not liable for losses that result from relying on a
+          review, from a third-party purchase, or from the site being unavailable.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="Changes">
+        <p>
+          These terms may be updated. The date at the top of this page shows the latest revision. If you do not
+          agree with these terms, please do not use the site.
         </p>
       </LegalSection>
 
       <LegalSection title="Contact">
         <p>
-          Questions:{" "}
-          <a href={`mailto:${email}`} className="text-emerald-400 hover:underline">
-            {email}
-          </a>
-          .
+          Questions about these terms: see the <Link href="/contact">Contact</Link> page.
         </p>
       </LegalSection>
     </PublicLegalLayout>

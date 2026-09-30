@@ -234,7 +234,7 @@ export function hasUsableProductImage(page: PresellPage): boolean {
   const image = page.hero.image;
   if (!image.src) return false;
   if (image.provenance === "PLACEHOLDER" || image.provenance === "NOT_FOUND") return false;
-  if (/order[-_ ]?now|banner|cta|buy[-_ ]?now/i.test(`${image.src} ${image.alt}`)) return false;
+  if (/order[-_ ]?now|\bcta\b|buy[-_ ]?now/i.test(`${image.src} ${image.alt}`)) return false;
   return true;
 }
 
