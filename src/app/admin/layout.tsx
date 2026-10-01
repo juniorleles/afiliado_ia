@@ -39,6 +39,9 @@ export default function AdminLayout({
           <Link href="/admin/validation" className="hover:text-zinc-100">
             Validation
           </Link>
+          <Link href="/admin/discovery" className="hover:text-zinc-100">
+            Discovery
+          </Link>
           <form action={logoutAdminAction}>
             <button type="submit" className="hover:text-zinc-100">
               Sair
