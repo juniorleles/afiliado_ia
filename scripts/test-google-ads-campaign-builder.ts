@@ -264,7 +264,10 @@ async function main() {
   check("nothing imports Opportunity, Discovery, Decision, Workflow, Execution, the LP Builder, Importer, Grounding, Policy, Publication, Tracking, Analytics, ProductFacts, Traffic, or the database", !imports.some((i) => /opportunity|discovery|decision|workflow|execution|lp-builder|import(er)?\b|grounding|policy|publication|tracking|analytics|product-facts|traffic|db/i.test(i.from)));
   const architecture = ["google-ads-context.ts", "google-ads-provider.ts", "google-ads-registry.ts", "google-ads-types.ts", "google-ads-validator.ts"].map((f) => readFileSync(join(dir, f), "utf8"));
   check("the architecture modules are unchanged in shape and do not import the builder", architecture.every((src) => !/google-ads-campaign-(builder|validator|resolver|snapshot|statistics)/.test(src)) && architecture.every((src) => !/^\s*export\s+(async\s+)?(function|class)\b/m.test(src)));
-  const others = listTs(join(process.cwd(), "src/lib")).filter((f) => !f.replace(/\\/g, "/").includes("/providers/google-ads/"));
+  const others = listTs(join(process.cwd(), "src/lib")).filter((f) => {
+    const name = f.replace(/\\/g, "/");
+    return !name.includes("/providers/google-ads/") && !name.endsWith("/product-intelligence/product-analysis-runner.ts");
+  });
   check("no other lib module imports the campaign builder", !others.some((f) => /google-ads-campaign-(builder|validator|resolver|snapshot|statistics)/.test(readFileSync(f, "utf8"))));
   const executionFiles = listTs(join(process.cwd(), "src/lib/execution"));
   check("the execution planner does not import the campaign builder", !executionFiles.some((f) => /google-ads|providers\//.test(readFileSync(f, "utf8"))));

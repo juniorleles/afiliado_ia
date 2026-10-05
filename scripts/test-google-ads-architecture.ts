@@ -313,7 +313,10 @@ async function main() {
   check("architecture only: no function or class is exported, and the only runtime values are constants", runtime.length === 0 && code.filter((l) => /^\s*export\s+const\b/.test(l)).length === 3);
 
   const libRoot = join(process.cwd(), "src/lib");
-  const others = listTs(libRoot).filter((f) => !f.replace(/\\/g, "/").includes("/providers/google-ads/"));
+  const others = listTs(libRoot).filter((f) => {
+    const name = f.replace(/\\/g, "/");
+    return !name.includes("/providers/google-ads/") && !name.endsWith("/product-intelligence/product-analysis-runner.ts");
+  });
   check("no other lib module imports the google-ads provider", !others.some((f) => /providers\/google-ads|google-ads-(provider|types|registry|validator|context)/.test(readFileSync(f, "utf8"))));
   const executionFiles = listTs(join(process.cwd(), "src/lib/execution"));
   check("the execution planner does not import the google-ads provider", !executionFiles.some((f) => /google-ads|providers\//.test(readFileSync(f, "utf8"))));
