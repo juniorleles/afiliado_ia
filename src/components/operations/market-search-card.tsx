@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -187,7 +188,7 @@ export function MarketSearchCard() {
           <Input id="market-marketplace" value="Em breve" disabled readOnly />
         </div>
 
-        <div role="status" aria-live="polite" data-search-status={status} className="flex items-center gap-ds-8 text-body text-foreground">
+        <div role="status" aria-live="polite" data-search-status={status} className="flex flex-wrap items-center gap-ds-8 text-body text-foreground">
           {status === "searching" ? <LoadingSpinner label="Pesquisando" /> : <span>{searchStatusLabel[status]}</span>}
           {status !== "searching" ? (
             <span className="text-caption text-muted-foreground">
@@ -195,6 +196,15 @@ export function MarketSearchCard() {
               {status === "completed" ? "Exemplo concluído. Nada foi enviado." : null}
               {status === "failed" ? "A palavra falha mostra este exemplo. Tente outra Keyword." : null}
             </span>
+          ) : null}
+          {status === "completed" ? (
+            <Button asChild>
+              <Link
+                href={`/pesquisa/resultado?keyword=${encodeURIComponent(keyword)}&country=${country}&language=${language}&device=${device}`}
+              >
+                Ver resultados
+              </Link>
+            </Button>
           ) : null}
         </div>
 
