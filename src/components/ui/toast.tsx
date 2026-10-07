@@ -2,8 +2,9 @@
 
 import * as React from "react";
 import { Button } from "./button";
+import { cn } from "@/lib/utils";
 
-type ToastTone = "default" | "danger";
+type ToastTone = "default" | "success" | "warning" | "danger";
 
 type ToastRecord = { id: string; message: string; tone: ToastTone };
 
@@ -12,6 +13,13 @@ type ToastContextValue = {
 };
 
 const ToastContext = React.createContext<ToastContextValue | null>(null);
+
+const toneClass: Record<ToastTone, string> = {
+  default: "border-border bg-card text-foreground",
+  success: "border-success bg-success-subtle text-success",
+  warning: "border-warning bg-warning-subtle text-warning",
+  danger: "border-danger bg-danger-subtle text-danger",
+};
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = React.useState<ToastRecord[]>([]);
@@ -34,12 +42,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ push }}>
       {children}
-      <div className="pointer-events-none fixed bottom-ds-16 right-ds-16 z-50 flex w-[min(360px,calc(100%-32px))] flex-col gap-ds-8">
+      <div
+        aria-live="polite"
+        aria-relevant="additions"
+        className="pointer-events-none fixed bottom-ds-16 right-ds-16 z-50 flex w-[min(360px,calc(100%-32px))] flex-col gap-ds-8"
+      >
         {items.map((item) => (
           <div
             key={item.id}
             role={item.tone === "danger" ? "alert" : "status"}
-            className="pointer-events-auto rounded-ds-md border border-border bg-card p-ds-16 text-body text-foreground shadow-ds-2"
+            className={cn("ds-pop-in pointer-events-auto rounded-ds-md border p-ds-16 text-body shadow-ds-2", toneClass[item.tone])}
           >
             <p>{item.message}</p>
             <Button type="button" variant="link" className="mt-ds-8" onClick={() => dismiss(item.id)}>

@@ -31,7 +31,7 @@ export function NotificationsButton() {
         <Bell aria-hidden className="h-ds-16 w-ds-16" strokeWidth={1.5} />
       </IconButton>
       {open ? (
-        <div id={panelId} role="region" aria-label="Notificações" className="absolute right-0 z-40 mt-ds-8 w-72 rounded-ds-md border border-border bg-card p-ds-16 text-body text-foreground shadow-ds-2">
+        <div id={panelId} role="region" aria-label="Notificações" className="ds-pop-in absolute right-0 z-40 mt-ds-8 w-72 rounded-ds-md border border-border bg-card p-ds-16 text-body text-foreground shadow-ds-2">
           <p>Nenhuma notificação nova neste exemplo.</p>
         </div>
       ) : null}

@@ -40,7 +40,7 @@ const AccordionContent = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content>
 >(({ className, children, ...props }, ref) => (
-  <AccordionPrimitive.Content ref={ref} className="overflow-hidden text-body" {...props}>
+  <AccordionPrimitive.Content ref={ref} className="ds-accordion overflow-hidden text-body" {...props}>
     <div className={cn("pb-ds-16 text-muted-foreground", className)}>{children}</div>
   </AccordionPrimitive.Content>
 ));

@@ -33,13 +33,13 @@ export default function DashboardPage() {
       </div>
       <ul className="mt-ds-24 flex flex-col gap-ds-12">
         {exampleOffers.map((offer) => (
-          <li key={offer.name} className="flex flex-wrap items-center justify-between gap-ds-12 rounded-ds-md border border-border bg-card p-ds-16">
+          <li key={offer.name} className="flex flex-wrap items-center justify-between gap-ds-12 rounded-ds-md border border-border bg-card p-ds-16 transition-[box-shadow] duration-ds-fast ease-ds-standard hover:shadow-ds-1">
             <span className="text-body">{offer.name}</span>
             <Badge status={offer.status} />
           </li>
         ))}
         {exampleCampaigns.slice(0, 1).map((campaign) => (
-          <li key={campaign.name} className="flex flex-wrap items-center justify-between gap-ds-12 rounded-ds-md border border-border bg-card p-ds-16">
+          <li key={campaign.name} className="flex flex-wrap items-center justify-between gap-ds-12 rounded-ds-md border border-border bg-card p-ds-16 transition-[box-shadow] duration-ds-fast ease-ds-standard hover:shadow-ds-1">
             <span className="text-body">{campaign.name}</span>
             <Badge status={campaign.status} />
           </li>

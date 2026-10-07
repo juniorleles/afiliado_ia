@@ -22,11 +22,11 @@ export function Drawer({
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-transparent" />
+        <DialogPrimitive.Overlay className="ds-fade-in fixed inset-0 z-40 bg-transparent" />
         <DialogPrimitive.Content
           aria-modal="true"
           className={cn(
-            "fixed inset-y-0 right-0 z-50 flex w-[min(400px,100%)] flex-col bg-card p-ds-24 text-foreground shadow-ds-2",
+            "ds-drawer-in fixed inset-y-0 right-0 z-50 flex w-[min(400px,100%)] flex-col bg-card p-ds-24 text-foreground shadow-ds-2",
             focusRing,
           )}
           onOpenAutoFocus={(event) => {

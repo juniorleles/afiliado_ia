@@ -5,10 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { useToast } from "@/components/ui/toast";
+import { successMessages } from "@/lib/ui/feedback-messages";
 
 export function ExampleSearchForm() {
   const [country, setCountry] = useState("us");
   const [note, setNote] = useState("");
+  const toast = useToast();
 
   return (
     <form
@@ -16,6 +19,7 @@ export function ExampleSearchForm() {
       onSubmit={(event) => {
         event.preventDefault();
         setNote("A busca não é enviada. Este campo só mostra a estrutura.");
+        toast.push({ message: successMessages.pesquisa, tone: "success" });
       }}
     >
       <div>

@@ -31,14 +31,22 @@ export function Modal({
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-[var(--color-overlay)]" />
+        <DialogPrimitive.Overlay className="ds-fade-in fixed inset-0 z-40 bg-[var(--color-overlay)]" />
         <DialogPrimitive.Content
           aria-modal="true"
           className={cn(
-            "fixed left-1/2 top-1/2 z-50 w-[min(480px,calc(100%-32px))] -translate-x-1/2 -translate-y-1/2",
+            "ds-fade-in fixed left-1/2 top-1/2 z-50 w-[min(480px,calc(100%-32px))] -translate-x-1/2 -translate-y-1/2",
             "rounded-ds-lg bg-card p-ds-32 text-foreground shadow-ds-2",
             focusRing,
           )}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) return;
+            const target = event.target as HTMLElement;
+            if (target.tagName === "TEXTAREA" || target.closest("button, a")) return;
+            event.preventDefault();
+            onPrimary?.();
+            onOpenChange(false);
+          }}
           onOpenAutoFocus={(event) => {
             event.preventDefault();
             titleRef.current?.focus();

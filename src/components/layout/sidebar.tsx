@@ -38,9 +38,9 @@ export function SidebarNav({ expanded, onNavigate }: { expanded: boolean; onNavi
               aria-current={active ? "page" : undefined}
               onClick={onNavigate}
               className={cn(
-                "flex items-center gap-ds-12 rounded-ds-md px-ds-12 py-ds-8 text-body text-foreground",
+                "flex items-center gap-ds-12 rounded-ds-md px-ds-12 py-ds-8 text-body text-foreground transition-colors duration-ds-fast ease-ds-standard",
                 focusRing,
-                active && "bg-card text-primary",
+                active ? "bg-card text-primary" : "hover:bg-secondary",
               )}
             >
               <UiIcon name={item.icon} size={20} className={active ? "text-primary" : undefined} />
@@ -62,7 +62,7 @@ export function Sidebar({ expanded, onExpandedChange }: { expanded: boolean; onE
   return (
     <aside
       className={cn(
-        "sticky top-0 hidden h-screen shrink-0 flex-col border-r border-border bg-background md:flex",
+        "sticky top-0 hidden h-screen shrink-0 flex-col border-r border-border bg-background transition-[width] duration-ds-normal ease-ds-standard md:flex",
         expanded ? "w-[var(--layout-sidebar)]" : "w-ds-64 xl:w-[var(--layout-sidebar)]",
       )}
     >

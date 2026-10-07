@@ -40,12 +40,15 @@ export function UserMenu() {
         <span className="sr-only">Conta do operador</span>
       </button>
       {open ? (
-        <div id={menuId} role="menu" aria-label="Conta" className="absolute right-0 z-40 mt-ds-8 w-56 rounded-ds-md border border-border bg-card p-ds-8 shadow-ds-2">
+        <div id={menuId} role="menu" aria-label="Conta" className="ds-pop-in absolute right-0 z-40 mt-ds-8 w-56 rounded-ds-md border border-border bg-card p-ds-8 shadow-ds-2">
           <p className="px-ds-12 py-ds-8 text-caption text-muted-foreground">Operador</p>
           <Link
             href="/configuracoes"
             role="menuitem"
-            className={cn("block rounded-ds-sm px-ds-12 py-ds-8 text-body text-foreground hover:bg-secondary", focusRing)}
+            className={cn(
+              "block rounded-ds-sm px-ds-12 py-ds-8 text-body text-foreground transition-colors duration-ds-fast ease-ds-standard hover:bg-secondary",
+              focusRing,
+            )}
             onClick={() => setOpen(false)}
           >
             Conta

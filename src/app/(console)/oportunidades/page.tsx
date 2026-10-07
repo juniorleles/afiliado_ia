@@ -20,7 +20,7 @@ export default function OportunidadesPage() {
     >
       <ol className="flex flex-col gap-ds-12">
         {exampleOffers.map((offer, index) => (
-          <li key={offer.name} className="flex flex-wrap items-center justify-between gap-ds-12 rounded-ds-md border border-border bg-card p-ds-16">
+          <li key={offer.name} className="flex flex-wrap items-center justify-between gap-ds-12 rounded-ds-md border border-border bg-card p-ds-16 transition-[box-shadow] duration-ds-fast ease-ds-standard hover:shadow-ds-1">
             <span className="text-body">
               {index + 1}. {offer.name}
             </span>

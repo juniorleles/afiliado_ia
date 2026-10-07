@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageTemplate } from "@/components/layout/page-template";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ExampleConfirmButton } from "@/components/ux/example-confirm-button";
+import { successMessages } from "@/lib/ui/feedback-messages";
 import { exampleReadiness } from "@/lib/ui/shell-examples";
 
 export const metadata: Metadata = { title: "Configurações" };
@@ -14,9 +16,17 @@ export default function ConfiguracoesPage() {
       title="Configurações"
       description="Conta e prontidão de exemplo. Nenhum segredo é pedido."
       primaryAction={
-        <Button asChild variant="secondary">
-          <Link href="/dashboard">Voltar ao Dashboard</Link>
-        </Button>
+        <>
+          <Button asChild variant="secondary">
+            <Link href="/dashboard">Voltar ao Dashboard</Link>
+          </Button>
+          <ExampleConfirmButton
+            label="Salvar exemplo"
+            title="Salvar configuração"
+            description="Nenhuma preferência é gravada. A confirmação fica nesta página."
+            success={successMessages.configuracao}
+          />
+        </>
       }
     >
       <Tabs defaultValue="sessao">

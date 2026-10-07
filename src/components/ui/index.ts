@@ -9,7 +9,7 @@ export { DataTable, type DataTableColumn, type DataTableSort } from "./data-tabl
 export { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from "./dialog";
 export { Drawer } from "./drawer";
 export { EmptyState, NoCampaignsEmpty, NoOpportunitiesEmpty, NoProductsEmpty, NoReportsEmpty, NoSearchResultsEmpty } from "./empty-state";
-export { ErrorState } from "./error-state";
+export { ErrorState, NetworkErrorState, NotFoundErrorState, SearchErrorState, UnauthorizedErrorState, UnexpectedErrorState } from "./error-state";
 export { IconButton } from "./icon-button";
 export { UiIcon, uiIconLabels, uiIcons, type UiIconName } from "./icons";
 export { Input } from "./input";

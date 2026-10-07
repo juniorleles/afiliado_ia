@@ -20,7 +20,11 @@ export function PageHeader({
           <h1 className="text-h1">{title}</h1>
           {description ? <p className="mt-ds-8 max-w-content text-body text-muted-foreground">{description}</p> : null}
         </div>
-        {actions ? <div className="flex flex-wrap gap-ds-8">{actions}</div> : null}
+        {actions ? (
+          <div data-primary-action className="flex flex-wrap gap-ds-8">
+            {actions}
+          </div>
+        ) : null}
       </div>
     </header>
   );

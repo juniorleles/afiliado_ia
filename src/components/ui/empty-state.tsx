@@ -1,5 +1,15 @@
+import Link from "next/link";
 import * as React from "react";
+import { Button } from "./button";
 import { UiIcon, type UiIconName } from "./icons";
+
+function EmptyIllustration({ icon }: { icon: UiIconName }) {
+  return (
+    <div aria-hidden className="flex h-16 w-16 items-center justify-center rounded-ds-lg bg-secondary text-muted-foreground">
+      <UiIcon name={icon} size={20} />
+    </div>
+  );
+}
 
 export function EmptyState({
   title,
@@ -13,8 +23,8 @@ export function EmptyState({
   icon?: UiIconName;
 }) {
   return (
-    <div className="flex flex-col items-start gap-ds-8 rounded-ds-md border border-dashed border-border bg-card p-ds-24">
-      {icon ? <UiIcon name={icon} size={20} className="text-muted-foreground" /> : null}
+    <div className="flex flex-col items-start gap-ds-12 rounded-ds-md border border-dashed border-border bg-card p-ds-24">
+      {icon ? <EmptyIllustration icon={icon} /> : null}
       <h3 className="text-h3">{title}</h3>
       <p className="max-w-content text-body text-muted-foreground">{description}</p>
       {action}
@@ -27,8 +37,14 @@ export function NoProductsEmpty(props: { action?: React.ReactNode }) {
     <EmptyState
       icon="produtos"
       title="Nenhum Product"
-      description="A lista de Products ainda não tem um item para abrir."
-      action={props.action}
+      description="Ainda não há um Product nesta lista. Uma pesquisa de mercado de exemplo é o próximo passo."
+      action={
+        props.action ?? (
+          <Button asChild>
+            <Link href="/pesquisa">Pesquisar</Link>
+          </Button>
+        )
+      }
     />
   );
 }
@@ -38,8 +54,14 @@ export function NoCampaignsEmpty(props: { action?: React.ReactNode }) {
     <EmptyState
       icon="campanhas"
       title="Nenhuma campanha"
-      description="Nenhuma campanha aparece nesta lista."
-      action={props.action}
+      description="Nenhuma campanha aparece nesta lista. Abra Products para escolher um exemplo."
+      action={
+        props.action ?? (
+          <Button asChild>
+            <Link href="/produtos">Ver Products</Link>
+          </Button>
+        )
+      }
     />
   );
 }
@@ -49,8 +71,14 @@ export function NoReportsEmpty(props: { action?: React.ReactNode }) {
     <EmptyState
       icon="relatorios"
       title="Nenhum relatório"
-      description="Ainda não há um relatório para comparar."
-      action={props.action}
+      description="Ainda não há um relatório para comparar. Volte às campanhas de exemplo."
+      action={
+        props.action ?? (
+          <Button asChild>
+            <Link href="/campanhas">Ver campanhas</Link>
+          </Button>
+        )
+      }
     />
   );
 }
@@ -60,8 +88,14 @@ export function NoOpportunitiesEmpty(props: { action?: React.ReactNode }) {
     <EmptyState
       icon="opportunity"
       title="Nenhuma oportunidade"
-      description="Nenhuma oportunidade está nesta lista."
-      action={props.action}
+      description="Nenhuma oportunidade está nesta lista. Comece por uma pesquisa de exemplo."
+      action={
+        props.action ?? (
+          <Button asChild>
+            <Link href="/pesquisa">Pesquisar</Link>
+          </Button>
+        )
+      }
     />
   );
 }
@@ -71,8 +105,14 @@ export function NoSearchResultsEmpty(props: { action?: React.ReactNode }) {
     <EmptyState
       icon="search"
       title="Nenhum resultado"
-      description="A busca não devolveu linhas para esta lista."
-      action={props.action}
+      description="A busca de exemplo não devolveu linhas. Ajuste a palavra e tente de novo nesta página."
+      action={
+        props.action ?? (
+          <Button asChild>
+            <Link href="/pesquisa">Nova pesquisa</Link>
+          </Button>
+        )
+      }
     />
   );
 }
