@@ -1,0 +1,107 @@
+{
+  "startedAt": "2026-10-07T19:09:26.931Z",
+  "elapsedMs": 4536,
+  "configuration": {
+    "searchApi": "SET",
+    "googleAds": "Not Connected",
+    "demoPublish": "MISSING",
+    "language": "pt-BR",
+    "publicLanguage": "en"
+  },
+  "dbBefore": [
+    {
+      "name": "presell-os.db",
+      "size": 1282048,
+      "mtime": "2026-09-25T18:04:01.761Z"
+    },
+    {
+      "name": "presell-os.db-shm",
+      "size": 32768,
+      "mtime": "2026-10-07T18:58:06.399Z"
+    },
+    {
+      "name": "presell-os.db-wal",
+      "size": 3328992,
+      "mtime": "2026-10-01T13:54:24.120Z"
+    }
+  ],
+  "dbAfter": [
+    {
+      "name": "presell-os.db",
+      "size": 1282048,
+      "mtime": "2026-09-25T18:04:01.761Z"
+    },
+    {
+      "name": "presell-os.db-shm",
+      "size": 32768,
+      "mtime": "2026-10-07T18:58:06.399Z"
+    },
+    {
+      "name": "presell-os.db-wal",
+      "size": 3328992,
+      "mtime": "2026-10-01T13:54:24.120Z"
+    }
+  ],
+  "dbUnchanged": true,
+  "search": {
+    "status": "OK",
+    "elapsedMs": 4453,
+    "issues": [],
+    "sponsoredCount": 0,
+    "organicCount": 9,
+    "sponsoredTitles": [],
+    "organicTitles": [
+      "12 Supplements for Osteoarthritis",
+      "7 Supplements for Joint Pain",
+      "Can Supplements Help To Ease Joint Pain?",
+      "Glucosamine Chondroitin MSM Joint Support Supplement ...",
+      "7 natural supplements that might relieve back, joint, and ..."
+    ]
+  },
+  "landing": [],
+  "products": [],
+  "market": {
+    "brands": [],
+    "categories": [],
+    "prices": [],
+    "warnings": [],
+    "missingEvidence": []
+  },
+  "opportunity": {
+    "score": null,
+    "rank": null,
+    "recommendation": null,
+    "metrics": {}
+  },
+  "watch": {
+    "created": false,
+    "updated": false,
+    "removed": false,
+    "timeline": 0
+  },
+  "ads": {
+    "googleAds": "Not Connected",
+    "sent": false,
+    "campaignIssues": [
+      "Missing Authentication: an authenticated session is required.",
+      "Missing Customer: a customer id is required.",
+      "Missing Authentication: a developer token is required."
+    ],
+    "adGroupIssues": [
+      "Missing Authentication: an authenticated session is required.",
+      "Missing Campaign: a published paused campaign is required.",
+      "Invalid Ad Group Draft: an ad group draft is required.",
+      "Missing Authentication: a developer token is required."
+    ],
+    "rsaIssues": [
+      "Missing Authentication: an authenticated session is required.",
+      "Missing Campaign: a published paused campaign is required.",
+      "Missing Campaign: a paused ad group in the published campaign is required.",
+      "Invalid RSA Draft: a responsive search ad draft is required.",
+      "Missing Authentication: a developer token is required."
+    ],
+    "campaignCount": 2,
+    "campaignRead": "OK"
+  },
+  "optimization": "Not Connected. No metrics request was sent."
+}
