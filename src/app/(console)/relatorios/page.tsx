@@ -1,36 +1,38 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { MetricCard } from "@/components/ui/metric-card";
+import { Card, CardContent } from "@/components/ui/card";
 import { PageTemplate } from "@/components/layout/page-template";
-import { ExampleConfirmButton } from "@/components/ux/example-confirm-button";
-import { successMessages } from "@/lib/ui/feedback-messages";
+import { NoReportsEmpty } from "@/components/ui/empty-state";
+import { readIntegrationConfiguration } from "@/lib/console/configuration";
+import { consoleStore } from "@/lib/console/store";
 
 export const metadata: Metadata = { title: "Monitoramento" };
+export const dynamic = "force-dynamic";
 
 export default function RelatoriosPage() {
+  const latest = consoleStore().listSearches()[0] ?? null;
+  const googleAds = readIntegrationConfiguration().googleAds;
+  if (latest === null) {
+    return (
+      <PageTemplate title="Monitoramento" description="Relatórios das buscas gravadas." primaryAction={null}>
+        <NoReportsEmpty />
+      </PageTemplate>
+    );
+  }
+  const blocks = [
+    ["Mercado", `${latest.sponsoredCount} patrocinados, ${latest.organicCount} orgânicos, ${latest.brands.length} marcas.`],
+    ["Product", `${latest.products.length} Products observados.`],
+    ["Oportunidade", latest.recommendation ?? "Sem recomendação nesta busca."],
+    ["Otimização", googleAds === "Connected" ? "A conta está configurada. Nenhuma métrica foi coletada." : "Not Connected"],
+    ["Execução", `${latest.elapsedMs} ms · score ${latest.score ?? "não calculado"} · ranking ${latest.rank ?? "não calculado"}.`],
+  ] as const;
   return (
-    <PageTemplate
-      title="Monitoramento"
-      description="Leitura de exemplo. Estes números não foram coletados."
-      primaryAction={
-        <>
-          <Button asChild variant="secondary">
-            <Link href="/campanhas">Voltar às campanhas</Link>
-          </Button>
-          <ExampleConfirmButton
-            label="Exportar exemplo"
-            title="Exportar relatório"
-            description="Nenhum arquivo é gerado. A mensagem só confirma o exemplo."
-            success={successMessages.relatorio}
-          />
-        </>
-      }
-    >
-      <div className="grid gap-ds-16 sm:grid-cols-3">
-        <MetricCard subject="Visitas" value="128" period="Exemplo" />
-        <MetricCard subject="Cliques no botão" value="14" period="Exemplo" />
-        <MetricCard subject="Compras" value="2" period="Exemplo" />
+    <PageTemplate title="Monitoramento" description={`Última Keyword: ${latest.keyword}.`} primaryAction={<Button asChild variant="secondary"><Link href={`/pesquisa/resultado?busca=${encodeURIComponent(latest.id)}`}>Ver resultados</Link></Button>}>
+      <div className="grid gap-ds-12 md:grid-cols-2">
+        {blocks.map(([title, body]) => (
+          <Card key={title}><CardContent><h2 className="text-h3">{title}</h2><p className="mt-ds-8 text-body">{body}</p></CardContent></Card>
+        ))}
       </div>
     </PageTemplate>
   );

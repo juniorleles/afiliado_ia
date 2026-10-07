@@ -161,3 +161,13 @@ Filhos:
 - Google Ads aparece dentro da campanha, como rascunho pausado. Não é um oitavo item.
 - Monitoramento é Relatórios, não uma tela solta no fim do fluxo.
 - O visitante continua em Home, Reviews e na presell. Esse mapa não altera o site público.
+
+## Console implementation
+
+The operator console now follows this map with live services:
+
+- Dashboard and Pesquisa de Mercado call the existing SearchApi, landing page, product, market, and opportunity hosts.
+- Products, opportunities, and reports read the stored search.
+- Lista de decisão stores notes, status, priority, and a timeline under `data/console/`.
+- Campanhas lists paused local drafts and campaigns already stored in the database. Google Ads stays `Not Connected` until credentials exist, and this screen does not send an ad.
+- Configurações shows presence of SearchApi and Google Ads. It does not show secret values.

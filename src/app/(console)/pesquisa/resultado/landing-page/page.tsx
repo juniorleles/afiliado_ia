@@ -1,43 +1,38 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { findMarketProduct } from "@/lib/ui/market-results";
+import { consoleStore } from "@/lib/console/store";
 
-export const metadata: Metadata = { title: "Landing page preview" };
+export const metadata: Metadata = { title: "Landing Page" };
+export const dynamic = "force-dynamic";
 
-export default async function LandingPreviewPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ produto?: string }>;
-}) {
-  const { produto } = await searchParams;
-  const product = findMarketProduct(produto);
-
+export default async function LandingPreviewPage({ searchParams }: { searchParams: Promise<{ busca?: string; produto?: string }> }) {
+  const { busca, produto } = await searchParams;
+  const store = consoleStore();
+  const record = busca ? store.getSearch(busca) : null;
+  const page = record?.landingPages.find((item) => item.id === produto) ?? null;
+  const html = record && page ? store.readPage(record.id, page.id) : null;
+  if (!record || !page) {
+    return (
+      <div className="ds-container py-ds-24">
+        <h1 className="text-h1">Landing Page</h1>
+        <p className="mt-ds-8 text-body text-muted-foreground">Esta Landing Page não está na busca gravada.</p>
+      </div>
+    );
+  }
   return (
-    <div className="ds-container flex flex-col gap-ds-24 py-ds-24">
-      <header className="flex flex-col gap-ds-12">
-        <h1 className="text-h1">Pré-visualização da Landing Page</h1>
-        <p className="max-w-content text-body text-muted-foreground">
-          Esta pré-visualização não publica a página e não envia uma visita.
-        </p>
-        <Button asChild variant="secondary">
-          <Link href={`/pesquisa/resultado/detalhe?produto=${product.id}`}>Voltar ao detalhe</Link>
-        </Button>
+    <div className="ds-container flex flex-col gap-ds-16 py-ds-24">
+      <header className="flex flex-col gap-ds-8">
+        <h1 className="text-h1">Landing Page</h1>
+        <p className="text-body text-muted-foreground">HTTP {page.httpStatus} · {page.redirectCount} redirecionamentos · {page.bytes} bytes</p>
+        <p className="text-caption text-muted-foreground">A pré-visualização não publica a página e não envia uma visita.</p>
+        <Button asChild variant="secondary"><Link href={`/pesquisa/resultado/detalhe?busca=${encodeURIComponent(record.id)}&produto=${encodeURIComponent(page.id)}`}>Voltar ao Product</Link></Button>
       </header>
-      <article lang="en" className="rounded-ds-md border border-border bg-card p-ds-24 text-foreground">
-        <p className="text-caption text-muted-foreground">Landing page</p>
-        <h2 className="mt-ds-12 text-h1">{product.name}</h2>
-        <p className="mt-ds-8 text-body">
-          <span className="text-muted-foreground">Headline. </span>
-          {product.name}
-        </p>
-        <p className="mt-ds-8 text-body">
-          <span className="text-muted-foreground">Description. </span>
-          Example preview for {product.brand}. This text is not a product claim.
-        </p>
-        <p className="mt-ds-16 text-h2">{product.priceLabel}</p>
-        <p className="mt-ds-16 text-body text-muted-foreground">The offer button stays on this preview.</p>
-      </article>
+      {html ? (
+        <iframe title="Pré-visualização da Landing Page" sandbox="" srcDoc={html} className="h-[720px] w-full rounded-ds-md border border-border bg-card" />
+      ) : (
+        <p className="text-body text-muted-foreground">O HTML desta página não ficou gravado.</p>
+      )}
     </div>
   );
 }

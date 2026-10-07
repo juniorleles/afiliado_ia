@@ -23,7 +23,7 @@ const buttonVariants = cva(
         danger: "bg-danger-solid text-primary-foreground hover:brightness-95",
         success: "bg-success-solid text-primary-foreground hover:brightness-95",
         warning: "bg-warning-solid text-primary-foreground hover:brightness-95",
-        link: "h-auto bg-transparent px-0 py-0 text-primary underline-offset-4 hover:underline",
+        link: "h-auto bg-transparent px-0 py-0 text-primary-text underline-offset-4 hover:underline",
         icon: "bg-transparent text-foreground hover:bg-accent",
       },
       size: {

@@ -9,7 +9,7 @@ const config: Config = {
         background: "var(--color-background)",
         foreground: "var(--color-text)",
         card: "var(--color-surface)",
-        primary: { DEFAULT: "var(--color-primary)", foreground: "var(--color-on-primary)" },
+        primary: { DEFAULT: "var(--color-primary)", foreground: "var(--color-on-primary)", text: "var(--color-primary-text)" },
         secondary: { DEFAULT: "var(--color-secondary)", foreground: "var(--color-on-secondary)" },
         success: {
           DEFAULT: "var(--color-success)",

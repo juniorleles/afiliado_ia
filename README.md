@@ -72,6 +72,23 @@ quiser renomear o arquivo do banco também, é seguro fazer manualmente
 `data/afiliado-ia.db`, atualizar o caminho em `src/lib/db.ts`) — só não é
 automático, porque mexe com dado que já existe no seu disco.
 
+## Console de operações
+
+O console em `/dashboard` lê os motores que já existem. A pesquisa chama
+SearchApi, o coletor de Landing Pages, o identificador de Products, o
+relatório de mercado e os motores de oportunidade. A fila, as notas e os
+rascunhos pausados ficam em `data/console/`. As campanhas publicáveis
+continuam na base `presell-os.db`.
+
+SearchApi e Google Ads são configurados em `.env.local`. A tela
+Configurações mostra só se a chave está presente. Ela não mostra o valor.
+Sem as credenciais do Google Ads, Campanhas e Relatórios mostram
+`Not Connected` e nenhum anúncio é enviado.
+
+Não publique, não faça deploy e não dispare anúncios a partir deste
+console. `npm run dev` sobe o servidor local. Um `next start` usa a mesma
+base e o mesmo diretório `data/`.
+
 ## O que este repo não é
 
 - Não é o Mercados Autônomos

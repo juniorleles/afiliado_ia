@@ -6,122 +6,130 @@ import { MarketSearchCard } from "@/components/operations/market-search-card";
 import { MetricCard } from "@/components/ui/metric-card";
 import { SectionHeader } from "@/components/ui/section-header";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import {
-  attentionItems,
-  latestOpportunities,
-  nextAction,
-  operationsKpis,
-  quickActions,
-  recentActivity,
-} from "@/lib/ui/operations-center";
+import { consoleStore } from "@/lib/console/store";
+import { listCampaigns } from "@/lib/campaigns";
 
 export const metadata: Metadata = { title: "Dashboard" };
+export const dynamic = "force-dynamic";
+
+function greeting(now: Date) {
+  const hour = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hourCycle: "h23", timeZone: "America/Sao_Paulo" }).format(now));
+  if (hour < 12) return "Bom dia";
+  if (hour < 18) return "Boa tarde";
+  return "Boa noite";
+}
 
 export default function DashboardPage() {
+  const now = new Date();
+  const weekday = new Intl.DateTimeFormat("pt-BR", { weekday: "long", timeZone: "America/Sao_Paulo" }).format(now);
+  const store = consoleStore();
+  const searches = store.listSearches();
+  const watchlist = store.readWatchlist();
+  const latest = searches[0] ?? null;
+  const today = now.toISOString().slice(0, 10);
+  const searchesToday = searches.filter((item) => item.createdAt.slice(0, 10) === today).length;
+  let campaigns: { id: number; name: string; publicationStatus: string; updatedAt: string }[] = [];
+  try {
+    campaigns = listCampaigns();
+  } catch {
+    campaigns = [];
+  }
+  const active = campaigns.filter((item) => item.publicationStatus === "published").length;
+  const drafts = campaigns.filter((item) => item.publicationStatus !== "published").length;
+  const next = watchlist.find((item) => item.status === "analise") ?? watchlist[0] ?? null;
+
   return (
     <div className="ds-container flex flex-col gap-ds-32 py-ds-24">
       <header>
-        <h1 className="text-h1">Bom dia, João 👋</h1>
-        <p className="mt-ds-8 text-body text-foreground">Hoje é quarta-feira.</p>
+        <h1 className="text-h1">{greeting(now)}</h1>
+        <p className="mt-ds-8 text-body text-foreground">Hoje é {weekday}.</p>
         <p className="mt-ds-4 text-body text-muted-foreground">Vamos encontrar oportunidades?</p>
-        <p className="mt-ds-8 text-caption text-muted-foreground">Os números e as linhas são exemplos. Nenhuma busca foi enviada.</p>
       </header>
-
       <section aria-labelledby="market-search-heading">
-        <MarketSearchCard />
+        <MarketSearchCard recentSearches={searches.slice(0, 10).map((item) => ({ id: item.id, keyword: item.keyword }))} />
       </section>
-
-      <section aria-labelledby="kpis-heading" className="flex flex-col gap-ds-16">
-        <SectionHeader id="kpis-heading" title="Indicadores" description="Leitura de exemplo para o dia." />
-        <div className="grid gap-ds-16 sm:grid-cols-2 xl:grid-cols-5">
-          {operationsKpis.map((kpi) => (
-            <MetricCard key={kpi.id} subject={kpi.label} value={kpi.value} period="Exemplo" />
-          ))}
+      <section aria-labelledby="kpis-heading">
+        <SectionHeader id="kpis-heading" title="Indicadores" description="Contagens gravadas nesta instalação." />
+        <div className="mt-ds-16 grid gap-ds-16 sm:grid-cols-2 xl:grid-cols-5">
+          <MetricCard subject="Pesquisar hoje" value={String(searchesToday)} period="Hoje" />
+          <MetricCard subject="Produtos encontrados" value={String(latest?.products.length ?? 0)} period="Última busca" />
+          <MetricCard subject="Produtos na fila" value={String(watchlist.length)} period="Fila" />
+          <MetricCard subject="Campanhas em rascunho" value={String(drafts)} period="Base local" />
+          <MetricCard subject="Campanhas ativas" value={String(active)} period="Publicadas" />
         </div>
       </section>
-
-      <section aria-labelledby="actions-heading" className="flex flex-col gap-ds-16">
+      <section aria-labelledby="actions-heading">
         <SectionHeader id="actions-heading" title="Ações principais" />
-        <nav className="flex flex-wrap gap-ds-8">
-          {quickActions.map((action) => (
-            <Button key={action.href} asChild variant={action.primary ? "primary" : "secondary"}>
-              <Link href={action.href}>{action.label}</Link>
-            </Button>
-          ))}
-        </nav>
+        <div className="mt-ds-16 flex flex-wrap gap-ds-8">
+          <Button asChild><Link href="/pesquisa">Pesquisar Mercado</Link></Button>
+          <Button asChild variant="secondary"><Link href="/campanhas">Criar Campanha</Link></Button>
+          <Button asChild variant="secondary"><Link href="/produtos">Ver Produtos</Link></Button>
+          <Button asChild variant="secondary"><Link href="/relatorios">Ver Relatórios</Link></Button>
+        </div>
       </section>
-
-      <div className="grid gap-ds-24 xl:grid-cols-2">
-        <section aria-labelledby="attention-heading" className="flex flex-col gap-ds-16">
-          <SectionHeader id="attention-heading" title="Atenção" />
+      <div className="grid gap-ds-16 lg:grid-cols-2">
+        <section aria-labelledby="attention-heading">
           <Card>
             <CardContent>
-              <ul className="flex flex-col gap-ds-12">
-                {attentionItems.map((item) => (
-                  <li key={item} className="text-body text-foreground">
-                    {item}
-                  </li>
-                ))}
+              <h2 id="attention-heading" className="text-h3">Atenção</h2>
+              <ul className="mt-ds-12 flex flex-col gap-ds-8 text-body">
+                <li>{watchlist.filter((item) => item.status === "analise").length} produtos aguardando análise</li>
+                <li>{watchlist.filter((item) => item.status === "pronto").length} produtos prontos para anunciar</li>
+                <li>{latest?.missingEvidence.length ?? 0} campos em falta na última busca</li>
               </ul>
             </CardContent>
           </Card>
         </section>
-
-        <section aria-labelledby="activity-heading" className="flex flex-col gap-ds-16">
-          <SectionHeader id="activity-heading" title="Atividade recente" />
+        <section aria-labelledby="activity-heading">
           <Card>
             <CardContent>
-              <ol className="flex flex-col gap-ds-12">
-                {recentActivity.map((item) => (
-                  <li key={item.id} className="flex flex-wrap items-baseline justify-between gap-ds-8">
-                    <span className="text-body text-foreground">{item.label}</span>
-                    <span className="text-caption text-muted-foreground">{item.detail}</span>
-                  </li>
-                ))}
-              </ol>
+              <h2 id="activity-heading" className="text-h3">Atividade recente</h2>
+              {searches.length === 0 && campaigns.length === 0 ? <p className="mt-ds-12 text-body text-muted-foreground">Ainda não há atividade gravada.</p> : (
+                <ol className="mt-ds-12 flex flex-col gap-ds-8 text-body">
+                  {searches.slice(0, 4).map((item) => <li key={item.id}>Pesquisa · {item.keyword}</li>)}
+                  {campaigns.slice(0, 2).map((item) => <li key={item.id}>Campanha · {item.name}</li>)}
+                </ol>
+              )}
             </CardContent>
           </Card>
         </section>
       </div>
-
-      <section aria-labelledby="next-heading" className="flex flex-col gap-ds-16">
-        <SectionHeader id="next-heading" title="Próximo passo" description="Uma recomendação de exemplo." />
+      <section aria-labelledby="next-heading">
         <Card>
-          <CardContent className="flex flex-wrap items-center justify-between gap-ds-16">
+          <CardContent className="flex flex-wrap items-center justify-between gap-ds-12">
             <div>
-              <p className="text-body text-foreground">{nextAction.title}</p>
-              <p className="mt-ds-4 text-h3">{nextAction.product}</p>
+              <h2 id="next-heading" className="text-h3">Próximo passo</h2>
+              <p className="mt-ds-8 text-body">{next ? next.name : "Pesquise um mercado para escolher um Product."}</p>
             </div>
-            <Button asChild>
-              <Link href={nextAction.href}>{nextAction.action}</Link>
-            </Button>
+            {next ? <Button asChild><Link href={`/lista/produto?id=${encodeURIComponent(next.id)}`}>Continuar</Link></Button> : <Button asChild><Link href="/pesquisa">Pesquisar Mercado</Link></Button>}
           </CardContent>
         </Card>
       </section>
-
-      <section aria-labelledby="opportunities-heading" className="flex flex-col gap-ds-16">
-        <SectionHeader id="opportunities-heading" title="Oportunidades recentes" description="Lista de exemplo. Nenhuma recomendação foi calculada." />
-        <Table>
-          <caption className="sr-only">Oportunidades de exemplo</caption>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Product</TableHead>
-              <TableHead>Recomendação</TableHead>
-              <TableHead>Concorrência</TableHead>
-              <TableHead>País</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {latestOpportunities.map((row) => (
-              <TableRow key={row.product}>
-                <TableCell>{row.product}</TableCell>
-                <TableCell>{row.recommendation}</TableCell>
-                <TableCell>{row.competition}</TableCell>
-                <TableCell>{row.country}</TableCell>
+      <section aria-labelledby="opportunities-heading">
+        <SectionHeader id="opportunities-heading" title="Oportunidades recentes" description={latest?.recommendation ? `Recomendação da última busca: ${latest.recommendation}` : "Ainda não há uma recomendação calculada."} />
+        <div className="mt-ds-16 overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Product</TableHead>
+                <TableHead>Marca</TableHead>
+                <TableHead>Preço</TableHead>
+                <TableHead>País</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {(latest?.products ?? []).map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell>{product.name}</TableCell>
+                  <TableCell>{product.brand ?? "Não observada"}</TableCell>
+                  <TableCell>{product.priceLabel ?? "Não observado"}</TableCell>
+                  <TableCell>{latest?.country}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {latest === null ? <p className="mt-ds-12 text-body text-muted-foreground">Nenhuma busca gravada.</p> : null}
+        </div>
       </section>
     </div>
   );

@@ -37,7 +37,7 @@ export function NoProductsEmpty(props: { action?: React.ReactNode }) {
     <EmptyState
       icon="produtos"
       title="Nenhum Product"
-      description="Ainda não há um Product nesta lista. Uma pesquisa de mercado de exemplo é o próximo passo."
+      description="Ainda não há um Product nesta lista. Uma pesquisa de mercado é o próximo passo."
       action={
         props.action ?? (
           <Button asChild>
@@ -54,7 +54,7 @@ export function NoCampaignsEmpty(props: { action?: React.ReactNode }) {
     <EmptyState
       icon="campanhas"
       title="Nenhuma campanha"
-      description="Nenhuma campanha aparece nesta lista. Abra Products para escolher um exemplo."
+      description="Nenhuma campanha aparece nesta lista. Abra Products para escolher um Product observado."
       action={
         props.action ?? (
           <Button asChild>
@@ -71,7 +71,7 @@ export function NoReportsEmpty(props: { action?: React.ReactNode }) {
     <EmptyState
       icon="relatorios"
       title="Nenhum relatório"
-      description="Ainda não há um relatório para comparar. Volte às campanhas de exemplo."
+      description="Ainda não há um relatório. Uma pesquisa de mercado gera a primeira leitura."
       action={
         props.action ?? (
           <Button asChild>
@@ -88,7 +88,7 @@ export function NoOpportunitiesEmpty(props: { action?: React.ReactNode }) {
     <EmptyState
       icon="opportunity"
       title="Nenhuma oportunidade"
-      description="Nenhuma oportunidade está nesta lista. Comece por uma pesquisa de exemplo."
+      description="Nenhuma oportunidade está nesta lista. Comece por uma pesquisa de mercado."
       action={
         props.action ?? (
           <Button asChild>
@@ -105,7 +105,7 @@ export function NoSearchResultsEmpty(props: { action?: React.ReactNode }) {
     <EmptyState
       icon="search"
       title="Nenhum resultado"
-      description="A busca de exemplo não devolveu linhas. Ajuste a palavra e tente de novo nesta página."
+      description="A busca não devolveu linhas. Ajuste a palavra e tente de novo."
       action={
         props.action ?? (
           <Button asChild>

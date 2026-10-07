@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { WatchlistProvider } from "@/components/operations/watchlist-provider";
 import { ToastProvider } from "@/components/ui/toast";
 import { applyTheme, type ThemeName } from "@/lib/ui/theme";
 import { focusRing } from "@/components/ui/styles";
@@ -95,7 +94,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <ToastProvider>
-      <WatchlistProvider>
       <div className="min-h-screen">
         {navigating ? <NavigationProgress /> : null}
         <a
@@ -123,7 +121,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </DialogContent>
         </Dialog>
       </div>
-      </WatchlistProvider>
     </ToastProvider>
   );
 }

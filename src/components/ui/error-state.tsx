@@ -56,8 +56,8 @@ export function NetworkErrorState({ onRetry }: { onRetry?: () => void }) {
   return (
     <ErrorPanel
       title="Erro de rede"
-      happened="A página não conseguiu carregar este exemplo."
-      solve="Confira a conexão e tente de novo. Nenhuma busca é enviada."
+      happened="A página não conseguiu carregar."
+      solve="Confira a conexão e tente de novo."
       action={
         onRetry ? (
           <Button type="button" onClick={onRetry}>
@@ -77,8 +77,8 @@ export function SearchErrorState({ onRetry }: { onRetry?: () => void }) {
   return (
     <ErrorPanel
       title="Erro na pesquisa"
-      happened="A pesquisa de exemplo não pôde ser mostrada."
-      solve="Volte ao formulário e envie de novo. O envio permanece nesta página."
+      happened="A pesquisa não pôde ser mostrada."
+      solve="Volte ao formulário e envie de novo."
       action={
         onRetry ? (
           <Button type="button" onClick={onRetry}>
@@ -98,8 +98,8 @@ export function UnauthorizedErrorState() {
   return (
     <ErrorPanel
       title="Acesso não autorizado"
-      happened="Esta área de exemplo pede a conta do operador."
-      solve="Abra Configurações para ver a conta de exemplo. Nenhum login é enviado."
+      happened="Esta área pede autorização."
+      solve="Abra Configurações para ver o estado da conta. Nenhum segredo é mostrado."
       action={
         <Button asChild>
           <Link href="/configuracoes">Abrir configurações</Link>
@@ -113,8 +113,8 @@ export function UnexpectedErrorState({ onRetry }: { onRetry?: () => void }) {
   return (
     <ErrorPanel
       title="Erro inesperado"
-      happened="Algo nesta página de exemplo parou antes de mostrar o conteúdo."
-      solve="Volte ao início ou tente de novo. Nenhum dado é gravado."
+      happened="Esta página parou antes de mostrar o conteúdo."
+      solve="Volte ao início ou tente de novo."
       action={
         onRetry ? (
           <Button type="button" onClick={onRetry}>

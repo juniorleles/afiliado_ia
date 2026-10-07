@@ -40,10 +40,10 @@ export function SidebarNav({ expanded, onNavigate }: { expanded: boolean; onNavi
               className={cn(
                 "flex items-center gap-ds-12 rounded-ds-md px-ds-12 py-ds-8 text-body text-foreground transition-colors duration-ds-fast ease-ds-standard",
                 focusRing,
-                active ? "bg-card text-primary" : "hover:bg-secondary",
+                active ? "bg-card text-primary-text" : "hover:bg-secondary",
               )}
             >
-              <UiIcon name={item.icon} size={20} className={active ? "text-primary" : undefined} />
+              <UiIcon name={item.icon} size={20} className={active ? "text-primary-text" : undefined} />
               <span className={cn("truncate", !expanded && "max-xl:sr-only")}>{item.label}</span>
             </Link>
           );

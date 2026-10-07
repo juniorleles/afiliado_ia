@@ -1,27 +1,3 @@
-export const recentSearches = [
-  "joint pain supplement",
-  "blood sugar support",
-  "hearing support",
-  "sleep aid",
-  "weight loss",
-  "memory support",
-  "skin care",
-  "hair growth",
-  "joint pain",
-  "blood sugar",
-] as const;
-
-export const suggestedKeywords = [
-  "Joint Pain",
-  "Blood Sugar",
-  "Sleep Aid",
-  "Weight Loss",
-  "Memory",
-  "Hearing",
-  "Skin Care",
-  "Hair Growth",
-] as const;
-
 export const marketCountries = [
   { value: "us", label: "United States" },
   { value: "br", label: "Brazil" },
@@ -43,7 +19,7 @@ export const landingPageLimits = [
   { value: "5", label: "5" },
 ] as const;
 
-export const searchProviders = [{ value: "example", label: "Exemplo local" }] as const;
+export const searchProviders = [{ value: "searchapi", label: "SearchApi" }] as const;
 
 export const searchStatusLabel = {
   ready: "Pronto",

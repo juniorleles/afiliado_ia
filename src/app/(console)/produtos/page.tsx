@@ -1,53 +1,41 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PageTemplate } from "@/components/layout/page-template";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ExampleConfirmButton } from "@/components/ux/example-confirm-button";
-import { successMessages } from "@/lib/ui/feedback-messages";
-import { exampleOffers } from "@/lib/ui/shell-examples";
+import { PageTemplate } from "@/components/layout/page-template";
+import { NoProductsEmpty } from "@/components/ui/empty-state";
+import { consoleStore } from "@/lib/console/store";
 
 export const metadata: Metadata = { title: "Products" };
+export const dynamic = "force-dynamic";
 
 export default function ProdutosPage() {
+  const searches = consoleStore().listSearches();
+  const rows = searches.flatMap((search) => search.products.map((product) => ({ search, product })));
   return (
-    <PageTemplate
-      title="Products"
-      description="Lista de exemplo. Nenhum Product foi observado nesta página."
-      primaryAction={
-        <>
-          <Button asChild>
-            <Link href="/campanhas">Ver campanhas</Link>
-          </Button>
-          <ExampleConfirmButton
-            label="Salvar exemplo"
-            title="Salvar Product"
-            description="Isto só confirma o exemplo. Nada é gravado."
-            success={successMessages.produto}
-          />
-        </>
-      }
-    >
-      <Table>
-        <caption className="sr-only">Products de exemplo</caption>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Product</TableHead>
-            <TableHead>Estado</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {exampleOffers.map((offer) => (
-            <TableRow key={offer.name}>
-              <TableCell>{offer.name}</TableCell>
-              <TableCell>
-                <Badge status={offer.status} />
-              </TableCell>
+    <PageTemplate title="Products" description="Products observados nas buscas gravadas." primaryAction={<Button asChild><Link href="/pesquisa">Pesquisar Mercado</Link></Button>}>
+      {rows.length === 0 ? <NoProductsEmpty /> : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Product</TableHead>
+              <TableHead>Marca</TableHead>
+              <TableHead>Preço</TableHead>
+              <TableHead>Keyword</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {rows.map(({ search, product }) => (
+              <TableRow key={`${search.id}-${product.id}`}>
+                <TableCell><Link href={`/pesquisa/resultado/detalhe?busca=${encodeURIComponent(search.id)}&produto=${encodeURIComponent(product.id)}`}>{product.name}</Link></TableCell>
+                <TableCell>{product.brand ?? "Não observada"}</TableCell>
+                <TableCell>{product.priceLabel ?? "Não observado"}</TableCell>
+                <TableCell>{search.keyword}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
     </PageTemplate>
   );
 }

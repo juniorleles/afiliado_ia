@@ -48,7 +48,7 @@ export function Select({
               {options.map((option) => (
                 <SelectPrimitive.Item
                   key={option.value}
-                  className="rounded-ds-sm px-ds-12 py-ds-8 text-body outline-none focus:bg-secondary data-[highlighted]:bg-secondary data-[state=checked]:text-primary"
+                  className="rounded-ds-sm px-ds-12 py-ds-8 text-body outline-none focus:bg-secondary data-[highlighted]:bg-secondary data-[state=checked]:text-primary-text"
                   value={option.value}
                 >
                   <SelectPrimitive.ItemText>{option.label}</SelectPrimitive.ItemText>

@@ -9,15 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Select } from "@/components/ui/select";
+import { runMarketSearch } from "@/app/(console)/actions";
 import {
   landingPageLimits,
   marketCountries,
   marketDevices,
   marketLanguages,
-  recentSearches,
   searchProviders,
   searchStatusLabel,
-  suggestedKeywords,
   type MarketSearchStatus,
 } from "@/lib/ui/market-search";
 
@@ -26,16 +25,15 @@ const defaults = {
   language: "en",
   device: "desktop",
   landingPages: "3",
-  provider: "example",
+  provider: "searchapi",
 };
 
 function optionLabel(options: readonly { value: string; label: string }[], value: string) {
   return options.find((option) => option.value === value)?.label ?? value;
 }
 
-export function MarketSearchCard() {
+export function MarketSearchCard({ recentSearches }: { recentSearches: readonly { id: string; keyword: string }[] }) {
   const keywordRef = useRef<HTMLInputElement>(null);
-  const timerRef = useRef<number | null>(null);
   const errorId = useId();
   const [keyword, setKeyword] = useState("");
   const [country, setCountry] = useState(defaults.country);
@@ -45,12 +43,10 @@ export function MarketSearchCard() {
   const [provider, setProvider] = useState(defaults.provider);
   const [status, setStatus] = useState<MarketSearchStatus>("ready");
   const [error, setError] = useState("");
+  const [resultId, setResultId] = useState("");
 
   useEffect(() => {
     keywordRef.current?.focus();
-    return () => {
-      if (timerRef.current) window.clearTimeout(timerRef.current);
-    };
   }, []);
 
   function focusKeyword() {
@@ -58,7 +54,7 @@ export function MarketSearchCard() {
     keywordRef.current?.select();
   }
 
-  function runSearch(nextKeyword: string) {
+  async function runSearch(nextKeyword: string) {
     const value = nextKeyword.trim();
     if (!value) {
       setError("Informe uma Keyword.");
@@ -69,15 +65,28 @@ export function MarketSearchCard() {
     setError("");
     setKeyword(value);
     setStatus("searching");
-    if (timerRef.current) window.clearTimeout(timerRef.current);
-    const delay = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 450;
-    timerRef.current = window.setTimeout(() => {
-      setStatus(value.toLowerCase() === "falha" ? "failed" : "completed");
-    }, delay);
+    try {
+      const result = await runMarketSearch({
+        keyword: value,
+        country,
+        language,
+        device,
+        maxPages: Number(landingPages),
+      });
+      setResultId(result.id);
+      if (result.status === "REJECTED") {
+        setStatus("failed");
+        setError(result.message);
+        return;
+      }
+      setStatus("completed");
+    } catch {
+      setStatus("failed");
+      setError("A busca não pôde ser concluída.");
+    }
   }
 
   function clearSearch() {
-    if (timerRef.current) window.clearTimeout(timerRef.current);
     setKeyword("");
     setCountry(defaults.country);
     setLanguage(defaults.language);
@@ -86,6 +95,7 @@ export function MarketSearchCard() {
     setProvider(defaults.provider);
     setStatus("ready");
     setError("");
+    setResultId("");
     focusKeyword();
   }
 
@@ -109,7 +119,7 @@ export function MarketSearchCard() {
             Pesquisa de Mercado
           </h2>
           <p className="mt-ds-4 text-body text-muted-foreground">
-            A busca começa aqui. Nenhum pedido sai desta página. A palavra falha mostra o estado de falha.
+            A busca usa SearchApi. Landing Pages e Products observados aparecem nos resultados.
           </p>
         </div>
 
@@ -193,14 +203,14 @@ export function MarketSearchCard() {
           {status !== "searching" ? (
             <span className="text-caption text-muted-foreground">
               {status === "ready" ? "Digite uma Keyword e pressione Enter." : null}
-              {status === "completed" ? "Exemplo concluído. Nada foi enviado." : null}
-              {status === "failed" ? "A palavra falha mostra este exemplo. Tente outra Keyword." : null}
+              {status === "completed" ? "Pesquisa concluída." : null}
+              {status === "failed" ? error : null}
             </span>
           ) : null}
           {status === "completed" ? (
             <Button asChild>
               <Link
-                href={`/pesquisa/resultado?keyword=${encodeURIComponent(keyword)}&country=${country}&language=${language}&device=${device}`}
+                href={`/pesquisa/resultado?busca=${encodeURIComponent(resultId)}`}
               >
                 Ver resultados
               </Link>
@@ -210,28 +220,19 @@ export function MarketSearchCard() {
 
         <div>
           <h3 className="text-h3">Buscas recentes</h3>
-          <ul className="mt-ds-8 flex flex-wrap gap-ds-8">
-            {recentSearches.map((term) => (
-              <li key={term}>
-                <Button type="button" variant="outline" onClick={() => applyKeyword(term)}>
-                  {term}
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div>
-          <h3 className="text-h3">Palavras sugeridas</h3>
-          <ul className="mt-ds-8 flex flex-wrap gap-ds-8">
-            {suggestedKeywords.map((term) => (
-              <li key={term}>
-                <Button type="button" variant="secondary" onClick={() => applyKeyword(term)}>
-                  {term}
-                </Button>
-              </li>
-            ))}
-          </ul>
+          {recentSearches.length === 0 ? (
+            <p className="mt-ds-8 text-body text-muted-foreground">Ainda não há uma busca gravada.</p>
+          ) : (
+            <ul className="mt-ds-8 flex flex-wrap gap-ds-8">
+              {recentSearches.map((term) => (
+                <li key={term.id}>
+                  <Button type="button" variant="outline" onClick={() => applyKeyword(term.keyword)}>
+                    {term.keyword}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </CardContent>
     </Card>
