@@ -11,8 +11,18 @@ const config: Config = {
         card: "var(--color-surface)",
         primary: { DEFAULT: "var(--color-primary)", foreground: "var(--color-on-primary)" },
         secondary: { DEFAULT: "var(--color-secondary)", foreground: "var(--color-on-secondary)" },
-        success: { DEFAULT: "var(--color-success)", subtle: "var(--color-success-bg)" },
-        warning: { DEFAULT: "var(--color-warning)", subtle: "var(--color-warning-bg)" },
+        success: {
+          DEFAULT: "var(--color-success)",
+          subtle: "var(--color-success-bg)",
+          solid: "var(--color-success-solid)",
+        },
+        warning: {
+          DEFAULT: "var(--color-warning)",
+          subtle: "var(--color-warning-bg)",
+          solid: "var(--color-warning-solid)",
+        },
+        review: { DEFAULT: "var(--color-review)", subtle: "var(--color-review-bg)" },
+        danger: { DEFAULT: "var(--color-danger)", subtle: "var(--color-danger-bg)", solid: "var(--color-danger-solid)" },
         info: { DEFAULT: "var(--color-info)", subtle: "var(--color-info-bg)" },
         muted: { DEFAULT: "var(--color-background)", foreground: "var(--color-muted)" },
         accent: { DEFAULT: "var(--color-secondary)", foreground: "var(--color-on-secondary)" },
@@ -46,6 +56,7 @@ const config: Config = {
         "ds-0": "var(--shadow-0)",
         "ds-1": "var(--shadow-1)",
         "ds-2": "var(--shadow-2)",
+        "ds-focus": "var(--focus-ring)",
       },
       fontSize: {
         display: ["var(--type-display-size)", { lineHeight: "var(--type-display-line)", fontWeight: "600" }],
