@@ -68,7 +68,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         if (dialogOpen) return;
         event.preventDefault();
-        const input = document.getElementById("global-search");
+        const market = document.getElementById("market-keyword");
+        const input = market instanceof HTMLInputElement ? market : document.getElementById("global-search");
         if (input instanceof HTMLInputElement) {
           input.focus();
           input.select();

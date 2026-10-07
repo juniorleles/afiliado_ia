@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { MarketSearchCard } from "@/components/operations/market-search-card";
 import { MetricCard } from "@/components/ui/metric-card";
 import { SectionHeader } from "@/components/ui/section-header";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -25,6 +26,10 @@ export default function DashboardPage() {
         <p className="mt-ds-4 text-body text-muted-foreground">Vamos encontrar oportunidades?</p>
         <p className="mt-ds-8 text-caption text-muted-foreground">Os números e as linhas são exemplos. Nenhuma busca foi enviada.</p>
       </header>
+
+      <section aria-labelledby="market-search-heading">
+        <MarketSearchCard />
+      </section>
 
       <section aria-labelledby="kpis-heading" className="flex flex-col gap-ds-16">
         <SectionHeader id="kpis-heading" title="Indicadores" description="Leitura de exemplo para o dia." />
