@@ -11,6 +11,7 @@ export const consoleNav: ConsoleNavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: "dashboard", exact: true },
   { href: "/pesquisa", label: "Pesquisa de Mercado", icon: "pesquisa" },
   { href: "/produtos", label: "Products", icon: "produtos" },
+  { href: "/lista", label: "Lista de decisão", icon: "lista" },
   { href: "/oportunidades", label: "Oportunidades", icon: "opportunity" },
   { href: "/campanhas", label: "Campanhas", icon: "campanhas" },
   { href: "/relatorios", label: "Relatórios", icon: "relatorios" },

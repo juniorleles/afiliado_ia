@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
+import { useWatchlist } from "@/components/operations/watchlist-provider";
 import type { MarketProduct } from "@/lib/ui/market-results";
 
 export function ProductQuickActions({ product }: { product: MarketProduct }) {
   const toast = useToast();
-  const [saved, setSaved] = useState(false);
+  const watchlist = useWatchlist();
+  const saved = watchlist.has(product.id);
   const detailHref = `/pesquisa/resultado/detalhe?produto=${product.id}`;
   const landingHref = `/pesquisa/resultado/landing-page?produto=${product.id}`;
 
@@ -31,8 +32,11 @@ export function ProductQuickActions({ product }: { product: MarketProduct }) {
         type="button"
         variant="secondary"
         onClick={() => {
-          setSaved(true);
-          toast.push({ message: "Lista de exemplo atualizada. Nada foi gravado.", tone: "success" });
+          const result = watchlist.add(product.id);
+          toast.push({
+            message: result === "added" ? "Lista de exemplo atualizada. Nada foi gravado." : "Este Product já está na fila.",
+            tone: "success",
+          });
         }}
       >
         {saved ? "Na lista de exemplo" : "Salvar na lista"}

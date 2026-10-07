@@ -5,6 +5,7 @@ import {
   LayoutGrid,
   Lightbulb,
   LineChart,
+  ListChecks,
   Megaphone,
   Package,
   Search,
@@ -25,6 +26,7 @@ export const uiIcons = {
   landingPage: FileText,
   opportunity: BarChart3,
   recommendation: Lightbulb,
+  lista: ListChecks,
 } as const satisfies Record<string, LucideIcon>;
 
 export type UiIconName = keyof typeof uiIcons;
@@ -41,6 +43,7 @@ export const uiIconLabels: Record<UiIconName, string> = {
   landingPage: "Landing page",
   opportunity: "Opportunity",
   recommendation: "Recommendation",
+  lista: "Lista de decisão",
 };
 
 export function UiIcon({
