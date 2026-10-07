@@ -1,0 +1,141 @@
+{
+  "packageVersion": "0.1.0",
+  "node": "v20.20.2",
+  "startedAt": "2026-10-07T00:58:34.291Z",
+  "elapsedMs": 6661,
+  "keys": {
+    "SEARCHAPI_API_KEY": "SET",
+    "DEMO_PUBLISH": "MISSING",
+    "GOOGLE_ADS_CLIENT_ID": "MISSING",
+    "GOOGLE_ADS_CLIENT_SECRET": "MISSING",
+    "GOOGLE_ADS_DEVELOPER_TOKEN": "MISSING",
+    "GOOGLE_ADS_REFRESH_TOKEN": "MISSING",
+    "GOOGLE_ADS_CUSTOMER_ID": "MISSING",
+    "GOOGLE_ADS_LOGIN_CUSTOMER_ID": "MISSING",
+    "GOOGLE_ADS_TEST_CUSTOMER_ID": "MISSING"
+  },
+  "demoPublish": false,
+  "googleReady": false,
+  "db": [
+    {
+      "name": "presell-os.db",
+      "size": 1282048,
+      "mtime": "2026-09-25T18:04:01.761Z"
+    },
+    {
+      "name": "presell-os.db-shm",
+      "size": 32768,
+      "mtime": "2026-09-29T20:33:37.452Z"
+    },
+    {
+      "name": "presell-os.db-wal",
+      "size": 3328992,
+      "mtime": "2026-10-01T13:54:24.120Z"
+    }
+  ],
+  "search": {
+    "status": "OK",
+    "issues": [],
+    "ms": 2578,
+    "requestCount": 1,
+    "frozen": true
+  },
+  "normalizer": {
+    "status": "OK",
+    "issues": [],
+    "serpCount": 45,
+    "organicCount": 8,
+    "sponsoredCount": 37,
+    "httpsSponsored": 3,
+    "frozen": true
+  },
+  "landing": {
+    "status": "OK",
+    "issues": [],
+    "ms": 3962,
+    "pageCount": 3,
+    "pages": [
+      {
+        "id": "landing-session-1-page-1",
+        "httpStatus": 200,
+        "finalUrl": "https://www.omegaxl.com/tv-offer-omegaxl?utm_source=google&utm_medium=cpc&utm_campaign=WP_SRCH_g;brand_omegaxl;target_nonbranded;language_blended;&utm_term=&utm_content=727737758053&utm_brand=omegaxl&utm_target=nonbranded&utm_language=blended&g_acctid=617-598-8525&g_campaignid=21379060998&g_adgroupid=167191029281&g_adid=727737758053&g_keyword=omega%20joint%20and%20muscle%20support&g_keywordid=kwd-2373604383563&g_network=g&g_type=search_display&gad_source=1&gad_campaignid=21379060998&gbraid=0AAAAADAMCOFnZHgKqwW3uSOclCE6Cr-ab&gclid=EAIaIQobChMI4-z86tmmlwMVwD2HAx1x9R-qEAAYASAAEgKEBfD_BwE",
+        "redirectCount": 1,
+        "html": true,
+        "bytes": 560136
+      },
+      {
+        "id": "landing-session-1-page-2",
+        "httpStatus": 200,
+        "finalUrl": "https://www.qunol.com/collections/turmeric?nbt=nb%3Aadwords%3Ag%3A16507387645%3A170932759356%3A722566925404&nb_adtype=&nb_kwd=liquid+turmeric+with+black+pepper&nb_ti=kwd-356684690291&nb_mi=&nb_pc=&nb_pi=&nb_ppi=&nb_placement=&nb_li_ms=&nb_lp_ms=&nb_fii=&nb_ap=&nb_mt=b&tw_source=google&tw_adid=722566925404&tw_campaign=16507387645&tw_kwdid=kwd-356684690291&gad_source=1&gad_campaignid=16507387645&gclid=EAIaIQobChMI4-z86tmmlwMVwD2HAx1x9R-qEAAYAiAAEgLksvD_BwE",
+        "redirectCount": 2,
+        "html": true,
+        "bytes": 338240
+      },
+      {
+        "id": "landing-session-1-page-3",
+        "httpStatus": 200,
+        "finalUrl": "https://stonehengehealth.com/products/dynamic-joint?shopping=1otp&nbt=nb%3Aadwords%3Ag%3A22931171463%3A185038352792%3A771091711131&nb_adtype=pla&nb_kwd=&nb_ti=pla-2486818280128&nb_mi=132971357&nb_pc=online&nb_pi=SHDYNJOINT1-A&nb_ppi=2486818280128&nb_placement=&nb_li_ms=&nb_lp_ms=&nb_fii=&nb_ap=&nb_mt=&tw_source=google&tw_adid=771091711131&tw_campaign=22931171463&tw_kwdid=pla-2486818280128&utm_source=google&utm_medium=ppc&utm_campaign=22931171463&utm_term=&gad_source=1&gad_campaignid=22931171463&gbraid=0AAAAAC_ffgcP70TN-kVBadrduw8ApdgJw&gclid=EAIaIQobChMI4-z86tmmlwMVwD2HAx1x9R-qEAQYASABEgJgTfD_BwE",
+        "redirectCount": 2,
+        "html": true,
+        "bytes": 1312814
+      }
+    ],
+    "frozen": true
+  },
+  "products": {
+    "status": "OK",
+    "issues": [],
+    "count": 3,
+    "observed": [
+      {
+        "productName": "TV Offer - OmegaXL",
+        "brand": null,
+        "price": "49.95"
+      },
+      {
+        "productName": "Turmeric Curcumin Supplements",
+        "brand": null,
+        "price": null
+      },
+      {
+        "productName": "Dynamic Joint®",
+        "brand": "Stonehenge Health",
+        "price": "49.95"
+      }
+    ],
+    "graphNodes": 40,
+    "frozen": true
+  },
+  "market": {
+    "status": "OK",
+    "issues": [],
+    "brands": 1,
+    "categories": 0,
+    "prices": 1,
+    "frozen": true
+  },
+  "opportunity": {
+    "score": "OK",
+    "scoreIssues": [],
+    "rank": "OK",
+    "rankIssues": [],
+    "ordered": [
+      "1:joint-pain-supplement"
+    ],
+    "portfolio": "OK",
+    "portfolioIssues": [],
+    "recommendation": "OK",
+    "recommendationIssues": [],
+    "kinds": [
+      "MONITOR"
+    ]
+  },
+  "ads": {
+    "demoPublish": false,
+    "sent": false,
+    "campaignIssues": [],
+    "adGroupIssues": [],
+    "rsaIssues": []
+  },
+  "optimization": "Google Ads credentials are missing, and DEMO_PUBLISH is not true, so no campaign resource was available to read."
+}

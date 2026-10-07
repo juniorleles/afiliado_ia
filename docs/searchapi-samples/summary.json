@@ -1,0 +1,139 @@
+{
+  "creditsBefore": 100,
+  "creditsAfter": 93,
+  "creditsConsumed": 7,
+  "searchRequests": 10,
+  "http200": 7,
+  "averageLatencyMs": 4755,
+  "averagePayloadBytes": 88428,
+  "requests": [
+    {
+      "id": "01-connectivity-joint-pain-supplement",
+      "httpStatus": 200,
+      "latencyMs": 3335,
+      "payloadBytes": 57045,
+      "params": {
+        "engine": "google",
+        "device": "desktop",
+        "gl": "us",
+        "hl": "en",
+        "q": "joint pain supplement"
+      }
+    },
+    {
+      "id": "02-keyword-blood-sugar-support",
+      "httpStatus": 200,
+      "latencyMs": 2982,
+      "payloadBytes": 205012,
+      "params": {
+        "engine": "google",
+        "device": "desktop",
+        "gl": "us",
+        "hl": "en",
+        "q": "blood sugar support"
+      }
+    },
+    {
+      "id": "02-keyword-hearing-support",
+      "httpStatus": 200,
+      "latencyMs": 2466,
+      "payloadBytes": 77651,
+      "params": {
+        "engine": "google",
+        "device": "desktop",
+        "gl": "us",
+        "hl": "en",
+        "q": "hearing support"
+      }
+    },
+    {
+      "id": "02-keyword-weight-loss",
+      "httpStatus": 200,
+      "latencyMs": 5029,
+      "payloadBytes": 105075,
+      "params": {
+        "engine": "google",
+        "device": "desktop",
+        "gl": "us",
+        "hl": "en",
+        "q": "weight loss"
+      }
+    },
+    {
+      "id": "02-keyword-sleep-aid",
+      "httpStatus": 200,
+      "latencyMs": 10014,
+      "payloadBytes": 70093,
+      "params": {
+        "engine": "google",
+        "device": "desktop",
+        "gl": "us",
+        "hl": "en",
+        "q": "sleep aid"
+      }
+    },
+    {
+      "id": "06-locale-br-pt",
+      "httpStatus": 200,
+      "latencyMs": 1702,
+      "payloadBytes": 25162,
+      "params": {
+        "engine": "google",
+        "device": "desktop",
+        "gl": "br",
+        "hl": "pt",
+        "q": "joint pain supplement"
+      }
+    },
+    {
+      "id": "07-device-mobile",
+      "httpStatus": 200,
+      "latencyMs": 7757,
+      "payloadBytes": 78956,
+      "params": {
+        "engine": "google",
+        "device": "mobile",
+        "gl": "us",
+        "hl": "en",
+        "q": "joint pain supplement"
+      }
+    },
+    {
+      "id": "08-error-empty-keyword",
+      "httpStatus": 400,
+      "latencyMs": 151,
+      "payloadBytes": 63,
+      "params": {
+        "engine": "google",
+        "device": "desktop",
+        "gl": "us",
+        "hl": "en",
+        "q": ""
+      }
+    },
+    {
+      "id": "08-error-invalid-parameter",
+      "httpStatus": 400,
+      "latencyMs": 242,
+      "payloadBytes": 70,
+      "params": {
+        "engine": "google",
+        "q": "probe",
+        "device": "not-a-device"
+      }
+    },
+    {
+      "id": "08-error-invalid-country",
+      "httpStatus": 400,
+      "latencyMs": 429,
+      "payloadBytes": 56,
+      "params": {
+        "engine": "google",
+        "q": "probe",
+        "device": "desktop",
+        "hl": "en",
+        "gl": "zz"
+      }
+    }
+  ]
+}

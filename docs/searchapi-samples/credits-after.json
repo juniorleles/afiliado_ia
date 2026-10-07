@@ -1,0 +1,41 @@
+{
+  "label": "credits-after",
+  "httpStatus": 200,
+  "latencyMs": 152,
+  "headers": {
+    "access-control-allow-headers": "Origin, Content-Type, Accept, Authorization",
+    "access-control-allow-methods": "GET, POST, OPTIONS",
+    "access-control-allow-origin": "*",
+    "access-control-max-age": "7200",
+    "alt-svc": "h3=\":443\"; ma=86400",
+    "cache-control": "max-age=0, private, must-revalidate",
+    "connection": "keep-alive",
+    "content-length": "191",
+    "content-type": "application/json; charset=utf-8",
+    "date": "Tue, 06 Oct 2026 12:35:42 GMT",
+    "etag": "W/\"e4358b5a5a7f58e81448c5612f8ae524\"",
+    "referrer-policy": "strict-origin-when-cross-origin",
+    "strict-transport-security": "max-age=63072000; includeSubDomains",
+    "via": "1.1 54d64563bc7d40becd60b5425777fc1a.cloudfront.net (CloudFront)",
+    "x-amz-cf-id": "SvmW_sEJ3Hv5WwIRywlpig7Te0qefGYR8kxf9LWQePk6dqJ0sMtz3w==",
+    "x-amz-cf-pop": "GRU1-P5",
+    "x-cache": "Miss from cloudfront",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "SAMEORIGIN",
+    "x-permitted-cross-domain-policies": "none",
+    "x-request-id": "b46216a1-35b9-4195-95a0-3303b690827f",
+    "x-runtime": "0.014099",
+    "x-xss-protection": "0"
+  },
+  "body": {
+    "account": {
+      "current_month_usage": 0,
+      "monthly_allowance": 0,
+      "remaining_credits": 93
+    },
+    "api_usage": {
+      "searches_this_hour": 7,
+      "hourly_rate_limit": 200000
+    }
+  }
+}
