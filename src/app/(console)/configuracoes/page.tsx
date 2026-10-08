@@ -60,7 +60,7 @@ export default function ConfiguracoesPage() {
           ))}
         </ul>
         <p className="mt-ds-16 text-body">
-          <Link href="/admin/system/readiness">Abrir o diagnóstico na administração</Link>
+          <Link href="/admin/system/readiness">Abrir a central do sistema</Link>
         </p>
       </section>
     </PageTemplate>

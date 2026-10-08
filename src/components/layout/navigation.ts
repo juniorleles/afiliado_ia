@@ -68,7 +68,7 @@ export const adminNav: ConsoleNavItem[] = [
   { href: "/admin/validation", label: "Validação", icon: "recommendation", active: (pathname) => pathname.startsWith("/admin/validation") },
   { href: "/admin#analises", label: "Análises", icon: "relatorios", active: (pathname) => /\/analytics(\/|$)/.test(pathname) },
   { href: "/admin/discovery", label: "Descoberta", icon: "search", active: (pathname) => pathname.startsWith("/admin/discovery") },
-  { href: "/admin/system/readiness", label: "Configurações", icon: "configuracoes", active: (pathname) => pathname.startsWith("/admin/system") },
+  { href: "/admin/system/readiness", label: "Sistema", icon: "configuracoes", active: (pathname) => pathname.startsWith("/admin/system") },
 ];
 
 export function adminCrumbs(pathname: string): BreadcrumbItem[] {
@@ -82,7 +82,7 @@ export function adminCrumbs(pathname: string): BreadcrumbItem[] {
   }
   if (pathname.startsWith("/admin/validation")) return [adminHome, { label: "Validação" }];
   if (pathname.startsWith("/admin/discovery")) return [adminHome, { label: "Descoberta" }];
-  if (pathname.startsWith("/admin/system")) return [adminHome, { label: "Configurações" }];
+  if (pathname.startsWith("/admin/system")) return [adminHome, { label: "Sistema" }];
   if (pathname.startsWith("/admin/lp-") || pathname.startsWith("/admin/visual-concepts/")) return [adminHome, { label: "Landing pages" }];
   if (pathname.startsWith("/admin/product-")) return [adminHome, { label: "Produtos" }];
   if (/\/analytics(\/|$)/.test(pathname)) return [adminHome, { label: "Análises" }];
