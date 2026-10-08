@@ -6,7 +6,7 @@
  * never throws.
  */
 import { GOOGLE_ADS_API_VERSION, type GoogleAuthTransport } from "../google-ads-live/google-auth-client.ts";
-import { createGoogleMetricsClient } from "./google-metrics-client";
+import { createGoogleMetricsClient, resolveMetricWindow } from "./google-metrics-client";
 import { mapAdGroupMetrics, mapCampaignMetrics, mapRsaMetrics } from "./metrics-mapper";
 import type { MetricsMetadata } from "./metrics-context";
 import {
@@ -82,22 +82,23 @@ export function createMetricsCollector(options: MetricsCollectorOptions = {}): M
         const metadata = isRecord(input.executionMetadata) ? ({ ...input.executionMetadata } as MetricsMetadata) : {};
         const accessToken = (input.session as { accessToken: string }).accessToken.trim();
         const developerToken = (input.developerToken as string).trim();
+        const metricWindow = resolveMetricWindow(metadata);
         const campaignMetrics: CampaignMetrics[] = [];
         const adGroupMetrics: AdGroupMetrics[] = [];
         const rsaMetrics: RsaMetrics[] = [];
         let requestCount = 0;
         for (const resourceName of names) {
-          const campaign = await client.readCampaign(apiVersion, customerId, developerToken, accessToken, resourceName);
+          const campaign = await client.readCampaign(apiVersion, customerId, developerToken, accessToken, resourceName, metricWindow);
           requestCount += campaign.ok ? campaign.read.requestCount : 1;
           if (!campaign.ok) return refused(campaign.issues, metadata);
           const mappedCampaign = mapCampaignMetrics(resourceName, campaign.read.rows);
           if (!mappedCampaign.ok) return refused(mappedCampaign.issues, metadata);
-          const groups = await client.readAdGroups(apiVersion, customerId, developerToken, accessToken, resourceName);
+          const groups = await client.readAdGroups(apiVersion, customerId, developerToken, accessToken, resourceName, metricWindow);
           requestCount += groups.ok ? groups.read.requestCount : 1;
           if (!groups.ok) return refused(groups.issues, metadata);
           const mappedGroups = mapAdGroupMetrics(resourceName, customerId, groups.read.rows);
           if (!mappedGroups.ok) return refused(mappedGroups.issues, metadata);
-          const ads = await client.readAds(apiVersion, customerId, developerToken, accessToken, resourceName);
+          const ads = await client.readAds(apiVersion, customerId, developerToken, accessToken, resourceName, metricWindow);
           requestCount += ads.ok ? ads.read.requestCount : 1;
           if (!ads.ok) return refused(ads.issues, metadata);
           const mappedAds = mapRsaMetrics(resourceName, customerId, ads.read.rows);

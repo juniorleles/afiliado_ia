@@ -26,20 +26,41 @@ function quoted(resourceName: string): string {
   return `'${resourceName}'`;
 }
 
-function windowClause(): string {
-  return `segments.date DURING ${METRICS_DATE_RANGE}`;
+const METRIC_PRESETS = new Set(["TODAY", "YESTERDAY", "LAST_7_DAYS", "LAST_30_DAYS"]);
+const CUSTOM_WINDOW = /^BETWEEN '\d{4}-\d{2}-\d{2}' AND '\d{4}-\d{2}-\d{2}'$/;
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+export function resolveMetricWindow(metadata: Record<string, unknown> | undefined): string {
+  const value = metadata?.metricWindow;
+  if (typeof value === "string" && METRIC_PRESETS.has(value)) return value;
+  const start = metadata?.metricStart;
+  const end = metadata?.metricEnd;
+  if (typeof start === "string" && typeof end === "string" && DAY.test(start) && DAY.test(end)) return `BETWEEN '${start}' AND '${end}'`;
+  return METRICS_DATE_RANGE;
 }
 
-export function campaignMetricsQuery(resourceName: string): string {
-  return `SELECT ${CAMPAIGN_METRICS} FROM campaign WHERE campaign.resource_name = ${quoted(resourceName)} AND ${windowClause()}`;
+function safeRange(range?: string): string {
+  if (range && METRIC_PRESETS.has(range)) return range;
+  if (range && CUSTOM_WINDOW.test(range)) return range;
+  return METRICS_DATE_RANGE;
 }
 
-export function adGroupMetricsQuery(resourceName: string): string {
-  return `SELECT ${GROUP_METRICS} FROM ad_group WHERE campaign.resource_name = ${quoted(resourceName)} AND ${windowClause()}`;
+function windowClause(range?: string): string {
+  const safe = safeRange(range);
+  if (safe.startsWith("BETWEEN ")) return `segments.date ${safe}`;
+  return `segments.date DURING ${safe}`;
 }
 
-export function rsaMetricsQuery(resourceName: string): string {
-  return `SELECT ${AD_METRICS} FROM ad_group_ad WHERE campaign.resource_name = ${quoted(resourceName)} AND ad_group_ad.ad.type = 'RESPONSIVE_SEARCH_AD' AND ${windowClause()}`;
+export function campaignMetricsQuery(resourceName: string, range?: string): string {
+  return `SELECT ${CAMPAIGN_METRICS} FROM campaign WHERE campaign.resource_name = ${quoted(resourceName)} AND ${windowClause(range)}`;
+}
+
+export function adGroupMetricsQuery(resourceName: string, range?: string): string {
+  return `SELECT ${GROUP_METRICS} FROM ad_group WHERE campaign.resource_name = ${quoted(resourceName)} AND ${windowClause(range)}`;
+}
+
+export function rsaMetricsQuery(resourceName: string, range?: string): string {
+  return `SELECT ${AD_METRICS} FROM ad_group_ad WHERE campaign.resource_name = ${quoted(resourceName)} AND ad_group_ad.ad.type = 'RESPONSIVE_SEARCH_AD' AND ${windowClause(range)}`;
 }
 
 function requestHeaders(developerToken: string, accessToken: string): Record<string, string> {
@@ -83,11 +104,11 @@ export function createGoogleMetricsClient(transport?: GoogleAuthTransport) {
   }
 
   return {
-    readCampaign: (apiVersion: string, customerId: string, developerToken: string, accessToken: string, resourceName: string) =>
-      read(apiVersion, customerId, developerToken, accessToken, campaignMetricsQuery(resourceName)),
-    readAdGroups: (apiVersion: string, customerId: string, developerToken: string, accessToken: string, resourceName: string) =>
-      read(apiVersion, customerId, developerToken, accessToken, adGroupMetricsQuery(resourceName)),
-    readAds: (apiVersion: string, customerId: string, developerToken: string, accessToken: string, resourceName: string) =>
-      read(apiVersion, customerId, developerToken, accessToken, rsaMetricsQuery(resourceName)),
+    readCampaign: (apiVersion: string, customerId: string, developerToken: string, accessToken: string, resourceName: string, range?: string) =>
+      read(apiVersion, customerId, developerToken, accessToken, campaignMetricsQuery(resourceName, range)),
+    readAdGroups: (apiVersion: string, customerId: string, developerToken: string, accessToken: string, resourceName: string, range?: string) =>
+      read(apiVersion, customerId, developerToken, accessToken, adGroupMetricsQuery(resourceName, range)),
+    readAds: (apiVersion: string, customerId: string, developerToken: string, accessToken: string, resourceName: string, range?: string) =>
+      read(apiVersion, customerId, developerToken, accessToken, rsaMetricsQuery(resourceName, range)),
   };
 }

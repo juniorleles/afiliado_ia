@@ -75,10 +75,18 @@ export const adminNav: ConsoleNavItem[] = [
   { href: "/admin#analises", label: "Análises", icon: "relatorios", active: (pathname) => /\/analytics(\/|$)/.test(pathname) },
   { href: "/admin/discovery", label: "Descoberta", icon: "search", active: (pathname) => pathname.startsWith("/admin/discovery") },
   { href: "/admin/system/readiness", label: "Sistema", icon: "configuracoes", active: (pathname) => pathname.startsWith("/admin/system") },
+  { href: "/admin/google-ads/operacoes", label: "Google Ads", icon: "googleAds", active: (pathname) => pathname.startsWith("/admin/google-ads") },
 ];
 
 export function adminCrumbs(pathname: string): BreadcrumbItem[] {
   if (pathname === "/admin") return [{ label: "Início" }];
+  if (pathname.startsWith("/admin/google-ads")) {
+    return [
+      { label: "Administração", href: "/admin" },
+      { label: "Google Ads", href: "/admin/google-ads/operacoes" },
+      { label: "Operações" },
+    ];
+  }
   if (/^\/admin\/\d+\/google-ads\/?$/.test(pathname)) {
     return [
       { label: "Administração", href: "/admin" },

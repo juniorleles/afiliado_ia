@@ -746,6 +746,61 @@ export function migrate(db: Database.Database) {
       new Date().toISOString(),
     );
   }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS google_ads_operation_snapshots (
+      id TEXT PRIMARY KEY,
+      kind TEXT NOT NULL,
+      customer_id TEXT NOT NULL,
+      campaign_resource_name TEXT NOT NULL,
+      body_json TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS google_ads_operation_actions (
+      id TEXT PRIMARY KEY,
+      snapshot_id TEXT,
+      kind TEXT NOT NULL,
+      label TEXT NOT NULL,
+      resource_name TEXT NOT NULL,
+      reason TEXT NOT NULL,
+      evidence_json TEXT NOT NULL,
+      confidence TEXT NOT NULL,
+      expected_impact TEXT NOT NULL,
+      status TEXT NOT NULL,
+      payload_json TEXT,
+      operator TEXT,
+      decided_at TEXT,
+      executed_at TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS google_ads_operation_audits (
+      id TEXT PRIMARY KEY,
+      action_id TEXT NOT NULL,
+      before_json TEXT NOT NULL,
+      after_json TEXT NOT NULL,
+      operator TEXT NOT NULL,
+      reason TEXT NOT NULL,
+      resource_name TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS google_ads_operation_events (
+      id TEXT PRIMARY KEY,
+      kind TEXT NOT NULL,
+      operator TEXT NOT NULL,
+      detail TEXT NOT NULL,
+      resource_name TEXT,
+      created_at TEXT NOT NULL
+    );
+  `);
+  const operations = db.prepare("SELECT version FROM schema_migrations WHERE version = 15").get() as { version: number } | undefined;
+  if (!operations) {
+    db.prepare("INSERT INTO schema_migrations (version, name, appliedAt) VALUES (15, 'google-ads-live-operations', ?)").run(
+      new Date().toISOString(),
+    );
+  }
 }
 
 export function schemaVersion(db = getDb()): number {

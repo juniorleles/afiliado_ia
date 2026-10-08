@@ -75,7 +75,7 @@ export default async function GoogleAdsPublishPage({
     <PageTemplate
       title="Publicar no Google Ads"
       description="Campanha de pesquisa. Todos os recursos nascem pausados e não podem veicular."
-      primaryAction={<Button asChild variant="secondary"><Link href={`/admin/${campaign.id}/edit?aba=publicacao`}>Voltar à campanha</Link></Button>}
+      primaryAction={<div className="flex flex-wrap gap-ds-8"><Button asChild variant="secondary"><Link href="/admin/google-ads/operacoes">Operações</Link></Button><Button asChild variant="secondary"><Link href={`/admin/${campaign.id}/edit?aba=publicacao`}>Voltar à campanha</Link></Button></div>}
     >
       <section aria-label="Assistente de publicação no Google Ads" className="flex flex-col gap-ds-24">
         {aviso === "pausada" ? <Alert tone="success" title="Campanha pausada">Os identificadores foram gravados. Nada ficou elegível para veicular.</Alert> : null}
