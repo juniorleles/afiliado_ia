@@ -96,7 +96,7 @@ export function LayoutEditor({
         </div>
         <ul className="max-h-72 space-y-1 overflow-auto rounded-md border border-zinc-800 p-2">
           {resolved.sections.map((section) => (
-            <li key={section.id}>
+            <li key={section.id} data-preview-section={section.sectionId}>
               <button type="button" onClick={() => setSelectedId(section.id)} className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm ${section.id === selected?.id ? "bg-zinc-800 text-zinc-100" : "text-zinc-300"}`}>
                 <span>{section.label}{section.duplicate ? " · copy" : ""}</span>
                 <span className="text-xs text-zinc-500">{section.visible ? "Visible" : "Hidden"}{section.collapsed ? " · Collapsed" : " · Expanded"}{section.pinned ? " · Pinned" : ""}{section.locked ? " · Locked" : ""}</span>

@@ -325,7 +325,7 @@ export function MediaEditor({
             const src = presentationSrc(slot.effective.src);
             const position = CROP_POSITIONS.has(slot.effective.crop.trim().toLowerCase()) ? slot.effective.crop : "center";
             return (
-              <figure key={slot.slot.id} data-preview-slot={slot.slot.id} className="rounded-md border border-zinc-800 p-3">
+              <figure key={slot.slot.id} data-preview-slot={slot.slot.id} data-preview-section={slot.slot.section} className="rounded-md border border-zinc-800 p-3">
                 <figcaption className="text-xs uppercase tracking-wide text-zinc-500">{slot.slot.label}</figcaption>
                 {src ? (
                   <img src={src} alt={slot.effective.decorative ? "" : slot.effective.alt} className="mt-2 max-h-40 w-full object-contain" style={{ transform: `rotate(${slot.effective.rotation}deg)`, objectPosition: position }} />

@@ -278,11 +278,11 @@ function CampaignCardView({ campaign, googleAds }: { campaign: AdminCampaignCard
             <MenuLink href={`/admin/product-health/${campaign.id}`}>Saúde do produto</MenuLink>
             <MenuLink href={`/admin/product-editor/${campaign.id}`}>Editor do produto</MenuLink>
             <MenuLink href={`/admin/product-editor/${campaign.id}#completeness`}>Completude</MenuLink>
-            <MenuLink href={`/admin/lp-builder/${campaign.id}`}>Landing page</MenuLink>
-            <MenuLink href={`/admin/lp-visual/${campaign.id}`}>Visual</MenuLink>
-            <MenuLink href={`/admin/lp-media/${campaign.id}`}>Mídia</MenuLink>
-            <MenuLink href={`/admin/lp-layout/${campaign.id}`}>Layout</MenuLink>
-            <MenuLink href={`/admin/lp-versions/${campaign.id}`}>Histórico</MenuLink>
+            <MenuLink href={`/admin/${campaign.id}/edit?aba=landing`}>Landing page</MenuLink>
+            <MenuLink href={`/admin/${campaign.id}/edit?aba=landing&ferramenta=visual`}>Visual</MenuLink>
+            <MenuLink href={`/admin/${campaign.id}/edit?aba=landing&ferramenta=media`}>Mídia</MenuLink>
+            <MenuLink href={`/admin/${campaign.id}/edit?aba=landing&ferramenta=layout`}>Layout</MenuLink>
+            <MenuLink href={`/admin/${campaign.id}/edit?aba=landing&ferramenta=versoes`}>Histórico</MenuLink>
             {campaign.published ? (
               <li role="none">
                 <UnpublishButton id={campaign.id} name={campaign.name} />

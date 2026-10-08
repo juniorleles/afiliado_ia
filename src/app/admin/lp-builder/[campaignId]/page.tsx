@@ -6,7 +6,14 @@ import { CONTENT_LIMITS } from "@/lib/lp-builder/content";
 import { builderEditorState } from "@/lib/lp-content-render";
 import { BuilderEditor } from "@/app/admin/lp-builder/[campaignId]/builder-editor";
 
-export default async function LandingPageBuilderPage({ params }: { params: Promise<{ campaignId: string }> }) {
+export default async function LandingPageBuilderPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ campaignId: string }>;
+  searchParams?: Promise<{ embedded?: string | string[] }>;
+}) {
+  const embedded = (await searchParams)?.embedded === "studio";
   await requireAdmin();
   const id = Number((await params).campaignId);
   if (!Number.isInteger(id) || id < 1) notFound();
@@ -16,7 +23,7 @@ export default async function LandingPageBuilderPage({ params }: { params: Promi
 
   return (
     <div data-preview-wide className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      {embedded ? null : <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-widest text-emerald-400">Landing Page Builder</p>
           <h2 className="mt-1 text-2xl font-semibold">{campaign.name}</h2>
@@ -45,7 +52,7 @@ export default async function LandingPageBuilderPage({ params }: { params: Promi
             Admin
           </Link>
         </div>
-      </div>
+      </div>}
       <BuilderEditor
         campaignId={campaign.id}
         previewHref={`/admin/preview/${campaign.slug}`}

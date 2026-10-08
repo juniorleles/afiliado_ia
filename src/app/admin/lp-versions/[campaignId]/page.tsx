@@ -5,7 +5,14 @@ import { getCampaignById } from "@/lib/campaigns";
 import { listPageVersions, versionAutosaveEnabled } from "@/lib/lp-builder/version-store";
 import { VersionHistory } from "@/app/admin/lp-versions/[campaignId]/version-history";
 
-export default async function VersionHistoryPage({ params }: { params: Promise<{ campaignId: string }> }) {
+export default async function VersionHistoryPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ campaignId: string }>;
+  searchParams?: Promise<{ embedded?: string | string[] }>;
+}) {
+  const embedded = (await searchParams)?.embedded === "studio";
   await requireAdmin();
   const id = Number((await params).campaignId);
   if (!Number.isInteger(id) || id < 1) notFound();
@@ -15,7 +22,7 @@ export default async function VersionHistoryPage({ params }: { params: Promise<{
 
   return (
     <div data-preview-wide className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      {embedded ? null : <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-widest text-emerald-400">Version history</p>
           <h2 className="mt-1 text-2xl font-semibold">{campaign.name}</h2>
@@ -34,7 +41,7 @@ export default async function VersionHistoryPage({ params }: { params: Promise<{
             Admin
           </Link>
         </div>
-      </div>
+      </div>}
       <VersionHistory
         campaignId={campaign.id}
         previewHref={`/admin/preview/${campaign.slug}`}

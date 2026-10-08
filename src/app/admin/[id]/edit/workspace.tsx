@@ -6,12 +6,9 @@ import { DeleteButton } from "@/app/admin/delete-button";
 import { DuplicateButton } from "@/app/admin/duplicate-button";
 import { UnpublishButton } from "@/app/admin/unpublish-button";
 import { updateCampaignAction } from "@/app/admin/actions";
+import { LandingStudio, type LandingTool } from "@/app/admin/[id]/edit/landing-studio";
 import { WorkspaceCrumbName, WorkspaceTabs } from "@/app/admin/[id]/edit/workspace-tabs";
-import LandingPageBuilderPage from "@/app/admin/lp-builder/[campaignId]/page";
-import LayoutBuilderPage from "@/app/admin/lp-layout/[campaignId]/page";
-import MediaManagerPage from "@/app/admin/lp-media/[campaignId]/page";
 import VersionHistoryPage from "@/app/admin/lp-versions/[campaignId]/page";
-import VisualEditorPage from "@/app/admin/lp-visual/[campaignId]/page";
 import ProductEditorPage from "@/app/admin/product-editor/[campaignId]/page";
 import ProductHealthPage from "@/app/admin/product-health/[campaignId]/page";
 import AnalyticsPage from "@/app/admin/[id]/analytics/page";
@@ -32,7 +29,7 @@ import { getLatestVisualQaReport } from "@/lib/visual-qa/store";
 const TABS = ["visao", "landing", "produto", "validacao", "analytics", "publicacao", "historico"] as const;
 type TabId = (typeof TABS)[number];
 
-const LANDING_TOOLS = ["builder", "visual", "layout", "media", "versoes"] as const;
+const LANDING_TOOLS = ["builder", "visual", "layout", "media", "versoes", "preview"] as const;
 const PRODUCT_TOOLS = ["editor", "saude"] as const;
 const VALIDATION_TOOLS = ["verificacao", "laboratorio"] as const;
 
@@ -190,7 +187,19 @@ export async function CampaignWorkspace({
         className="flex flex-col gap-ds-16 outline-none focus-visible:shadow-ds-focus"
       >
         {aba === "visao" ? <Overview campaign={campaign} published={published} gateLabel={policyLabel(lint.gate)} score={score} googleAds={googleAds} updated={formatUpdated(campaign.updatedAt)} /> : null}
-        {aba === "landing" ? <LandingTools campaignId={campaign.id} ferramenta={toolOf(one(query.ferramenta), LANDING_TOOLS, "builder")} params={params} /> : null}
+        {aba === "landing" ? (
+          <LandingStudio
+            campaign={campaign}
+            product={product}
+            brand={brand}
+            published={published}
+            score={score}
+            gateLabel={policyLabel(lint.gate)}
+            adsConnected={adsConnected}
+            ferramenta={toolOf(one(query.ferramenta), LANDING_TOOLS, "builder") as LandingTool}
+            params={params}
+          />
+        ) : null}
         {aba === "produto" ? (
           <ProductTools
             campaignId={campaign.id}
@@ -298,36 +307,6 @@ function Overview({
           unpublishOnSave={published}
         />
       </section>
-    </div>
-  );
-}
-
-function LandingTools({
-  campaignId,
-  ferramenta,
-  params,
-}: {
-  campaignId: number;
-  ferramenta: (typeof LANDING_TOOLS)[number];
-  params: Promise<{ campaignId: string; id: string }>;
-}) {
-  const items = [
-    { id: "builder", href: workspaceHref(campaignId, "landing", "builder"), label: "Conteúdo" },
-    { id: "visual", href: workspaceHref(campaignId, "landing", "visual"), label: "Visual" },
-    { id: "layout", href: workspaceHref(campaignId, "landing", "layout"), label: "Layout" },
-    { id: "media", href: workspaceHref(campaignId, "landing", "media"), label: "Mídia" },
-    { id: "versoes", href: workspaceHref(campaignId, "landing", "versoes"), label: "Versões" },
-  ];
-  return (
-    <div className="flex flex-col gap-ds-16">
-      <WorkspaceTabs label="Ferramentas da landing page" current={ferramenta} items={items} />
-      <Embed>
-        {ferramenta === "builder" ? <LandingPageBuilderPage params={params} /> : null}
-        {ferramenta === "visual" ? <VisualEditorPage params={params} /> : null}
-        {ferramenta === "layout" ? <LayoutBuilderPage params={params} /> : null}
-        {ferramenta === "media" ? <MediaManagerPage params={params} /> : null}
-        {ferramenta === "versoes" ? <VersionHistoryPage params={params} /> : null}
-      </Embed>
     </div>
   );
 }

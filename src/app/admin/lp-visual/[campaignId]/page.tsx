@@ -29,7 +29,14 @@ const FIELD_LINES: Array<[string, VisualSectionId, string]> = [
   ["closing.cta", "closingCta", "button"],
 ];
 
-export default async function VisualEditorPage({ params }: { params: Promise<{ campaignId: string }> }) {
+export default async function VisualEditorPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ campaignId: string }>;
+  searchParams?: Promise<{ embedded?: string | string[] }>;
+}) {
+  const embedded = (await searchParams)?.embedded === "studio";
   await requireAdmin();
   const id = Number((await params).campaignId);
   if (!Number.isInteger(id) || id < 1) notFound();
@@ -49,7 +56,7 @@ export default async function VisualEditorPage({ params }: { params: Promise<{ c
 
   return (
     <div data-preview-wide className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      {embedded ? null : <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-widest text-emerald-400">Visual Editor</p>
           <h2 className="mt-1 text-2xl font-semibold">{campaign.name}</h2>
@@ -60,7 +67,7 @@ export default async function VisualEditorPage({ params }: { params: Promise<{ c
           <Link href={`/admin/preview/${campaign.slug}`} className="text-emerald-400 hover:underline">Preview</Link>
           <Link href="/admin" className="text-zinc-300 hover:underline">Admin</Link>
         </div>
-      </div>
+      </div>}
       <VisualEditor campaignId={campaign.id} saved={saved} lines={lines} initialAudit={listThemeAudit(campaign.id)} />
     </div>
   );

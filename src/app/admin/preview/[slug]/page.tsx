@@ -36,8 +36,10 @@ export default async function PreviewPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ design?: string | string[]; layer?: string | string[] }>;
+  searchParams: Promise<{ design?: string | string[]; layer?: string | string[]; embedded?: string | string[] }>;
 }) {
+  const embeddedFlag = (await searchParams).embedded;
+  const embedded = (Array.isArray(embeddedFlag) ? embeddedFlag[0] : embeddedFlag) === "studio";
   const { slug } = await params;
   const { design, layer: layerParam } = await searchParams;
   const stored = getCampaignBySlug(slug);
@@ -67,6 +69,7 @@ export default async function PreviewPage({
         ) : (
           <p className="text-base font-semibold tracking-wide">PREVIEW</p>
         )}
+        {embedded ? null : (
         <p className="mt-1 text-zinc-300">
           Showing {layer === "imported" ? "imported" : "effective"} values.{" "}
           <Link href={`/admin/preview/${slug}?layer=imported`} className="text-emerald-400 hover:underline">
@@ -101,6 +104,7 @@ export default async function PreviewPage({
             Back to admin
           </Link>
         </p>
+        )}
       </div>
       {overlay ? (
         <PreviewOverlay

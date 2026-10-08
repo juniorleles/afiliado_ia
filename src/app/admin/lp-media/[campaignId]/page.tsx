@@ -9,7 +9,14 @@ import { parsePresellPage } from "@/lib/presell-page";
 import { resolvePresellRenderAssets } from "@/lib/presell-render-assets-server";
 import { MediaEditor } from "@/app/admin/lp-media/[campaignId]/media-editor";
 
-export default async function MediaManagerPage({ params }: { params: Promise<{ campaignId: string }> }) {
+export default async function MediaManagerPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ campaignId: string }>;
+  searchParams?: Promise<{ embedded?: string | string[] }>;
+}) {
+  const embedded = (await searchParams)?.embedded === "studio";
   await requireAdmin();
   const id = Number((await params).campaignId);
   if (!Number.isInteger(id) || id < 1) notFound();
@@ -27,7 +34,7 @@ export default async function MediaManagerPage({ params }: { params: Promise<{ c
 
   return (
     <div data-preview-wide className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      {embedded ? null : <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-widest text-emerald-400">Media Manager</p>
           <h2 className="mt-1 text-2xl font-semibold">{campaign.name}</h2>
@@ -38,7 +45,7 @@ export default async function MediaManagerPage({ params }: { params: Promise<{ c
           <Link href={`/admin/preview/${campaign.slug}`} className="text-emerald-400 hover:underline">Preview</Link>
           <Link href="/admin" className="text-zinc-300 hover:underline">Admin</Link>
         </div>
-      </div>
+      </div>}
       <MediaEditor
         campaignId={campaign.id}
         initialSlots={slots}
