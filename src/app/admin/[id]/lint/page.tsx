@@ -33,7 +33,7 @@ const GATE_LABEL: Record<PublicationGate, string> = {
 };
 
 export default async function LintPage({ params, searchParams }: Props) {
-  const notice = await (searchParams ?? Promise.resolve({}));
+  const notice = await (searchParams ?? Promise.resolve<{ embedded?: string | string[] }>({}));
   const embedded = (Array.isArray(notice.embedded) ? notice.embedded[0] : notice.embedded) === "studio";
   const { id: rawId } = await params;
   const id = Number(rawId);

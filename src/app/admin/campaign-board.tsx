@@ -133,7 +133,7 @@ function MoreMenu({ name, children }: { name: string; children: ReactNode }) {
     function onPointer(event: MouseEvent) {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     }
-    function onKey(event: KeyboardEvent) {
+    function onKey(event: globalThis.KeyboardEvent) {
       if (event.key === "Escape") {
         setOpen(false);
         buttonRef.current?.focus();
