@@ -1,13 +1,14 @@
 "use client";
 
 import { duplicateCampaignAction } from "@/app/admin/actions";
+import { Button } from "@/components/ui/button";
 
-export function DuplicateButton({ id }: { id: number }) {
+export function DuplicateButton({ id, name }: { id: number; name: string }) {
   return (
     <form action={duplicateCampaignAction.bind(null, id)}>
-      <button type="submit" className="text-body text-primary-text hover:underline">
+      <Button type="submit" variant="secondary" aria-label={`Duplicar ${name}`}>
         Duplicar
-      </button>
+      </Button>
     </form>
   );
 }

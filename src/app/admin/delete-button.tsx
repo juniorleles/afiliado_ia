@@ -12,7 +12,11 @@ export function DeleteButton({ id, name }: { id: number; name: string }) {
         }
       }}
     >
-      <button type="submit" className="text-body text-red-700 hover:underline">
+      <button
+        type="submit"
+        role="menuitem"
+        className="flex w-full rounded-ds-sm px-ds-12 py-ds-8 text-left text-body text-danger outline-none hover:bg-secondary focus-visible:shadow-ds-focus"
+      >
         Excluir
       </button>
     </form>
