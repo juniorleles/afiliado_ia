@@ -681,6 +681,42 @@ export function migrate(db: Database.Database) {
       new Date().toISOString(),
     );
   }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS google_ads_accounts (
+      customer_id TEXT PRIMARY KEY,
+      account_name TEXT,
+      currency_code TEXT,
+      time_zone TEXT,
+      manager INTEGER NOT NULL,
+      test_account INTEGER NOT NULL,
+      account_status TEXT,
+      access_level TEXT,
+      selected INTEGER NOT NULL,
+      campaign_count INTEGER,
+      paused_count INTEGER,
+      enabled_count INTEGER,
+      removed_count INTEGER,
+      permissions_json TEXT NOT NULL,
+      discovered_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS google_ads_discovery (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      sync_state TEXT NOT NULL,
+      latency_ms INTEGER,
+      last_success_at TEXT,
+      last_error TEXT,
+      api_version TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+  `);
+  const discovery = db.prepare("SELECT version FROM schema_migrations WHERE version = 13").get() as { version: number } | undefined;
+  if (!discovery) {
+    db.prepare("INSERT INTO schema_migrations (version, name, appliedAt) VALUES (13, 'google-ads-account-discovery', ?)").run(
+      new Date().toISOString(),
+    );
+  }
 }
 
 export function schemaVersion(db = getDb()): number {

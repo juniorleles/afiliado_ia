@@ -109,7 +109,10 @@ assert(view.apiStatus === "Operacional", "API status follows a successful custom
 assert(view.refreshToken === "Configurado", "refresh token is present");
 assert(view.clientId === "Configurado" && view.clientSecret === "Configurado", "client credentials are present");
 assert(view.cloudProject === "demo-cloud-project", "cloud project is read from the environment");
-assert(view.lastSynchronization === "Não sincronizado", "synchronization stays idle");
+assert(view.lastSynchronization !== "Não sincronizado", "account discovery records a sync time");
+assert(view.accounts.length === 1, "one accessible account is stored");
+assert(view.accounts[0]?.customerId === "1234567890", "the stored account keeps the customer id");
+assert(!readFileSync(dbFile).toString("utf8").includes(":mutate"), "discovery does not record a mutate call");
 const secrets = store.readGoogleAdsOAuthSecrets();
 assert(secrets.refreshToken === REFRESH && secrets.clientSecret === SECRET, "stored secrets decrypt to the granted values");
 const dumped = readFileSync(dbFile);

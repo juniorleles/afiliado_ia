@@ -9,13 +9,20 @@ import { GOOGLE_ADS_API_VERSION, createGoogleAuthHttpClient, type GoogleAuthTran
 import { readCustomers } from "@/lib/google-ads-live/customer-manager";
 import { exchangeAuthorizationCode, exchangeRefreshToken } from "@/lib/google-ads-live/oauth-manager";
 import { googleAdsEncryptionReady } from "./cipher";
+import { discoverGoogleAdsAccounts } from "./discovery";
 import { googleAdsEnvironmentReady, readGoogleAdsEnvironment } from "./environment";
 import {
   clearGoogleAdsSession,
+  readGoogleAdsDiscoveryHealth,
   readGoogleAdsOAuthSecrets,
+  readGoogleAdsOAuthView,
+  replaceGoogleAdsAccounts,
   saveGoogleAdsClientCredentials,
   saveGoogleAdsRefreshToken,
+  selectGoogleAdsAccount,
   writeGoogleAdsConnection,
+  writeGoogleAdsDiscoveryHealth,
+  type GoogleAdsStoredAccount,
 } from "./store";
 
 export const GOOGLE_ADS_OAUTH_SCOPE = "https://www.googleapis.com/auth/adwords";
@@ -154,6 +161,7 @@ async function checkCustomers(accessToken: string, transport?: GoogleAuthTranspo
       lastConnectionAt: new Date().toISOString(),
       lastError: failureText("desenvolvedor"),
     });
+    noteDiscoveryFailure("desenvolvedor");
     return "desenvolvedor";
   }
   const client = createGoogleAuthHttpClient(transport);
@@ -170,21 +178,42 @@ async function checkCustomers(accessToken: string, transport?: GoogleAuthTranspo
       lastConnectionAt: new Date().toISOString(),
       lastError: failureText(notice),
     });
+    noteDiscoveryFailure(notice);
     return notice;
   }
-  const account = customers.read.accounts[0];
+  const discovered = await discoverGoogleAdsAccounts(client, GOOGLE_ADS_API_VERSION, env.developerToken, accessToken, customers.read);
+  const selected = replaceGoogleAdsAccounts(discovered.accounts);
   const manager = customers.read.accounts.find((item) => item.manager);
+  const now = new Date().toISOString();
+  writeGoogleAdsDiscoveryHealth({
+    syncState: "connected",
+    latencyMs: discovered.latencyMs,
+    lastSuccessAt: now,
+    lastError: null,
+    apiVersion: GOOGLE_ADS_API_VERSION,
+  });
   writeGoogleAdsConnection({
     oauthStatus: "connected",
     apiStatus: "success",
-    customerId: account?.customerId ?? customers.read.accessibleCustomerIds[0] ?? null,
+    customerId: selected?.customerId ?? null,
     loginCustomerId: env.loginCustomerId ?? manager?.customerId ?? null,
-    accountName: account?.descriptiveName ?? null,
-    accessLevel: "Autorizado",
-    lastConnectionAt: new Date().toISOString(),
+    accountName: selected?.accountName ?? null,
+    accessLevel: selected?.accessLevel ?? "Autorizado",
+    lastConnectionAt: now,
     lastError: null,
   });
   return "sucesso";
+}
+
+function noteDiscoveryFailure(notice: GoogleAdsOAuthNotice): void {
+  const previous = readGoogleAdsDiscoveryHealth();
+  writeGoogleAdsDiscoveryHealth({
+    syncState: notice === "conta" ? "permission_error" : "needs_authorization",
+    latencyMs: previous.latencyMs,
+    lastSuccessAt: previous.lastSuccessAt,
+    lastError: failureText(notice),
+    apiVersion: GOOGLE_ADS_API_VERSION,
+  });
 }
 
 export async function testStoredGoogleAdsConnection(transport?: GoogleAuthTransport): Promise<GoogleAdsOAuthNotice> {
@@ -217,6 +246,7 @@ export async function testStoredGoogleAdsConnection(transport?: GoogleAuthTransp
       lastConnectionAt: new Date().toISOString(),
       lastError: failureText(publicFailure(oauth.issues[0]?.message ?? "")),
     });
+    noteDiscoveryFailure(publicFailure(oauth.issues[0]?.message ?? ""));
     return publicFailure(oauth.issues[0]?.message ?? "");
   }
   return checkCustomers(oauth.grant.accessToken, transport);
@@ -224,4 +254,22 @@ export async function testStoredGoogleAdsConnection(transport?: GoogleAuthTransp
 
 export function disconnectStoredGoogleAds(): void {
   clearGoogleAdsSession();
+}
+
+export function activateGoogleAdsAccount(customerId: string): boolean {
+  const selected = selectGoogleAdsAccount(customerId);
+  if (!selected) return false;
+  const env = readGoogleAdsEnvironment();
+  const view = readGoogleAdsOAuthView();
+  writeGoogleAdsConnection({
+    oauthStatus: view.oauthStatus === "error" ? "error" : "connected",
+    apiStatus: view.apiStatus === "unchecked" ? "success" : view.apiStatus,
+    customerId: selected.customerId,
+    loginCustomerId: env.loginCustomerId ?? (selected.manager ? selected.customerId : view.loginCustomerId),
+    accountName: selected.accountName,
+    accessLevel: selected.accessLevel ?? view.accessLevel ?? "Autorizado",
+    lastConnectionAt: view.lastConnectionAt,
+    lastError: view.lastError,
+  });
+  return true;
 }

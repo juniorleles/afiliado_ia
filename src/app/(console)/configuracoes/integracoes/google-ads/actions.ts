@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { operatorMayManageGoogleAds } from "@/lib/integrations/google-ads-oauth/access";
-import { disconnectStoredGoogleAds, testStoredGoogleAdsConnection } from "@/lib/integrations/google-ads-oauth/flow";
+import { activateGoogleAdsAccount, disconnectStoredGoogleAds, testStoredGoogleAdsConnection } from "@/lib/integrations/google-ads-oauth/flow";
 
 const PAGE = "/configuracoes/integracoes/google-ads";
 
@@ -16,4 +16,11 @@ export async function testGoogleAdsConnectionAction(): Promise<void> {
   if (!(await operatorMayManageGoogleAds())) redirect(`/admin/login?next=${encodeURIComponent(PAGE)}`);
   const notice = await testStoredGoogleAdsConnection();
   redirect(`${PAGE}?aviso=${notice}`);
+}
+
+export async function selectGoogleAdsAccountAction(formData: FormData): Promise<void> {
+  if (!(await operatorMayManageGoogleAds())) redirect(`/admin/login?next=${encodeURIComponent(PAGE)}`);
+  const customerId = String(formData.get("customerId") ?? "");
+  const selected = activateGoogleAdsAccount(customerId);
+  redirect(`${PAGE}?aviso=${selected ? "selecionada" : "conta"}`);
 }
