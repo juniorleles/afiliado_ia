@@ -138,7 +138,7 @@ export function AppLayout({
           <div className="flex min-w-0 flex-1 flex-col">
             <Header theme={theme} onThemeChange={setTheme} menuOpen={menuOpen} onMenuOpen={setMenuOpen} crumbsFor={resolvedCrumbs} extra={headerExtra} />
             <main id="conteudo" key={pathname} className="ds-page-enter flex-1">
-              {resolvedTone === "admin" && pathname !== "/admin" && !pathname.startsWith("/admin/system") && !/^\/admin\/\d+\/edit\/?$/.test(pathname) ? (
+              {resolvedTone === "admin" && pathname !== "/admin" && !pathname.startsWith("/admin/system") && !pathname.startsWith("/admin/validation") && !/^\/admin\/\d+\/edit\/?$/.test(pathname) ? (
                 <div className="mx-auto min-h-full w-full max-w-3xl bg-zinc-950 px-6 py-10 text-zinc-100 has-[[data-preview-wide]]:max-w-[1480px]">
                   {children}
                 </div>

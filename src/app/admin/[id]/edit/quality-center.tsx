@@ -227,11 +227,7 @@ export function QualityCenter({
           <LintPage params={params} searchParams={Promise.resolve({ embedded: "studio" })} />
         </Embed>
       ) : null}
-      {ferramenta === "laboratorio" ? (
-        <Embed>
-          <ValidationLabPage />
-        </Embed>
-      ) : null}
+      {ferramenta === "laboratorio" ? <ValidationLabPage /> : null}
       {ferramenta === "analytics" ? (
         <Embed>
           <AnalyticsPage params={params} searchParams={Promise.resolve({ range: one(query.range) })} />

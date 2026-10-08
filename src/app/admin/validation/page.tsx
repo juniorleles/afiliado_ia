@@ -1,6 +1,9 @@
-import Link from "next/link";
 import { createValidationRunAction } from "@/app/admin/validation/actions";
-import { listValidationRuns } from "@/lib/validation/store";
+import { ValidationBoard } from "@/app/admin/validation/validation-board";
+import { brandFromFacts, formatUpdated, gateLabel, gateTone, policyShare, type ValidationRow } from "@/app/admin/validation/validation-view";
+import { Button } from "@/components/ui/button";
+import { getCampaignById } from "@/lib/campaigns";
+import { listValidationCandidates, listValidationRuns } from "@/lib/validation/store";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -11,53 +14,75 @@ async function createRun() {
 }
 
 export default async function ValidationLabPage() {
-  const runs = listValidationRuns();
+  const rows = buildRows();
   return (
-    <div data-preview-wide className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+    <section aria-label="Central de validação" className="ds-container flex flex-col gap-ds-24 py-ds-24">
+      <header className="flex flex-col gap-ds-12 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-widest text-emerald-400">Local Validation Lab</p>
-          <h2 className="mt-1 text-xl font-semibold">Product &amp; LP diversity</h2>
-          <p className="mt-2 max-w-2xl text-sm text-zinc-400">
-            Diagnostic only. Candidates stay DRAFT / INTERNAL. No publish, no PAGE_VIEW, no pixel, no affiliate hop.
-            Do not fabricate products — import operator URLs or attach existing drafts.
-          </p>
-          <p className="mt-2 text-xs uppercase tracking-wide text-amber-300">
-            Production deployment: PAUSED_BY_OPERATOR
+          <h1 className="text-h1">Validações</h1>
+          <p className="mt-ds-8 max-w-2xl text-body text-muted-foreground">
+            Diagnóstico interno. Os candidatos permanecem em rascunho. Esta tela não publica e não envia anúncios.
           </p>
         </div>
         <form action={createRun}>
-          <button
-            type="submit"
-            className="rounded-md bg-emerald-500 px-3 py-2 text-sm font-medium text-zinc-950 hover:bg-emerald-400"
-          >
-            Nova run
-          </button>
+          <Button type="submit">Nova validação</Button>
         </form>
-      </div>
-
-      {runs.length === 0 ? (
-        <p className="rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-8 text-center text-zinc-400">
-          Nenhuma run ainda. Crie uma e selecione produtos reais.
-        </p>
+      </header>
+      {rows.length === 0 ? (
+        <p className="text-body text-muted-foreground">Nenhuma validação gravada.</p>
       ) : (
-        <ul className="divide-y divide-zinc-800 rounded-md border border-zinc-800">
-          {runs.map((run) => (
-            <li key={run.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-              <div>
-                <p className="font-mono text-sm">{run.id}</p>
-                <p className="text-xs text-zinc-400">
-                  {run.createdAt} · {run.status} · products={run.products.length} · diversity=
-                  {run.structuralDiversity || "—"}
-                </p>
-              </div>
-              <Link href={`/admin/validation/${run.id}`} className="text-sm text-emerald-400 hover:underline">
-                Abrir
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <ValidationBoard rows={rows} />
       )}
-    </div>
+    </section>
   );
+}
+
+function buildRows(): ValidationRow[] {
+  let runs: ReturnType<typeof listValidationRuns> = [];
+  try {
+    runs = listValidationRuns();
+  } catch {
+    return [];
+  }
+  const rows: ValidationRow[] = [];
+  for (const run of runs) {
+    const candidates = readCandidates(run.id);
+    const score = run.summary
+      ? policyShare(run.summary.POLICY_READY_COUNT, run.summary.POLICY_REVIEW_COUNT, run.summary.POLICY_BLOCKED_COUNT)
+      : "—";
+    const products = run.products.length > 0 ? run.products : [null];
+    for (const product of products) {
+      const candidate = product
+        ? candidates.find((item) => item.strategyMeta?.recommended && item.productKey === product.key)
+          || candidates.find((item) => item.productKey === product.key)
+          || null
+        : candidates[0] ?? null;
+      const gate = run.status === "FAILED" ? "FAILED" : candidate?.contentQa.finalGate || candidate?.contentQa.policyGate || "";
+      const campaignId = product?.campaignId;
+      const campaign = campaignId ? getCampaignById(campaignId) : null;
+      rows.push({
+        key: `${run.id}:${product?.key || "empty"}`,
+        href: `/admin/validation/${run.id}`,
+        date: run.createdAt,
+        dateLabel: formatUpdated(run.createdAt),
+        campaign: campaign?.name || (campaignId ? `Campanha ${campaignId}` : "Não associada"),
+        product: product?.name || "Nenhum produto",
+        brand: brandFromFacts(candidate?.factsJson),
+        score,
+        publication: candidate ? "Rascunho" : "Não observada",
+        policy: gate ? gateLabel(gate) : gateLabel(run.status === "FAILED" ? "FAILED" : ""),
+        policyTone: gateTone(gate || (run.status === "FAILED" ? "FAILED" : "")),
+        recommendation: product?.RECOMMENDED_STRATEGY || candidate?.approach || "Não registrada",
+      });
+    }
+  }
+  return rows;
+}
+
+function readCandidates(runId: string) {
+  try {
+    return listValidationCandidates(runId);
+  } catch {
+    return [];
+  }
 }
