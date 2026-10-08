@@ -50,6 +50,12 @@ export const ENV_VAR_SPECS: EnvVarSpec[] = [
   { name: "S3_ACCESS_KEY_ID", cls: "SECRET", requiredInProduction: false, description: "Object storage access key" },
   { name: "S3_SECRET_ACCESS_KEY", cls: "SECRET", requiredInProduction: false, description: "Object storage secret key" },
   { name: "VISUAL_QA_BASE_URL", cls: "SERVER_ONLY", requiredInProduction: false, description: "Playwright inspection origin" },
+  { name: "GOOGLE_ADS_CLIENT_ID", cls: "SECRET", requiredInProduction: false, description: "Google OAuth client id for the Ads consent screen. Server-side only." },
+  { name: "GOOGLE_ADS_CLIENT_SECRET", cls: "SECRET", requiredInProduction: false, description: "Google OAuth client secret. Server-side only. Never rendered." },
+  { name: "GOOGLE_ADS_REDIRECT_URI", cls: "SERVER_ONLY", requiredInProduction: false, description: "Exact OAuth redirect URI registered in Google Cloud." },
+  { name: "GOOGLE_ADS_DEVELOPER_TOKEN", cls: "SECRET", requiredInProduction: false, description: "Google Ads developer token used by CustomerService. Never rendered." },
+  { name: "GOOGLE_ADS_LOGIN_CUSTOMER_ID", cls: "SERVER_ONLY", requiredInProduction: false, description: "Optional manager customer id." },
+  { name: "GOOGLE_CLOUD_PROJECT", cls: "SERVER_ONLY", requiredInProduction: false, description: "Google Cloud project id shown on the integration page." },
 ];
 
 const SECRET_NAMES = new Set(ENV_VAR_SPECS.filter((s) => s.cls === "SECRET").map((s) => s.name));

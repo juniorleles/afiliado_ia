@@ -43,6 +43,12 @@ export function operatorCrumbs(pathname: string): BreadcrumbItem[] {
   if (pathname.startsWith("/lista/rascunho")) return [home, { label: "Watchlist", href: "/lista" }, { label: "Rascunho" }];
   if (pathname.startsWith("/lista")) return [home, { label: "Watchlist" }];
   if (pathname.startsWith("/oportunidades")) return [home, { label: "Relatórios", href: "/relatorios" }, { label: "Oportunidade" }];
+  if (pathname.startsWith("/configuracoes/integracoes/google-ads")) {
+    return [home, { label: "Configurações", href: "/configuracoes" }, { label: "Integrações", href: "/configuracoes/integracoes" }, { label: "Google Ads" }];
+  }
+  if (pathname.startsWith("/configuracoes/integracoes")) {
+    return [home, { label: "Configurações", href: "/configuracoes" }, { label: "Integrações" }];
+  }
   if (pathname === "/dashboard") return [{ label: "Início" }];
   const current = consoleNav.find((item) => isConsoleNavActive(pathname, item));
   if (!current) return [{ label: "Início" }];

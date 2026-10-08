@@ -656,6 +656,31 @@ export function migrate(db: Database.Database) {
       new Date().toISOString(),
     );
   }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS google_ads_oauth (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      client_id_cipher TEXT,
+      client_secret_cipher TEXT,
+      refresh_token_cipher TEXT,
+      environment TEXT NOT NULL,
+      customer_id TEXT,
+      login_customer_id TEXT,
+      account_name TEXT,
+      access_level TEXT,
+      oauth_status TEXT NOT NULL,
+      api_status TEXT NOT NULL,
+      last_connection_at TEXT,
+      last_error TEXT,
+      updated_at TEXT NOT NULL
+    );
+  `);
+  const oauth = db.prepare("SELECT version FROM schema_migrations WHERE version = 12").get() as { version: number } | undefined;
+  if (!oauth) {
+    db.prepare("INSERT INTO schema_migrations (version, name, appliedAt) VALUES (12, 'google-ads-oauth', ?)").run(
+      new Date().toISOString(),
+    );
+  }
 }
 
 export function schemaVersion(db = getDb()): number {

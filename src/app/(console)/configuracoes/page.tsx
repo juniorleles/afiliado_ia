@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { PageTemplate } from "@/components/layout/page-template";
 import { readIntegrationConfiguration } from "@/lib/console/configuration";
+import { readGoogleAdsIntegrationStatus } from "@/lib/integrations/google-ads-oauth/status";
 import { productionReadiness, type ReadinessFlag } from "@/lib/readiness";
 
 export const metadata: Metadata = { title: "Configurações" };
@@ -30,6 +32,7 @@ function flagLabel(value: ReadinessFlag | string) {
 
 export default function ConfiguracoesPage() {
   const config = readIntegrationConfiguration();
+  const googleAds = readGoogleAdsIntegrationStatus();
   const health = productionReadiness();
   const rows = [
     ["Idioma do console", config.language],
@@ -48,6 +51,19 @@ export default function ConfiguracoesPage() {
           </li>
         ))}
       </ul>
+      <section aria-labelledby="integracoes-heading" className="mt-ds-32">
+        <h2 id="integracoes-heading" className="text-h3">Integrações</h2>
+        <p className="mt-ds-8 text-body text-muted-foreground">A conexão do Google Ads é feita por OAuth. O operador não cola tokens.</p>
+        <div className="mt-ds-16 flex flex-wrap items-center justify-between gap-ds-12">
+          <span className="text-body">Google Ads</span>
+          <Badge tone={googleAds.connectionTone}>{googleAds.connection}</Badge>
+        </div>
+        <p className="mt-ds-16">
+          <Button asChild variant="secondary">
+            <Link href="/configuracoes/integracoes">Abrir integrações</Link>
+          </Button>
+        </p>
+      </section>
       <section aria-labelledby="diagnostics-heading" className="mt-ds-32">
         <h2 id="diagnostics-heading" className="text-h3">Diagnóstico do sistema</h2>
         <p className="mt-ds-8 text-body text-muted-foreground">Saúde da instalação. Os valores de configuração não aparecem aqui.</p>

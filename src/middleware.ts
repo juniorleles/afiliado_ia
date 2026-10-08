@@ -15,7 +15,7 @@ import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 function classifyPath(pathname: string): "PUBLIC" | "ADMIN" | "INTERNAL" | "WEBHOOK" | "STATIC" {
   if (pathname.startsWith("/_next") || pathname === "/favicon.ico") return "STATIC";
-  if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) return "ADMIN";
+  if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin") || pathname.startsWith("/configuracoes/integracoes")) return "ADMIN";
   if (pathname.startsWith("/visual-frame") || pathname.startsWith("/preview")) return "INTERNAL";
   if (pathname.startsWith("/api/clickbank/ins")) return "WEBHOOK";
   return "PUBLIC";
