@@ -22,7 +22,15 @@ function useDesktopSidebar() {
   return desktop;
 }
 
-export function SidebarNav({ expanded, onNavigate }: { expanded: boolean; onNavigate?: () => void }) {
+export function SidebarNav({
+  expanded,
+  onNavigate,
+  nav = consoleNav,
+}: {
+  expanded: boolean;
+  onNavigate?: () => void;
+  nav?: typeof consoleNav;
+}) {
   const pathname = usePathname();
   const desktop = useDesktopSidebar();
   const labelsVisible = expanded || desktop;
@@ -30,7 +38,7 @@ export function SidebarNav({ expanded, onNavigate }: { expanded: boolean; onNavi
   return (
     <nav aria-label="Principal">
       <ul className="flex flex-col gap-ds-4">
-        {consoleNav.map((item) => {
+        {nav.map((item) => {
           const active = isConsoleNavActive(pathname, item);
           const link = (
             <Link
@@ -48,7 +56,7 @@ export function SidebarNav({ expanded, onNavigate }: { expanded: boolean; onNavi
             </Link>
           );
           return (
-            <li key={item.href}>
+            <li key={item.label}>
               {labelsVisible ? link : <Tooltip content={item.label}>{link}</Tooltip>}
             </li>
           );
@@ -58,7 +66,21 @@ export function SidebarNav({ expanded, onNavigate }: { expanded: boolean; onNavi
   );
 }
 
-export function Sidebar({ expanded, onExpandedChange }: { expanded: boolean; onExpandedChange: (expanded: boolean) => void }) {
+export function Sidebar({
+  expanded,
+  onExpandedChange,
+  nav = consoleNav,
+  homeHref = "/dashboard",
+  homeLabel = "Console",
+  mark = "C",
+}: {
+  expanded: boolean;
+  onExpandedChange: (expanded: boolean) => void;
+  nav?: typeof consoleNav;
+  homeHref?: string;
+  homeLabel?: string;
+  mark?: string;
+}) {
   return (
     <aside
       className={cn(
@@ -67,17 +89,17 @@ export function Sidebar({ expanded, onExpandedChange }: { expanded: boolean; onE
       )}
     >
       <div className="flex h-14 items-center px-ds-16">
-        <Link href="/dashboard" className={cn("truncate text-label text-foreground", focusRing)}>
-          <span className={cn(!expanded && "max-xl:sr-only")}>Console</span>
+        <Link href={homeHref} className={cn("truncate text-label text-foreground", focusRing)}>
+          <span className={cn(!expanded && "max-xl:sr-only")}>{homeLabel}</span>
           {!expanded ? (
             <span className="xl:hidden" aria-hidden>
-              P
+              {mark}
             </span>
           ) : null}
         </Link>
       </div>
       <div className="flex-1 overflow-y-auto px-ds-8">
-        <SidebarNav expanded={expanded} />
+        <SidebarNav expanded={expanded} nav={nav} />
       </div>
       <div className="hidden p-ds-8 md:block xl:hidden">
         <button

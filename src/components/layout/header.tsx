@@ -1,7 +1,8 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { Breadcrumb, type BreadcrumbItem } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import type { ThemeName } from "@/lib/ui/theme";
 import { operatorCrumbs } from "./navigation";
@@ -15,14 +16,18 @@ export function Header({
   onThemeChange,
   menuOpen,
   onMenuOpen,
+  crumbsFor = operatorCrumbs,
+  extra,
 }: {
   theme: ThemeName;
   onThemeChange: (theme: ThemeName) => void;
   menuOpen: boolean;
   onMenuOpen: (open: boolean) => void;
+  crumbsFor?: (pathname: string) => BreadcrumbItem[];
+  extra?: ReactNode;
 }) {
   const pathname = usePathname();
-  const crumbs = operatorCrumbs(pathname);
+  const crumbs = crumbsFor(pathname);
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-card px-ds-16 py-ds-8">
@@ -38,6 +43,7 @@ export function Header({
         </div>
         <ThemeSwitcher theme={theme} onThemeChange={onThemeChange} />
         <NotificationsButton />
+        {extra}
         <UserMenu />
       </div>
     </header>

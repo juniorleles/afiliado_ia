@@ -12,8 +12,8 @@ export function DeleteButton({ id, name }: { id: number; name: string }) {
         }
       }}
     >
-      <button type="submit" className="text-sm text-red-400 hover:underline">
-        Delete
+      <button type="submit" className="text-body text-red-700 hover:underline">
+        Excluir
       </button>
     </form>
   );

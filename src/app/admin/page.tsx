@@ -2,23 +2,42 @@ import Link from "next/link";
 import { DeleteButton } from "@/app/admin/delete-button";
 import { DuplicateButton } from "@/app/admin/duplicate-button";
 import { UnpublishButton } from "@/app/admin/unpublish-button";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { MetricCard } from "@/components/ui/metric-card";
+import { SectionHeader } from "@/components/ui/section-header";
 import { listCampaigns } from "@/lib/campaigns";
+import { readIntegrationConfiguration } from "@/lib/console/configuration";
 import { lintCampaign, type PublicationGate } from "@/lib/policy-linter";
 import { parseCampaignFacts, withResolvedCampaign } from "@/lib/manual-overrides";
 import { analyzeImportCompleteness } from "@/lib/completeness-engine";
+import { productionReadiness } from "@/lib/readiness";
 
-const GATE_CLASS: Record<PublicationGate, string> = {
-  READY: "text-emerald-400",
-  REVIEW_REQUIRED: "text-amber-400",
-  BLOCKED: "text-red-400",
+const GATE_LABEL: Record<PublicationGate, string> = {
+  READY: "Pronta",
+  REVIEW_REQUIRED: "Revisão necessária",
+  BLOCKED: "Bloqueada",
 };
 
 const NOTICE: Record<string, string> = {
-  published: "Campaign is now published. /p/[slug] is public. This is not advertising-platform approval.",
-  unpublished: "Campaign moved to Draft. Public /p/[slug] now returns 404. Preview still works.",
-  "moved-to-draft":
-    "Campaign moved to Draft because published content was changed. Run Policy Check and publish again.",
+  published: "A campanha foi publicada. A página /p/[slug] está pública. Isto não é aprovação de uma plataforma de anúncios.",
+  unpublished: "A campanha voltou a rascunho. A página pública agora responde 404. A prévia continua disponível.",
+  "moved-to-draft": "A campanha voltou a rascunho porque o conteúdo publicado mudou. Verifique a política e publique de novo.",
 };
+
+function greeting(now: Date) {
+  const hour = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hourCycle: "h23", timeZone: "America/Sao_Paulo" }).format(now));
+  if (hour < 12) return "Bom dia";
+  if (hour < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
+function healthLabel(value: string) {
+  if (value === "READY") return "Pronto";
+  if (value === "OPTIONAL") return "Opcional";
+  return "Ausente";
+}
 
 export default async function AdminPage({
   searchParams,
@@ -28,187 +47,156 @@ export default async function AdminPage({
   const { notice } = await searchParams;
   const campaigns = listCampaigns();
   const noticeText = notice ? NOTICE[notice] : undefined;
+  const config = readIntegrationConfiguration();
+  const health = productionReadiness();
+  const now = new Date();
+  const rows = campaigns.map((campaign) => {
+    const gate = lintCampaign(withResolvedCampaign(campaign)).gate;
+    const published = campaign.publicationStatus === "published";
+    const facts = parseCampaignFacts(campaign.sourceFactsJson, campaign.affiliateUrl);
+    const completeness = analyzeImportCompleteness({
+      facts,
+      headline: campaign.headline,
+      imageUrl: campaign.productImageSrc || facts.productImageUrl,
+      imageProvenance: campaign.productImageProvenance || facts.productImageProvenance,
+      visualAssetCount: campaign.productAssetStatus === "READY" ? 1 : 0,
+    });
+    return { campaign, gate, published, completeness };
+  });
+  const drafts = rows.filter((row) => !row.published);
+  const published = rows.filter((row) => row.published);
+  const reviews = rows.filter((row) => row.gate === "REVIEW_REQUIRED");
+  const latest = rows.slice(0, 5);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-zinc-400">
-          New campaigns start as Draft. /p/[slug] is public only after an
-          explicit Publish. Policy Check is an internal risk gate, not Google
-          approval.
-        </p>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/admin/generate"
-            className="rounded-md border border-emerald-500 px-3 py-2 text-sm font-medium text-emerald-400 hover:bg-emerald-500/10"
-          >
-            Gerar com IA
-          </Link>
-          <Link
-            href="/admin/validation"
-            className="rounded-md border border-zinc-500 px-3 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-800"
-          >
-            Validation Lab
-          </Link>
-          <Link
-            href="/admin/new"
-            className="rounded-md bg-emerald-500 px-3 py-2 text-sm font-medium text-zinc-950"
-          >
-            Nova campanha
-          </Link>
-        </div>
-      </div>
+    <div className="ds-container flex flex-col gap-ds-32 py-ds-24">
+      <header>
+        <h1 className="text-h1">{greeting(now)}, João</h1>
+        <p className="mt-ds-8 text-body text-muted-foreground">Painel da administração. As ferramentas técnicas ficam dentro de cada campanha.</p>
+      </header>
 
       {noticeText ? (
-        <p
-          className="rounded-md border border-amber-500/40 bg-amber-950/40 px-3 py-2 text-sm text-amber-100"
-          role="status"
-        >
+        <p className="rounded-ds-md border border-border bg-card px-ds-16 py-ds-12 text-body" role="status">
           {noticeText}
         </p>
       ) : null}
 
-      {campaigns.length === 0 ? (
-        <p className="rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-8 text-center text-zinc-400">
-          Nenhuma campanha ainda. Crie a primeira para validar o CRUD.
-        </p>
-      ) : (
-        <ul className="divide-y divide-zinc-800 rounded-md border border-zinc-800">
-          {campaigns.map((campaign) => {
-            const gate = lintCampaign(withResolvedCampaign(campaign)).gate;
-            const published = campaign.publicationStatus === "published";
-            const facts = parseCampaignFacts(campaign.sourceFactsJson, campaign.affiliateUrl);
-            const completeness = analyzeImportCompleteness({
-              facts,
-              headline: campaign.headline,
-              imageUrl: campaign.productImageSrc || facts.productImageUrl,
-              imageProvenance: campaign.productImageProvenance || facts.productImageProvenance,
-              visualAssetCount: campaign.productAssetStatus === "READY" ? 1 : 0,
-            });
-            return (
-              <li
-                key={campaign.id}
-                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-              >
-                <div>
-                  <p className="font-medium">{campaign.name}</p>
-                  <p className="font-mono text-sm text-zinc-400">{campaign.slug}</p>
-                  <p className="mt-1 text-xs uppercase tracking-wide text-zinc-300">
-                    Publication:{" "}
-                    <span className={published ? "text-emerald-400" : "text-amber-400"}>
-                      {published ? "PUBLISHED" : "DRAFT"}
-                    </span>
-                  </p>
-                  <p className={`text-xs font-medium uppercase tracking-wide ${GATE_CLASS[gate]}`}>
-                    Policy: {gate.replaceAll("_", " ")}
-                  </p>
-                  <p className="text-xs text-zinc-300">
-                    Completeness:{" "}
-                    <Link href={`/admin/product-editor/${campaign.id}#completeness`} className="text-emerald-300 hover:underline">
-                      {completeness.score}%
-                    </Link>
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-4">
-                  {published ? (
-                    <Link
-                      href={`/p/${campaign.slug}`}
-                      className="text-sm text-zinc-300 hover:underline"
-                    >
-                      View
-                    </Link>
-                  ) : (
-                    <Link
-                      href={`/admin/preview/${campaign.slug}`}
-                      className="text-sm text-zinc-300 hover:underline"
-                    >
-                      Preview
-                    </Link>
-                  )}
-                  <Link
-                    href={`/admin/visual-concepts/${campaign.slug}`}
-                    className="text-sm text-zinc-300 hover:underline"
-                  >
-                    Visual concepts
-                  </Link>
-                  <Link
-                    href={`/admin/${campaign.id}/analytics`}
-                    className="text-sm text-zinc-300 hover:underline"
-                  >
-                    Analytics
-                  </Link>
-                  <Link
-                    href={`/admin/${campaign.id}/lint`}
-                    className="text-sm font-medium text-emerald-400 hover:underline"
-                  >
-                    Policy Check
-                  </Link>
-                  <Link
-                    href={`/admin/product-health/${campaign.id}`}
-                    className="text-sm text-emerald-400 hover:underline"
-                  >
-                    Product Health
-                  </Link>
-                  <Link
-                    href={`/admin/product-editor/${campaign.id}`}
-                    className="text-sm text-emerald-400 hover:underline"
-                  >
-                    Product Editor
-                  </Link>
-                  <Link
-                    href={`/admin/lp-builder/${campaign.id}`}
-                    className="text-sm text-emerald-400 hover:underline"
-                  >
-                    LP Builder
-                  </Link>
-                  <Link
-                    href={`/admin/lp-visual/${campaign.id}`}
-                    className="text-sm text-emerald-400 hover:underline"
-                  >
-                    Visual Editor
-                  </Link>
-                  <Link
-                    href={`/admin/lp-media/${campaign.id}`}
-                    className="text-sm text-emerald-400 hover:underline"
-                  >
-                    Media Manager
-                  </Link>
-                  <Link
-                    href={`/admin/lp-layout/${campaign.id}`}
-                    className="text-sm text-emerald-400 hover:underline"
-                  >
-                    Layout Builder
-                  </Link>
-                  <Link
-                    href={`/admin/lp-versions/${campaign.id}`}
-                    className="text-sm text-emerald-400 hover:underline"
-                  >
-                    History
-                  </Link>
-                  <Link
-                    href={`/admin/${campaign.id}/edit`}
-                    className="text-sm text-emerald-400 hover:underline"
-                  >
-                    Edit
-                  </Link>
-                  {published ? (
-                    <UnpublishButton id={campaign.id} name={campaign.name} />
-                  ) : (
-                    <Link
-                      href={`/admin/${campaign.id}/publish`}
-                      className="text-sm font-medium text-emerald-300 hover:underline"
-                    >
-                      Publish
-                    </Link>
-                  )}
-                  <DuplicateButton id={campaign.id} />
-                  <DeleteButton id={campaign.id} name={campaign.name} />
-                </div>
+      <section aria-labelledby="admin-metrics-heading">
+        <SectionHeader id="admin-metrics-heading" title="Resumo" />
+        <div className="mt-ds-16 grid gap-ds-16 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard subject="Campanhas" value={String(rows.length)} period="Nesta instalação" />
+          <MetricCard subject="Rascunhos" value={String(drafts.length)} period="Ainda não publicadas" />
+          <MetricCard subject="Publicadas" value={String(published.length)} period="Páginas públicas" />
+          <MetricCard subject="Revisão necessária" value={String(reviews.length)} period="Política" />
+          <MetricCard subject="Google Ads" value={config.googleAds === "Connected" ? "Conectado" : "Não conectado"} period="Conta" />
+          <MetricCard subject="SearchApi" value={config.searchApi === "SET" ? "Configurado" : "Ausente"} period="Pesquisa" />
+          <MetricCard subject="Saúde do sistema" value={healthLabel(health.DATABASE)} period="Banco de dados" />
+        </div>
+      </section>
+
+      <section aria-labelledby="quick-actions-heading">
+        <SectionHeader id="quick-actions-heading" title="Ações rápidas" />
+        <div className="mt-ds-16 flex flex-wrap gap-ds-8">
+          <Button asChild><Link href="/admin/new">Nova campanha</Link></Button>
+          <Button asChild variant="secondary"><Link href="/admin/generate">Importar produto</Link></Button>
+          <Button asChild variant="secondary"><Link href="/admin/validation">Laboratório de validação</Link></Button>
+          <Button asChild variant="secondary"><Link href="#analises">Análises</Link></Button>
+        </div>
+      </section>
+
+      <div className="grid gap-ds-16 lg:grid-cols-2">
+        <section aria-labelledby="latest-heading">
+          <Card>
+            <CardContent>
+              <h2 id="latest-heading" className="text-h3">Últimas campanhas</h2>
+              {latest.length === 0 ? <p className="mt-ds-12 text-body text-muted-foreground">Nenhuma campanha gravada.</p> : (
+                <ul className="mt-ds-12 flex flex-col gap-ds-8 text-body">
+                  {latest.map(({ campaign, published: isPublished }) => (
+                    <li key={campaign.id} className="flex items-center justify-between gap-ds-12">
+                      <Link href={`/admin/${campaign.id}/edit`}>{campaign.name}</Link>
+                      <Badge tone={isPublished ? "success" : "warning"}>{isPublished ? "Publicada" : "Rascunho"}</Badge>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </section>
+        <section aria-labelledby="reviews-heading">
+          <Card>
+            <CardContent>
+              <h2 id="reviews-heading" className="text-h3">Revisões pendentes</h2>
+              {reviews.length === 0 ? <p className="mt-ds-12 text-body text-muted-foreground">Nenhuma campanha aguarda revisão.</p> : (
+                <ul className="mt-ds-12 flex flex-col gap-ds-8 text-body">
+                  {reviews.map(({ campaign }) => (
+                    <li key={campaign.id}><Link href={`/admin/${campaign.id}/lint`}>{campaign.name}</Link></li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </section>
+      </div>
+
+      <section id="campanhas" className="flex flex-col gap-ds-16">
+        <SectionHeader id="campaign-list-heading" title="Campanhas" description="Landing pages, produtos e análises abrem a partir de cada campanha." />
+        <div id="landing-pages" />
+        <div id="produtos" />
+        <div id="analises" />
+        {rows.length === 0 ? (
+          <p className="rounded-ds-md border border-dashed border-border bg-card px-ds-16 py-ds-24 text-center text-body text-muted-foreground">
+            Nenhuma campanha ainda. Crie a primeira para começar.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-ds-12">
+            {rows.map(({ campaign, gate, published: isPublished, completeness }) => (
+              <li key={campaign.id}>
+                <Card>
+                  <CardContent className="flex flex-col gap-ds-12">
+                    <div className="flex flex-wrap items-start justify-between gap-ds-12">
+                      <div>
+                        <p className="text-h3">{campaign.name}</p>
+                        <p className="mt-ds-4 font-mono text-caption text-muted-foreground">{campaign.slug}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-ds-8">
+                        <Badge tone={isPublished ? "success" : "warning"}>{isPublished ? "Publicada" : "Rascunho"}</Badge>
+                        <Badge tone={gate === "READY" ? "success" : gate === "BLOCKED" ? "danger" : "warning"}>{GATE_LABEL[gate]}</Badge>
+                      </div>
+                    </div>
+                    <p className="text-caption text-muted-foreground">
+                      Completude{" "}
+                      <Link href={`/admin/product-editor/${campaign.id}#completeness`} className="text-primary-text hover:underline">{completeness.score}%</Link>
+                    </p>
+                    <div className="flex flex-wrap gap-x-ds-16 gap-y-ds-8 text-body">
+                      {isPublished ? (
+                        <Link href={`/p/${campaign.slug}`} className="text-primary-text hover:underline">Ver página</Link>
+                      ) : (
+                        <Link href={`/admin/preview/${campaign.slug}`} className="text-primary-text hover:underline">Prévia</Link>
+                      )}
+                      <Link href={`/admin/visual-concepts/${campaign.slug}`} className="text-primary-text hover:underline">Conceitos visuais</Link>
+                      <Link href={`/admin/${campaign.id}/analytics`} className="text-primary-text hover:underline">Análises</Link>
+                      <Link href={`/admin/${campaign.id}/lint`} className="text-primary-text hover:underline">Verificação</Link>
+                      <Link href={`/admin/product-health/${campaign.id}`} className="text-primary-text hover:underline">Saúde do produto</Link>
+                      <Link href={`/admin/product-editor/${campaign.id}`} className="text-primary-text hover:underline">Editor do produto</Link>
+                      <Link href={`/admin/lp-builder/${campaign.id}`} className="text-primary-text hover:underline">Landing page</Link>
+                      <Link href={`/admin/lp-visual/${campaign.id}`} className="text-primary-text hover:underline">Visual</Link>
+                      <Link href={`/admin/lp-media/${campaign.id}`} className="text-primary-text hover:underline">Mídia</Link>
+                      <Link href={`/admin/lp-layout/${campaign.id}`} className="text-primary-text hover:underline">Layout</Link>
+                      <Link href={`/admin/lp-versions/${campaign.id}`} className="text-primary-text hover:underline">Histórico</Link>
+                      <Link href={`/admin/${campaign.id}/edit`} className="text-primary-text hover:underline">Editar</Link>
+                      {isPublished ? <UnpublishButton id={campaign.id} name={campaign.name} /> : (
+                        <Link href={`/admin/${campaign.id}/publish`} className="text-primary-text hover:underline">Publicar</Link>
+                      )}
+                      <DuplicateButton id={campaign.id} />
+                      <DeleteButton id={campaign.id} name={campaign.name} />
+                    </div>
+                  </CardContent>
+                </Card>
               </li>
-            );
-          })}
-        </ul>
-      )}
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

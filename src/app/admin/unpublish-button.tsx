@@ -7,13 +7,13 @@ export function UnpublishButton({ id, name }: { id: number; name: string }) {
     <form
       action={unpublishCampaignAction.bind(null, id)}
       onSubmit={(event) => {
-        if (!window.confirm(`Unpublish “${name}”? /p/[slug] will return 404. Preview stays available.`)) {
+        if (!window.confirm(`Retirar “${name}” da publicação? A página pública passa a responder 404. A prévia continua disponível.`)) {
           event.preventDefault();
         }
       }}
     >
-      <button type="submit" className="text-sm text-amber-300 hover:underline">
-        Unpublish
+      <button type="submit" className="text-body text-amber-800 hover:underline">
+        Retirar publicação
       </button>
     </form>
   );

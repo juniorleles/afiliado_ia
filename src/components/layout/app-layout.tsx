@@ -8,7 +8,9 @@ import { applyTheme, type ThemeName } from "@/lib/ui/theme";
 import { focusRing } from "@/components/ui/styles";
 import { cn } from "@/lib/utils";
 import { Header } from "./header";
+import { adminCrumbs, adminNav, consoleNav, operatorCrumbs, type ConsoleNavItem } from "./navigation";
 import { Sidebar, SidebarNav } from "./sidebar";
+import type { BreadcrumbItem } from "@/components/ui/breadcrumb";
 
 function NavigationProgress() {
   const [width, setWidth] = useState("0%");
@@ -32,7 +34,33 @@ function NavigationProgress() {
   );
 }
 
-export function AppLayout({ children }: { children: ReactNode }) {
+export function AppLayout({
+  children,
+  shell = "console",
+  nav,
+  crumbsFor,
+  homeHref,
+  homeLabel,
+  mark,
+  tone,
+  headerExtra,
+}: {
+  children: ReactNode;
+  shell?: "console" | "admin";
+  nav?: ConsoleNavItem[];
+  crumbsFor?: (pathname: string) => BreadcrumbItem[];
+  homeHref?: string;
+  homeLabel?: string;
+  mark?: string;
+  tone?: "console" | "admin";
+  headerExtra?: ReactNode;
+}) {
+  const resolvedNav = nav ?? (shell === "admin" ? adminNav : consoleNav);
+  const resolvedCrumbs = crumbsFor ?? (shell === "admin" ? adminCrumbs : operatorCrumbs);
+  const resolvedHome = homeHref ?? (shell === "admin" ? "/admin" : "/dashboard");
+  const resolvedLabel = homeLabel ?? (shell === "admin" ? "Administração" : "Console");
+  const resolvedMark = mark ?? (shell === "admin" ? "A" : "C");
+  const resolvedTone = tone ?? shell;
   const pathname = usePathname();
   const [theme, setTheme] = useState<ThemeName>("light");
   const [expanded, setExpanded] = useState(false);
@@ -106,18 +134,24 @@ export function AppLayout({ children }: { children: ReactNode }) {
           Ir para o conteúdo
         </a>
         <div className="flex min-h-screen">
-          <Sidebar expanded={expanded} onExpandedChange={setExpanded} />
+          <Sidebar expanded={expanded} onExpandedChange={setExpanded} nav={resolvedNav} homeHref={resolvedHome} homeLabel={resolvedLabel} mark={resolvedMark} />
           <div className="flex min-w-0 flex-1 flex-col">
-            <Header theme={theme} onThemeChange={setTheme} menuOpen={menuOpen} onMenuOpen={setMenuOpen} />
+            <Header theme={theme} onThemeChange={setTheme} menuOpen={menuOpen} onMenuOpen={setMenuOpen} crumbsFor={resolvedCrumbs} extra={headerExtra} />
             <main id="conteudo" key={pathname} className="ds-page-enter flex-1">
-              {children}
+              {resolvedTone === "admin" && pathname !== "/admin" ? (
+                <div className="mx-auto min-h-full w-full max-w-3xl bg-zinc-950 px-6 py-10 text-zinc-100 has-[[data-preview-wide]]:max-w-[1480px]">
+                  {children}
+                </div>
+              ) : (
+                children
+              )}
             </main>
           </div>
         </div>
         <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
           <DialogContent id="menu-movel">
             <DialogTitle className="mb-ds-16 pr-ds-32 text-h3">Menu</DialogTitle>
-            <SidebarNav expanded onNavigate={() => setMenuOpen(false)} />
+            <SidebarNav expanded onNavigate={() => setMenuOpen(false)} nav={resolvedNav} />
           </DialogContent>
         </Dialog>
       </div>

@@ -6,6 +6,7 @@ export type ConsoleNavItem = {
   label: string;
   icon: UiIconName;
   exact?: boolean;
+  active?: (pathname: string) => boolean;
 };
 
 export const consoleNav: ConsoleNavItem[] = [
@@ -19,6 +20,7 @@ export const consoleNav: ConsoleNavItem[] = [
 ];
 
 export function isConsoleNavActive(pathname: string, item: ConsoleNavItem): boolean {
+  if (item.active) return item.active(pathname);
   if (item.exact) return pathname === item.href;
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
@@ -45,4 +47,38 @@ export function operatorCrumbs(pathname: string): BreadcrumbItem[] {
   const current = consoleNav.find((item) => isConsoleNavActive(pathname, item));
   if (!current) return [{ label: "Início" }];
   return [home, { label: current.label }];
+}
+
+const adminHome: BreadcrumbItem = { label: "Início", href: "/admin" };
+
+function campaignTool(pathname: string): boolean {
+  return pathname === "/admin/new" || pathname.startsWith("/admin/preview/") || /^\/admin\/\d+\/(edit|publish|lint)(\/|$)/.test(pathname);
+}
+
+export const adminNav: ConsoleNavItem[] = [
+  { href: "/admin", label: "Dashboard", icon: "dashboard", exact: true },
+  { href: "/admin#campanhas", label: "Campanhas", icon: "campanhas", active: campaignTool },
+  {
+    href: "/admin#landing-pages",
+    label: "Landing pages",
+    icon: "landingPage",
+    active: (pathname) => pathname.startsWith("/admin/lp-") || pathname.startsWith("/admin/visual-concepts/"),
+  },
+  { href: "/admin#produtos", label: "Produtos", icon: "produtos", active: (pathname) => pathname.startsWith("/admin/product-") },
+  { href: "/admin/validation", label: "Validação", icon: "recommendation", active: (pathname) => pathname.startsWith("/admin/validation") },
+  { href: "/admin#analises", label: "Análises", icon: "relatorios", active: (pathname) => /\/analytics(\/|$)/.test(pathname) },
+  { href: "/admin/discovery", label: "Descoberta", icon: "search", active: (pathname) => pathname.startsWith("/admin/discovery") },
+  { href: "/admin/system/readiness", label: "Configurações", icon: "configuracoes", active: (pathname) => pathname.startsWith("/admin/system") },
+];
+
+export function adminCrumbs(pathname: string): BreadcrumbItem[] {
+  if (pathname === "/admin") return [{ label: "Início" }];
+  if (pathname.startsWith("/admin/validation")) return [adminHome, { label: "Validação" }];
+  if (pathname.startsWith("/admin/discovery")) return [adminHome, { label: "Descoberta" }];
+  if (pathname.startsWith("/admin/system")) return [adminHome, { label: "Configurações" }];
+  if (pathname.startsWith("/admin/lp-") || pathname.startsWith("/admin/visual-concepts/")) return [adminHome, { label: "Landing pages" }];
+  if (pathname.startsWith("/admin/product-")) return [adminHome, { label: "Produtos" }];
+  if (/\/analytics(\/|$)/.test(pathname)) return [adminHome, { label: "Análises" }];
+  if (campaignTool(pathname)) return [adminHome, { label: "Campanhas", href: "/admin#campanhas" }];
+  return [adminHome, { label: "Administração" }];
 }
