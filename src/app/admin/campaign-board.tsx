@@ -275,8 +275,8 @@ function CampaignCardView({ campaign, googleAds }: { campaign: AdminCampaignCard
             <MenuLink href={`/admin/visual-concepts/${campaign.slug}`}>Conceitos visuais</MenuLink>
             <MenuLink href={`/admin/${campaign.id}/analytics`}>Análises</MenuLink>
             <MenuLink href={`/admin/${campaign.id}/lint`}>Verificação</MenuLink>
-            <MenuLink href={`/admin/product-health/${campaign.id}`}>Saúde do produto</MenuLink>
-            <MenuLink href={`/admin/product-editor/${campaign.id}`}>Editor do produto</MenuLink>
+            <MenuLink href={`/admin/${campaign.id}/edit?aba=produto&ferramenta=saude`}>Saúde do produto</MenuLink>
+            <MenuLink href={`/admin/${campaign.id}/edit?aba=produto&ferramenta=editor`}>Editor do produto</MenuLink>
             <MenuLink href={`/admin/product-editor/${campaign.id}#completeness`}>Completude</MenuLink>
             <MenuLink href={`/admin/${campaign.id}/edit?aba=landing`}>Landing page</MenuLink>
             <MenuLink href={`/admin/${campaign.id}/edit?aba=landing&ferramenta=visual`}>Visual</MenuLink>

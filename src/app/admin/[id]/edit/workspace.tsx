@@ -7,10 +7,9 @@ import { DuplicateButton } from "@/app/admin/duplicate-button";
 import { UnpublishButton } from "@/app/admin/unpublish-button";
 import { updateCampaignAction } from "@/app/admin/actions";
 import { LandingStudio, type LandingTool } from "@/app/admin/[id]/edit/landing-studio";
+import { PRODUCT_TOOL_IDS, ProductWorkspace, type ProductTool } from "@/app/admin/[id]/edit/product-workspace";
 import { WorkspaceCrumbName, WorkspaceTabs } from "@/app/admin/[id]/edit/workspace-tabs";
 import VersionHistoryPage from "@/app/admin/lp-versions/[campaignId]/page";
-import ProductEditorPage from "@/app/admin/product-editor/[campaignId]/page";
-import ProductHealthPage from "@/app/admin/product-health/[campaignId]/page";
 import AnalyticsPage from "@/app/admin/[id]/analytics/page";
 import LintPage from "@/app/admin/[id]/lint/page";
 import PublishPage from "@/app/admin/[id]/publish/page";
@@ -30,7 +29,6 @@ const TABS = ["visao", "landing", "produto", "validacao", "analytics", "publicac
 type TabId = (typeof TABS)[number];
 
 const LANDING_TOOLS = ["builder", "visual", "layout", "media", "versoes", "preview"] as const;
-const PRODUCT_TOOLS = ["editor", "saude"] as const;
 const VALIDATION_TOOLS = ["verificacao", "laboratorio"] as const;
 
 function one(value: string | string[] | undefined) {
@@ -201,9 +199,11 @@ export async function CampaignWorkspace({
           />
         ) : null}
         {aba === "produto" ? (
-          <ProductTools
-            campaignId={campaign.id}
-            ferramenta={toolOf(one(query.ferramenta), PRODUCT_TOOLS, "editor")}
+          <ProductWorkspace
+            campaign={campaign}
+            gateLabel={policyLabel(lint.gate)}
+            score={score}
+            ferramenta={toolOf(one(query.ferramenta), PRODUCT_TOOL_IDS, "visao") as ProductTool}
             params={params}
             query={query}
           />
@@ -307,44 +307,6 @@ function Overview({
           unpublishOnSave={published}
         />
       </section>
-    </div>
-  );
-}
-
-function ProductTools({
-  campaignId,
-  ferramenta,
-  params,
-  query,
-}: {
-  campaignId: number;
-  ferramenta: (typeof PRODUCT_TOOLS)[number];
-  params: Promise<{ campaignId: string; id: string }>;
-  query: Record<string, string | string[] | undefined>;
-}) {
-  const items = [
-    { id: "editor", href: workspaceHref(campaignId, "produto", "editor"), label: "Editor" },
-    { id: "saude", href: workspaceHref(campaignId, "produto", "saude"), label: "Saúde" },
-  ];
-  return (
-    <div className="flex flex-col gap-ds-16">
-      <WorkspaceTabs label="Ferramentas do produto" current={ferramenta} items={items} />
-      <p className="text-body text-muted-foreground">
-        Evidências, fatos observados e a recomendação de completude estão no editor. Os ativos e a saúde estão na leitura de saúde.
-      </p>
-      <div className="flex flex-wrap gap-ds-8">
-        <Button asChild variant="secondary"><Link href={`/admin/product-evidence/${campaignId}`}>Exportar evidências</Link></Button>
-      </div>
-      <Embed>
-        {ferramenta === "editor" ? (
-          <ProductEditorPage
-            params={params}
-            searchParams={Promise.resolve({ saved: one(query.saved), reset: one(query.reset), error: one(query.error) })}
-          />
-        ) : (
-          <ProductHealthPage params={params} />
-        )}
-      </Embed>
     </div>
   );
 }

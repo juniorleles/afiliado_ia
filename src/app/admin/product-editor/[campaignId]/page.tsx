@@ -12,7 +12,7 @@ import { integratedVisualAssetSources } from "@/lib/visual-concept/asset-integra
 
 type Props = {
   params: Promise<{ campaignId: string }>;
-  searchParams: Promise<{ saved?: string; reset?: string; error?: string }>;
+  searchParams: Promise<{ saved?: string; reset?: string; error?: string; embedded?: string }>;
 };
 
 export default async function ProductEditorPage({ params, searchParams }: Props) {
@@ -24,6 +24,7 @@ export default async function ProductEditorPage({ params, searchParams }: Props)
   if (!campaign) notFound();
 
   const notice = await searchParams;
+  const embedded = notice.embedded === "studio";
   const facts = parseCampaignFacts(campaign.sourceFactsJson, campaign.affiliateUrl);
   const overrides = listManualOverrides(campaign.id);
   ensureEvidenceBaseline({
@@ -55,7 +56,7 @@ export default async function ProductEditorPage({ params, searchParams }: Props)
 
   return (
     <div data-preview-wide className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      {embedded ? null : <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm text-zinc-400">
             <Link href="/admin" className="hover:text-zinc-100">
@@ -87,7 +88,7 @@ export default async function ProductEditorPage({ params, searchParams }: Props)
             </Link>
           </div>
         </div>
-      </div>
+      </div>}
       <p className="rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300">
         Imported ProductFacts stay unchanged. A save writes only that field. Preview, research, grounding, policy, and publication read the resolved facts. Running the importer again does not erase overrides.
       </p>

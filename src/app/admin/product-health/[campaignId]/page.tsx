@@ -15,6 +15,7 @@ import { listCompletenessHistory, recordCompletenessAnalysis } from "@/lib/produ
 
 type Props = {
   params: Promise<{ campaignId: string }>;
+  searchParams?: Promise<{ embedded?: string | string[] }>;
 };
 
 const HEALTH_LABEL: Record<ProductHealth, string> = {
@@ -35,7 +36,9 @@ const STATUS_CLASS: Record<CompletenessStatus | ProductHealth, string> = {
   UNKNOWN: "text-zinc-500",
 };
 
-export default async function ProductHealthPage({ params }: Props) {
+export default async function ProductHealthPage({ params, searchParams }: Props) {
+  const embeddedFlag = (await searchParams)?.embedded;
+  const embedded = (Array.isArray(embeddedFlag) ? embeddedFlag[0] : embeddedFlag) === "studio";
   await requireAdmin();
   const { campaignId: rawId } = await params;
   const id = Number(rawId);
@@ -75,7 +78,7 @@ export default async function ProductHealthPage({ params }: Props) {
 
   return (
     <div data-preview-wide className="space-y-8">
-      <div>
+      {embedded ? null : <div>
         <p className="text-sm text-zinc-400">
           <Link href="/admin" className="hover:text-zinc-100">
             Campaigns
@@ -85,7 +88,7 @@ export default async function ProductHealthPage({ params }: Props) {
         </p>
         <h2 className="mt-1 text-xl font-medium">Product Health</h2>
         <p className="mt-1 font-mono text-sm text-zinc-400">{campaign.slug}</p>
-      </div>
+      </div>}
 
       <section className="rounded-md border border-zinc-800 bg-zinc-900/40 p-4">
         <p className="text-sm text-zinc-400">Overall completeness</p>
