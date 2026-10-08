@@ -8,12 +8,11 @@ import { UnpublishButton } from "@/app/admin/unpublish-button";
 import { updateCampaignAction } from "@/app/admin/actions";
 import { LandingStudio, type LandingTool } from "@/app/admin/[id]/edit/landing-studio";
 import { PRODUCT_TOOL_IDS, ProductWorkspace, type ProductTool } from "@/app/admin/[id]/edit/product-workspace";
+import { QUALITY_TOOL_IDS, QualityCenter, type QualityTool } from "@/app/admin/[id]/edit/quality-center";
 import { WorkspaceCrumbName, WorkspaceTabs } from "@/app/admin/[id]/edit/workspace-tabs";
 import VersionHistoryPage from "@/app/admin/lp-versions/[campaignId]/page";
 import AnalyticsPage from "@/app/admin/[id]/analytics/page";
-import LintPage from "@/app/admin/[id]/lint/page";
 import PublishPage from "@/app/admin/[id]/publish/page";
-import ValidationLabPage from "@/app/admin/validation/page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,14 +21,12 @@ import { analyzeImportCompleteness } from "@/lib/completeness-engine";
 import { readIntegrationConfiguration } from "@/lib/console/configuration";
 import { listPageVersions } from "@/lib/lp-builder/version-store";
 import { parseCampaignFacts, withResolvedCampaign } from "@/lib/manual-overrides";
-import { findingsByCategory, lintCampaign, type LintStatus } from "@/lib/policy-linter";
-import { getLatestVisualQaReport } from "@/lib/visual-qa/store";
+import { lintCampaign } from "@/lib/policy-linter";
 
 const TABS = ["visao", "landing", "produto", "validacao", "analytics", "publicacao", "historico"] as const;
 type TabId = (typeof TABS)[number];
 
 const LANDING_TOOLS = ["builder", "visual", "layout", "media", "versoes", "preview"] as const;
-const VALIDATION_TOOLS = ["verificacao", "laboratorio"] as const;
 
 function one(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -71,12 +68,6 @@ function policyTone(gate: "READY" | "REVIEW_REQUIRED" | "BLOCKED") {
   if (gate === "READY") return "success" as const;
   if (gate === "BLOCKED") return "danger" as const;
   return "review" as const;
-}
-
-function lintWord(status: LintStatus) {
-  if (status === "pass") return "Aprovada";
-  if (status === "warn") return "Atenção";
-  return "Falha";
 }
 
 function Embed({ children }: { children: ReactNode }) {
@@ -209,12 +200,15 @@ export async function CampaignWorkspace({
           />
         ) : null}
         {aba === "validacao" ? (
-          <ValidationTools
-            campaignId={campaign.id}
-            ferramenta={toolOf(one(query.ferramenta), VALIDATION_TOOLS, "verificacao")}
-            params={params}
-            score={lint.score}
+          <QualityCenter
+            campaign={campaign}
+            product={product}
+            lint={lint}
             gateLabel={policyLabel(lint.gate)}
+            adsConnected={adsConnected}
+            ferramenta={toolOf(one(query.ferramenta), QUALITY_TOOL_IDS, "painel") as QualityTool}
+            params={params}
+            query={query}
           />
         ) : null}
         {aba === "analytics" ? (
@@ -307,51 +301,6 @@ function Overview({
           unpublishOnSave={published}
         />
       </section>
-    </div>
-  );
-}
-
-function ValidationTools({
-  campaignId,
-  ferramenta,
-  params,
-  score,
-  gateLabel,
-}: {
-  campaignId: number;
-  ferramenta: (typeof VALIDATION_TOOLS)[number];
-  params: Promise<{ campaignId: string; id: string }>;
-  score: number;
-  gateLabel: string;
-}) {
-  const campaign = getCampaignById(campaignId);
-  const groups = campaign ? findingsByCategory(lintCampaign(withResolvedCampaign(campaign))) : [];
-  const links = groups.find((group) => group.category === "CTA_AND_LINKS");
-  const report = campaign ? getLatestVisualQaReport(campaign.id) : null;
-  const items = [
-    { id: "verificacao", href: workspaceHref(campaignId, "validacao", "verificacao"), label: "Verificação" },
-    { id: "laboratorio", href: workspaceHref(campaignId, "validacao", "laboratorio"), label: "Laboratório" },
-  ];
-  return (
-    <div className="flex flex-col gap-ds-16">
-      <Card>
-        <CardContent>
-          <p className="text-caption text-muted-foreground">Pontuação da verificação</p>
-          <p className="mt-ds-4 text-h1">{score}</p>
-          <p className="mt-ds-4 text-body text-muted-foreground">Política interna: {gateLabel}. Esta pontuação não é aprovação do Google Ads.</p>
-        </CardContent>
-      </Card>
-      <dl className="grid gap-ds-12 sm:grid-cols-2 xl:grid-cols-5">
-        <div><dt className="text-caption text-muted-foreground">Links</dt><dd className="text-body">{links ? lintWord(links.worst) : "Sem leitura"}</dd></div>
-        <div><dt className="text-caption text-muted-foreground">SEO</dt><dd className="text-body">Sem auditoria gravada</dd></div>
-        <div><dt className="text-caption text-muted-foreground">HTML</dt><dd className="text-body">{report ? (report.technical.headingOrderOk ? "Ordem de títulos ok" : "Ordem de títulos com aviso") : "Sem auditoria gravada"}</dd></div>
-        <div><dt className="text-caption text-muted-foreground">Desempenho</dt><dd className="text-body">{report ? "Lighthouse não executado" : "Sem auditoria gravada"}</dd></div>
-        <div><dt className="text-caption text-muted-foreground">Acessibilidade</dt><dd className="text-body">{report ? `${report.technical.missingAlts} imagens sem texto alternativo` : "Sem auditoria gravada"}</dd></div>
-      </dl>
-      <WorkspaceTabs label="Ferramentas de validação" current={ferramenta} items={items} />
-      <Embed>
-        {ferramenta === "verificacao" ? <LintPage params={params} /> : <ValidationLabPage />}
-      </Embed>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { withResolvedCampaign } from "@/lib/manual-overrides";
 
 type Props = {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ embedded?: string | string[] }>;
 };
 
 const STATUS_STYLE: Record<LintStatus, string> = {
@@ -31,7 +32,9 @@ const GATE_LABEL: Record<PublicationGate, string> = {
   BLOCKED: "BLOCKED",
 };
 
-export default async function LintPage({ params }: Props) {
+export default async function LintPage({ params, searchParams }: Props) {
+  const notice = await (searchParams ?? Promise.resolve({}));
+  const embedded = (Array.isArray(notice.embedded) ? notice.embedded[0] : notice.embedded) === "studio";
   const { id: rawId } = await params;
   const id = Number(rawId);
   if (!Number.isInteger(id) || id < 1) {
@@ -49,11 +52,15 @@ export default async function LintPage({ params }: Props) {
 
   return (
     <div className="max-w-2xl">
-      <p className="text-xs font-medium uppercase tracking-widest text-emerald-400">Policy Linter V2</p>
-      <h2 className="mb-1 text-xl font-medium">{campaign.name}</h2>
-      <p className="mb-4 font-mono text-sm text-zinc-500">
-        /p/{campaign.slug} · {campaign.publicationStatus === "published" ? "PUBLISHED" : "DRAFT"}
-      </p>
+      {embedded ? null : (
+        <>
+          <p className="text-xs font-medium uppercase tracking-widest text-emerald-400">Policy Linter V2</p>
+          <h2 className="mb-1 text-xl font-medium">{campaign.name}</h2>
+          <p className="mb-4 font-mono text-sm text-zinc-500">
+            /p/{campaign.slug} · {campaign.publicationStatus === "published" ? "PUBLISHED" : "DRAFT"}
+          </p>
+        </>
+      )}
 
       <p className="mb-6 rounded-md border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-400">
         <strong className="text-zinc-200">Internal risk assessment only.</strong> This
