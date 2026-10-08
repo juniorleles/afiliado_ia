@@ -1,16 +1,16 @@
 export const marketCountries = [
-  { value: "us", label: "United States" },
-  { value: "br", label: "Brazil" },
+  { value: "us", label: "Estados Unidos" },
+  { value: "br", label: "Brasil" },
 ] as const;
 
 export const marketLanguages = [
-  { value: "en", label: "English" },
+  { value: "en", label: "Inglês" },
   { value: "pt", label: "Português" },
 ] as const;
 
 export const marketDevices = [
-  { value: "desktop", label: "Desktop" },
-  { value: "mobile", label: "Mobile" },
+  { value: "desktop", label: "Computador" },
+  { value: "mobile", label: "Celular" },
 ] as const;
 
 export const landingPageLimits = [

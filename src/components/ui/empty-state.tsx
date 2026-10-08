@@ -36,8 +36,8 @@ export function NoProductsEmpty(props: { action?: React.ReactNode }) {
   return (
     <EmptyState
       icon="produtos"
-      title="Nenhum Product"
-      description="Ainda não há um Product nesta lista. Uma pesquisa de mercado é o próximo passo."
+      title="Nenhum produto"
+      description="Ainda não há um produto nesta lista. Uma pesquisa de mercado é o próximo passo."
       action={
         props.action ?? (
           <Button asChild>
@@ -54,11 +54,11 @@ export function NoCampaignsEmpty(props: { action?: React.ReactNode }) {
     <EmptyState
       icon="campanhas"
       title="Nenhuma campanha"
-      description="Nenhuma campanha aparece nesta lista. Abra Products para escolher um Product observado."
+      description="Nenhuma campanha aparece nesta lista. Abra Produtos para escolher um produto observado."
       action={
         props.action ?? (
           <Button asChild>
-            <Link href="/produtos">Ver Products</Link>
+            <Link href="/produtos">Ver produtos</Link>
           </Button>
         )
       }
@@ -75,7 +75,7 @@ export function NoReportsEmpty(props: { action?: React.ReactNode }) {
       action={
         props.action ?? (
           <Button asChild>
-            <Link href="/campanhas">Ver campanhas</Link>
+            <Link href="/pesquisa">Pesquisar Mercado</Link>
           </Button>
         )
       }

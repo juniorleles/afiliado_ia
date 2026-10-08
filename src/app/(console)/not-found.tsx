@@ -7,7 +7,7 @@ export default function ConsoleNotFound() {
   return (
     <PageTemplate
       title="Página não encontrada"
-      description="Este endereço não abre um módulo do console."
+      description="Este endereço não faz parte do console."
       primaryAction={
         <Button asChild>
           <Link href="/dashboard">Ir para o Dashboard</Link>

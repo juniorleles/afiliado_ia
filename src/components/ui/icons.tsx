@@ -39,11 +39,11 @@ export const uiIconLabels: Record<UiIconName, string> = {
   relatorios: "Relatórios",
   configuracoes: "Configurações",
   googleAds: "Google Ads",
-  search: "Search",
+  search: "Pesquisar",
   landingPage: "Landing page",
-  opportunity: "Opportunity",
-  recommendation: "Recommendation",
-  lista: "Lista de decisão",
+  opportunity: "Oportunidade",
+  recommendation: "Recomendação",
+  lista: "Watchlist",
 };
 
 export function UiIcon({

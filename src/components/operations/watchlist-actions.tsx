@@ -46,7 +46,7 @@ export function WatchlistActions({ item }: { item: WatchItem }) {
           onClick={() => {
             void createCampaignDraft(item.searchId, item.productId).then((result) => {
               if (result.status !== "created") return;
-              toast.push({ message: result.googleAds === "Connected" ? "Rascunho pausado. Nenhum anúncio é enviado." : "Not Connected. Nenhum anúncio é enviado.", tone: "success" });
+              toast.push({ message: result.googleAds === "Connected" ? "Rascunho pausado. Nenhum anúncio é enviado." : "Não conectado. Nenhum anúncio é enviado.", tone: "success" });
               router.push(`/lista/rascunho?id=${encodeURIComponent(result.id)}`);
             });
           }}
@@ -59,7 +59,7 @@ export function WatchlistActions({ item }: { item: WatchItem }) {
           variant="secondary"
           onClick={() => {
             void removeFromWatchlist(item.id).then(() => {
-              toast.push({ message: "Product removido da fila.", tone: "success" });
+              toast.push({ message: "Produto removido da Watchlist.", tone: "success" });
               router.refresh();
             });
           }}
@@ -75,7 +75,7 @@ export function WatchlistActions({ item }: { item: WatchItem }) {
         open={noteOpen}
         onOpenChange={setNoteOpen}
         title="Nota"
-        description="A nota fica gravada nesta fila."
+        description="A nota fica gravada nesta Watchlist."
         primaryLabel="Guardar nota"
         onPrimary={() => {
           void updateWatchNote(item.id, draft).then(() => {

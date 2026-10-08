@@ -17,10 +17,10 @@ export function ProductQuickActions({ searchId, productId, saved }: { searchId: 
   return (
     <div className="flex flex-wrap gap-ds-8">
       <Button asChild>
-        <Link href={landing}>Abrir Landing Page</Link>
+        <Link href={landing}>Abrir landing page</Link>
       </Button>
       <Button asChild variant="secondary">
-        <Link href={details}>Ver detalhes</Link>
+        <Link href={details}>Ver produto</Link>
       </Button>
       <Button
         type="button"
@@ -31,11 +31,11 @@ export function ProductQuickActions({ searchId, productId, saved }: { searchId: 
           void createCampaignDraft(searchId, productId)
             .then((result) => {
               if (result.status !== "created") {
-                toast.push({ message: "Este Product não está nesta busca.", tone: "warning" });
+                toast.push({ message: "Este produto não está nesta busca.", tone: "warning" });
                 return;
               }
               toast.push({
-                message: result.googleAds === "Connected" ? "Rascunho pausado. Nenhum anúncio é enviado." : "Not Connected. Nenhum anúncio é enviado.",
+                message: result.googleAds === "Connected" ? "Rascunho pausado. Nenhum anúncio é enviado." : "Não conectado. Nenhum anúncio é enviado.",
                 tone: "success",
               });
               router.push(`/lista/rascunho?id=${encodeURIComponent(result.id)}`);
@@ -55,16 +55,16 @@ export function ProductQuickActions({ searchId, productId, saved }: { searchId: 
           void addToWatchlist(searchId, productId)
             .then((result) => {
               toast.push({
-                message: result.status === "added" ? "Product salvo na fila." : "Este Product já está na fila.",
+                message: result.status === "added" ? "Produto salvo na Watchlist." : "Este produto já está na Watchlist.",
                 tone: "success",
               });
               router.refresh();
             })
-            .catch(() => toast.push({ message: "Não foi possível salvar na fila.", tone: "danger" }))
+            .catch(() => toast.push({ message: "Não foi possível salvar na Watchlist.", tone: "danger" }))
             .finally(() => setPending(false));
         }}
       >
-        {saved ? "Na fila" : "Salvar na lista"}
+        {saved ? "Na Watchlist" : "Salvar na Watchlist"}
       </Button>
     </div>
   );

@@ -35,7 +35,7 @@ check("search presence is a label", config.searchApi === "SET" || config.searchA
 async function main() {
 const empty = await runConsoleSearch({ keyword: " ", country: "us", language: "en", device: "desktop", maxPages: 3 });
 check("empty keyword is rejected", empty.record.status === "REJECTED" && empty.pages.length === 0);
-check("empty keyword message", operatorSearchMessage(empty.record.issues) === "Informe uma Keyword.");
+check("empty keyword message", operatorSearchMessage(empty.record.issues) === "Informe uma palavra-chave.");
 
 const root = mkdtempSync(join(tmpdir(), "console-store-"));
 const store = createConsoleStore(root);

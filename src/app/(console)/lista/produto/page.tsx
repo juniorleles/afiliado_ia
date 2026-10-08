@@ -7,7 +7,7 @@ import { WatchlistActions } from "@/components/operations/watchlist-actions";
 import { consoleStore } from "@/lib/console/store";
 import type { WatchStatus } from "@/lib/console/types";
 
-export const metadata: Metadata = { title: "Product" };
+export const metadata: Metadata = { title: "Produto" };
 export const dynamic = "force-dynamic";
 
 const statusView: Record<WatchStatus, { tone: "success" | "warning" | "review" | "danger"; label: string }> = {
@@ -21,7 +21,7 @@ export default async function ListaProdutoPage({ searchParams }: { searchParams:
   const { id } = await searchParams;
   const item = consoleStore().readWatchlist().find((entry) => entry.id === id) ?? null;
   if (!item) {
-    return <div className="ds-container py-ds-24"><h1 className="text-h1">Product</h1><p className="mt-ds-8 text-body">Este Product não está na fila.</p></div>;
+    return <div className="ds-container py-ds-24"><h1 className="text-h1">Produto</h1><p className="mt-ds-8 text-body">Este produto não está na Watchlist.</p></div>;
   }
   const status = statusView[item.status];
   return (
@@ -35,7 +35,7 @@ export default async function ListaProdutoPage({ searchParams }: { searchParams:
           <dl className="grid gap-ds-12 sm:grid-cols-2">
             <div><dt className="text-caption text-muted-foreground">Marca</dt><dd>{item.brand ?? "Não observada"}</dd></div>
             <div><dt className="text-caption text-muted-foreground">Preço</dt><dd>{item.priceLabel ?? "Não observado"}</dd></div>
-            <div><dt className="text-caption text-muted-foreground">Keyword</dt><dd>{item.keyword}</dd></div>
+            <div><dt className="text-caption text-muted-foreground">Palavra-chave</dt><dd>{item.keyword}</dd></div>
             <div><dt className="text-caption text-muted-foreground">País</dt><dd>{item.country}</dd></div>
             <div><dt className="text-caption text-muted-foreground">Domínio</dt><dd>{item.domain ?? "Não observado"}</dd></div>
           </dl>

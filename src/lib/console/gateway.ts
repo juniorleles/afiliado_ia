@@ -50,13 +50,13 @@ function pageLimit(value: number): number {
 
 export function operatorSearchMessage(issues: readonly ConsoleIssue[]): string {
   const text = issues.map((item) => item.message).join(" ");
-  if (/Empty Keyword/i.test(text)) return "Informe uma Keyword.";
+  if (/Empty Keyword/i.test(text)) return "Informe uma palavra-chave.";
   if (/Missing API Key/i.test(text)) return "SearchApi não está configurado.";
   if (/Invalid Locale|Invalid Device/i.test(text)) return "País, idioma ou dispositivo não é aceito.";
   if (/HTTP Errors|Provider Failure|Malformed/i.test(text)) return "A busca não pôde ser concluída.";
   if (/timeout/i.test(text)) return "A busca excedeu o tempo.";
-  if (/Missing Landing Pages/i.test(text)) return "A busca voltou, e nenhuma Landing Page foi coletada.";
-  if (/Missing Product Evidence/i.test(text)) return "As páginas voltaram sem um Product observado.";
+  if (/Missing Landing Pages/i.test(text)) return "A busca voltou, e nenhuma landing page foi coletada.";
+  if (/Missing Product Evidence/i.test(text)) return "As páginas voltaram sem um produto observado.";
   return "Não foi possível concluir a busca.";
 }
 

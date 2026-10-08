@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import type { ThemeName } from "@/lib/ui/theme";
-import { consoleNav, isConsoleNavActive } from "./navigation";
+import { operatorCrumbs } from "./navigation";
 import { NotificationsButton } from "./notifications-button";
 import { SearchBar } from "./search-bar";
 import { ThemeSwitcher } from "./theme-switcher";
@@ -22,14 +22,7 @@ export function Header({
   onMenuOpen: (open: boolean) => void;
 }) {
   const pathname = usePathname();
-  const current = consoleNav.find((item) => isConsoleNavActive(pathname, item));
-  const crumbs =
-    !current || current.href === "/dashboard"
-      ? [{ label: "Início" }]
-      : [
-          { label: "Início", href: "/dashboard" },
-          { label: current.label },
-        ];
+  const crumbs = operatorCrumbs(pathname);
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-card px-ds-16 py-ds-8">

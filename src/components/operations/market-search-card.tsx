@@ -57,7 +57,7 @@ export function MarketSearchCard({ recentSearches }: { recentSearches: readonly 
   async function runSearch(nextKeyword: string) {
     const value = nextKeyword.trim();
     if (!value) {
-      setError("Informe uma Keyword.");
+      setError("Informe uma palavra-chave.");
       setStatus("ready");
       focusKeyword();
       return;
@@ -119,7 +119,7 @@ export function MarketSearchCard({ recentSearches }: { recentSearches: readonly 
             Pesquisa de Mercado
           </h2>
           <p className="mt-ds-4 text-body text-muted-foreground">
-            A busca usa SearchApi. Landing Pages e Products observados aparecem nos resultados.
+            A busca usa SearchApi. Os resultados mostram produtos e landing pages observados.
           </p>
         </div>
 
@@ -132,7 +132,7 @@ export function MarketSearchCard({ recentSearches }: { recentSearches: readonly 
         >
           <div className="flex flex-col gap-ds-12 md:flex-row md:items-end">
             <div className="min-w-0 flex-1">
-              <Label htmlFor="market-keyword">Keyword</Label>
+              <Label htmlFor="market-keyword">Palavra-chave</Label>
               <Input
                 ref={keywordRef}
                 id="market-keyword"
@@ -142,7 +142,7 @@ export function MarketSearchCard({ recentSearches }: { recentSearches: readonly 
                 invalid={Boolean(error)}
                 aria-describedby={error ? errorId : undefined}
                 aria-keyshortcuts="Control+K"
-                placeholder="Keyword"
+                placeholder="Palavra-chave"
                 onChange={(event) => {
                   setKeyword(event.target.value);
                   if (error) setError("");
@@ -202,7 +202,7 @@ export function MarketSearchCard({ recentSearches }: { recentSearches: readonly 
           {status === "searching" ? <LoadingSpinner label="Pesquisando" /> : <span>{searchStatusLabel[status]}</span>}
           {status !== "searching" ? (
             <span className="text-caption text-muted-foreground">
-              {status === "ready" ? "Digite uma Keyword e pressione Enter." : null}
+              {status === "ready" ? "Digite uma palavra-chave e pressione Enter." : null}
               {status === "completed" ? "Pesquisa concluída." : null}
               {status === "failed" ? error : null}
             </span>

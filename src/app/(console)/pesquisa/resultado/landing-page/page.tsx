@@ -26,7 +26,7 @@ export default async function LandingPreviewPage({ searchParams }: { searchParam
         <h1 className="text-h1">Landing Page</h1>
         <p className="text-body text-muted-foreground">HTTP {page.httpStatus} · {page.redirectCount} redirecionamentos · {page.bytes} bytes</p>
         <p className="text-caption text-muted-foreground">A pré-visualização não publica a página e não envia uma visita.</p>
-        <Button asChild variant="secondary"><Link href={`/pesquisa/resultado/detalhe?busca=${encodeURIComponent(record.id)}&produto=${encodeURIComponent(page.id)}`}>Voltar ao Product</Link></Button>
+        <Button asChild variant="secondary"><Link href={`/pesquisa/resultado/detalhe?busca=${encodeURIComponent(record.id)}&produto=${encodeURIComponent(page.id)}`}>Voltar ao produto</Link></Button>
       </header>
       {html ? (
         <iframe title="Pré-visualização da Landing Page" sandbox="" srcDoc={html} className="h-[720px] w-full rounded-ds-md border border-border bg-card" />

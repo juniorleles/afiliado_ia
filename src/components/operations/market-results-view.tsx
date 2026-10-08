@@ -40,8 +40,8 @@ export function MarketResultsView({ record, savedIds }: { record: ConsoleSearchR
       <section aria-labelledby="summary-heading" className="grid gap-ds-12 sm:grid-cols-2 lg:grid-cols-4">
         <Card><CardContent><h2 id="summary-heading" className="text-caption text-muted-foreground">Patrocinados</h2><p className="text-h2">{record.sponsoredCount}</p></CardContent></Card>
         <Card><CardContent><h2 className="text-caption text-muted-foreground">Orgânicos</h2><p className="text-h2">{record.organicCount}</p></CardContent></Card>
-        <Card><CardContent><h2 className="text-caption text-muted-foreground">Landing Pages</h2><p className="text-h2">{record.landingPages.length}</p></CardContent></Card>
-        <Card><CardContent><h2 className="text-caption text-muted-foreground">Products</h2><p className="text-h2">{record.products.length}</p></CardContent></Card>
+        <Card><CardContent><h2 className="text-caption text-muted-foreground">Landing pages</h2><p className="text-h2">{record.landingPages.length}</p></CardContent></Card>
+        <Card><CardContent><h2 className="text-caption text-muted-foreground">Produtos</h2><p className="text-h2">{record.products.length}</p></CardContent></Card>
       </section>
       <section aria-labelledby="health-heading">
         <Card>
@@ -57,11 +57,11 @@ export function MarketResultsView({ record, savedIds }: { record: ConsoleSearchR
       <section aria-labelledby="filters-heading" className="grid gap-ds-12 sm:grid-cols-3">
         <h2 id="filters-heading" className="sr-only">Filtros</h2>
         <Select id="brand-filter" label="Marca" value={brand} onValueChange={setBrand} options={[{ value: all, label: "Todas" }, ...brands.map((item) => ({ value: item, label: item }))]} />
-        <Select id="landing-filter" label="Landing Page" value={landing} onValueChange={setLanding} options={[{ value: all, label: "Todas" }, { value: "yes", label: "Coletada" }, { value: "no", label: "Sem página" }]} />
+        <Select id="landing-filter" label="Landing page" value={landing} onValueChange={setLanding} options={[{ value: all, label: "Todas" }, { value: "yes", label: "Coletada" }, { value: "no", label: "Sem página" }]} />
         <Select id="sort-results" label="Ordem" value={sort} onValueChange={setSort} options={[{ value: "name", label: "Nome" }, { value: "price", label: "Preço" }]} />
       </section>
       {visible.length === 0 ? (
-        <p className="text-body text-muted-foreground">Nenhum Product com estes filtros.</p>
+        <p className="text-body text-muted-foreground">Nenhum produto com estes filtros.</p>
       ) : (
         <div className="grid gap-ds-16 lg:grid-cols-2">
           {visible.map((product) => (

@@ -20,8 +20,8 @@ export default async function RascunhoPage({ searchParams }: { searchParams: Pro
       <Card>
         <CardContent>
           <dl className="grid gap-ds-12 sm:grid-cols-2">
-            <div><dt className="text-caption text-muted-foreground">Product</dt><dd>{draft.name}</dd></div>
-            <div><dt className="text-caption text-muted-foreground">Keyword</dt><dd>{draft.keyword}</dd></div>
+            <div><dt className="text-caption text-muted-foreground">Produto</dt><dd>{draft.name}</dd></div>
+            <div><dt className="text-caption text-muted-foreground">Palavra-chave</dt><dd>{draft.keyword}</dd></div>
             <div><dt className="text-caption text-muted-foreground">Estado</dt><dd>{draft.status}</dd></div>
             <div><dt className="text-caption text-muted-foreground">Envio</dt><dd>{draft.sent ? "Enviado" : "Não enviado"}</dd></div>
           </dl>

@@ -68,7 +68,7 @@ export function Sidebar({ expanded, onExpandedChange }: { expanded: boolean; onE
     >
       <div className="flex h-14 items-center px-ds-16">
         <Link href="/dashboard" className={cn("truncate text-label text-foreground", focusRing)}>
-          <span className={cn(!expanded && "max-xl:sr-only")}>Plataforma</span>
+          <span className={cn(!expanded && "max-xl:sr-only")}>Console</span>
           {!expanded ? (
             <span className="xl:hidden" aria-hidden>
               P

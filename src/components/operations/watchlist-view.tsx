@@ -41,8 +41,8 @@ export function WatchlistView({ items }: { items: WatchItem[] }) {
   return (
     <div className="ds-container flex flex-col gap-ds-24 py-ds-24">
       <header>
-        <h1 className="text-h1">Lista de decisão</h1>
-        <p className="mt-ds-8 max-w-content text-body text-muted-foreground">Fila para decidir o próximo passo. As notas, o estado e a prioridade ficam gravados.</p>
+        <h1 className="text-h1">Watchlist</h1>
+        <p className="mt-ds-8 max-w-content text-body text-muted-foreground">Itens para decidir o próximo passo. As notas, o estado e a prioridade ficam gravados.</p>
       </header>
       <div className="grid gap-ds-16 xl:grid-cols-[minmax(0,1fr)_240px]">
         <div className="flex flex-col gap-ds-16">
@@ -51,7 +51,7 @@ export function WatchlistView({ items }: { items: WatchItem[] }) {
             <Select id="watch-status" label="Estado" value={status} onValueChange={setStatus} options={[{ value: "all", label: "Todos" }, { value: "pronto", label: "Pronto para anunciar" }, { value: "analise", label: "Em análise" }, { value: "revisao", label: "Aguardando revisão" }, { value: "descartado", label: "Descartado" }]} />
             <Select id="watch-priority" label="Prioridade" value={priority} onValueChange={setPriority} options={[{ value: "all", label: "Todas" }, { value: "high", label: "Alta" }, { value: "medium", label: "Média" }, { value: "low", label: "Baixa" }]} />
           </section>
-          {visible.length === 0 ? <p className="text-body text-muted-foreground">{items.length === 0 ? "A fila está vazia." : "Nenhum Product com estes filtros."}</p> : null}
+          {visible.length === 0 ? <p className="text-body text-muted-foreground">{items.length === 0 ? "A Watchlist está vazia." : "Nenhum produto com estes filtros."}</p> : null}
           {visible.map((item) => {
             const view = statusView[item.status];
             return (
@@ -63,7 +63,7 @@ export function WatchlistView({ items }: { items: WatchItem[] }) {
                   </div>
                   <p className="text-body text-muted-foreground">{item.brand ?? "Marca não observada"} · {item.priceLabel ?? "Preço não observado"}</p>
                   <dl className="grid gap-ds-8 sm:grid-cols-2">
-                    <div><dt className="text-caption text-muted-foreground">Keyword</dt><dd>{item.keyword}</dd></div>
+                    <div><dt className="text-caption text-muted-foreground">Palavra-chave</dt><dd>{item.keyword}</dd></div>
                     <div><dt className="text-caption text-muted-foreground">Prioridade</dt><dd>{priorityLabel[item.priority]}</dd></div>
                     <div><dt className="text-caption text-muted-foreground">Entrada</dt><dd>{formatDate(item.addedOn)}</dd></div>
                     <div><dt className="text-caption text-muted-foreground">Domínio</dt><dd>{item.domain ?? "Não observado"}</dd></div>
@@ -81,12 +81,12 @@ export function WatchlistView({ items }: { items: WatchItem[] }) {
           })}
           {status !== "all" || priority !== "all" ? <Button type="button" variant="secondary" onClick={() => { setStatus("all"); setPriority("all"); }}>Limpar filtros</Button> : null}
         </div>
-        <aside aria-label="Resumo da fila">
+        <aside aria-label="Resumo da Watchlist">
           <Card>
             <CardContent>
               <h2 className="text-h3">Fila</h2>
               <ul className="mt-ds-12 flex flex-col gap-ds-8 text-body">
-                <li>Na fila: {counts.total}</li>
+                <li>Na Watchlist: {counts.total}</li>
                 <li>Pronto para anunciar: {counts.pronto}</li>
                 <li>Em análise: {counts.analise}</li>
                 <li>Aguardando revisão: {counts.revisao}</li>
