@@ -15,7 +15,7 @@ process.env.ADMIN_SESSION_SECRET = "test-session-secret-value";
 process.env.GOOGLE_ADS_CLIENT_ID = "client-discovery-example";
 process.env.GOOGLE_ADS_CLIENT_SECRET = "secret-discovery-example";
 process.env.GOOGLE_ADS_REDIRECT_URI = "http://127.0.0.1:3000/configuracoes/integracoes/google-ads/retorno";
-process.env.GOOGLE_ADS_DEVELOPER_TOKEN = "developer-discovery-example";
+delete process.env.GOOGLE_ADS_DEVELOPER_TOKEN;
 process.env.GOOGLE_CLOUD_PROJECT = "demo-cloud-project";
 process.env.AIA_ENV = "test";
 
@@ -161,7 +161,7 @@ async function main(): Promise<void> {
   assert(standard?.campaignCount === 4 && standard.enabledCount === 2 && standard.pausedCount === 1 && standard.removedCount === 1, "campaign counts are read");
   assert(standard?.permissions.campaignRead === "granted" && standard.permissions.adGroup === "granted", "read probes are granted");
   assert(view.syncLabel === "Conectado", "sync state is connected");
-  assert(view.apiVersion === "v21", "api version is recorded");
+  assert(view.apiVersion === "v25", "api version is recorded");
   assert(view.cloudProject === "demo-cloud-project", "cloud project is shown");
   assert(view.oauthClient === "Configurado", "oauth client presence is shown");
   const selected = flow.activateGoogleAdsAccount(STANDARD);

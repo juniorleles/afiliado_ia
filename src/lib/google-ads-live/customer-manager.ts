@@ -5,6 +5,7 @@
  * manager account. Account text is copied from the response.
  */
 import {
+  googleAdsRequestHeaders,
   googleAdsRoot,
   googleAuthErrorCodes,
   isGoogleAuthRecord,
@@ -18,7 +19,7 @@ export const CUSTOMER_CLIENT_QUERY = "SELECT customer_client.client_customer, cu
 export const MAX_ACCOUNT_PAGES = 10;
 
 const DEVELOPER = new Set(["DEVELOPER_TOKEN_INVALID", "DEVELOPER_TOKEN_NOT_APPROVED"]);
-const ACCESS = new Set(["USER_PERMISSION_DENIED", "CUSTOMER_NOT_ENABLED", "ACTION_NOT_PERMITTED", "DEVELOPER_TOKEN_PROHIBITED"]);
+const ACCESS = new Set(["USER_PERMISSION_DENIED", "CUSTOMER_NOT_ENABLED", "ACTION_NOT_PERMITTED", "DEVELOPER_TOKEN_PROHIBITED", "CLOUD_PROJECT_NOT_APPROVED_FOR_PRODUCTION"]);
 
 export interface GoogleAuthCustomerRead {
   accounts: GoogleAuthAccount[];
@@ -112,12 +113,7 @@ async function search(client: GoogleAuthHttpClient, root: string, customerId: st
     const response = await client.send({
       url: `${root}/customers/${customerId}/googleAds:search`,
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "developer-token": developerToken,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+      headers: googleAdsRequestHeaders(accessToken, true),
       body: JSON.stringify(payload),
     });
     httpStatus = response.httpStatus;
@@ -139,11 +135,7 @@ export async function readCustomers(client: GoogleAuthHttpClient, apiVersion: st
   const listed = await client.send({
     url: `${root}/customers:listAccessibleCustomers`,
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "developer-token": developerToken,
-      Accept: "application/json",
-    },
+    headers: googleAdsRequestHeaders(accessToken),
   });
   const listedBody = parseGoogleAuthJson(listed.bodyText);
   const listedFailure = failure(listedBody, listed.httpStatus);

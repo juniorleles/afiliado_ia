@@ -4,7 +4,7 @@
  * Sends one mutate request and one status read. The grant is placed on the
  * request and is not returned.
  */
-import { GOOGLE_ADS_API_VERSION, createGoogleAuthHttpClient, googleAdsRoot, googleAuthErrorCodes, isGoogleAuthRecord, parseGoogleAuthJson, type GoogleAuthHttpResponse, type GoogleAuthTransport } from "./google-auth-client";
+import { GOOGLE_ADS_API_VERSION, createGoogleAuthHttpClient, googleAdsRequestHeaders, googleAdsRoot, googleAuthErrorCodes, isGoogleAuthRecord, parseGoogleAuthJson, type GoogleAuthHttpResponse, type GoogleAuthTransport } from "./google-auth-client";
 import type { CampaignMutateBody } from "./campaign-operation-builder";
 import type { CampaignPublishIssue } from "./campaign-publisher-session";
 
@@ -52,12 +52,7 @@ export function createCampaignPublisherClient(transport?: GoogleAuthTransport) {
       const response: GoogleAuthHttpResponse = await client.send({
         url: `${googleAdsRoot(apiVersion || GOOGLE_ADS_API_VERSION)}/customers/${customerId}/googleAds:mutate`,
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "developer-token": developerToken,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        headers: googleAdsRequestHeaders(accessToken, true),
         body: JSON.stringify(body),
       });
       const parsed = parseGoogleAuthJson(response.bodyText);
@@ -88,12 +83,7 @@ export function createCampaignPublisherClient(transport?: GoogleAuthTransport) {
       const response = await client.send({
         url: `${googleAdsRoot(apiVersion || GOOGLE_ADS_API_VERSION)}/customers/${customerId}/googleAds:search`,
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "developer-token": developerToken,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        headers: googleAdsRequestHeaders(accessToken, true),
         body: JSON.stringify({ query }),
       });
       const parsed = parseGoogleAuthJson(response.bodyText);

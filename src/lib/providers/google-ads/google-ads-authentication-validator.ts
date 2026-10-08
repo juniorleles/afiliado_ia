@@ -67,7 +67,6 @@ export function createGoogleAdsTokenValidator(): GoogleAdsTokenValidator {
       return [
         { field: "configuration.clientId", message: "Missing Client ID: a client id is required." },
         { field: "configuration.clientSecret", message: "Missing Client Secret: a client secret is required." },
-        { field: "configuration.developerToken", message: "Missing Developer Token: a developer token is required." },
         { field: "configuration.customerId", message: "Missing Customer ID: a customer id is required." },
       ];
     }
@@ -81,9 +80,6 @@ export function createGoogleAdsTokenValidator(): GoogleAdsTokenValidator {
     }
     if (textOf(input.clientSecret) === null) {
       issues.push({ field: "configuration.clientSecret", message: "Missing Client Secret: a client secret is required." });
-    }
-    if (textOf(input.developerToken) === null) {
-      issues.push({ field: "configuration.developerToken", message: "Missing Developer Token: a developer token is required." });
     }
     if (textOf(input.customerId) === null) {
       issues.push({ field: "configuration.customerId", message: "Missing Customer ID: a customer id is required." });
@@ -118,9 +114,6 @@ export function createGoogleAdsTokenValidator(): GoogleAdsTokenValidator {
     const issues: GoogleAdsIssue[] = [];
     if (typeof input.sessionId !== "string" || !RECORD_ID.test(input.sessionId)) {
       issues.push({ field: "tokens.sessionId", message: "Invalid Metadata: a well-formed session id is required." });
-    }
-    if (textOf(input.developerToken) === null) {
-      issues.push({ field: "tokens.developerToken", message: "Missing Developer Token: a developer token is required." });
     }
     if (input.accessToken !== undefined && input.accessToken !== null && textOf(input.accessToken) === null) {
       issues.push({ field: "tokens.accessToken", message: "Invalid Metadata: an access token must be text when listed." });

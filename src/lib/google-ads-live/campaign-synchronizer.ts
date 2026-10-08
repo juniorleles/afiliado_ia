@@ -90,7 +90,7 @@ export function createCampaignSynchronizer(options: CampaignSynchronizerOptions 
         const priorPresent = input.localSnapshot !== undefined;
         const prior = priorPresent ? validator.localCampaigns(input.localSnapshot) : null;
         const accessToken = (input.session as { accessToken: string }).accessToken.trim();
-        const developerToken = (input.developerToken as string).trim();
+        const developerToken = typeof input.developerToken === "string" ? input.developerToken.trim() : "";
         const observed: CampaignState[] = [];
         let requestCount = 0;
         for (const resourceName of names) {

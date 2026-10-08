@@ -210,7 +210,7 @@ async function main() {
       !mutateBody.includes('"status":"ENABLED"') &&
       !mutateBody.includes("biddingStrategy") &&
       !/budget|keyword/i.test(mutateBody) &&
-      live.calls[0]?.headers["developer-token"] === "developer-marker" &&
+      !("developer-token" in (live.calls[0]?.headers ?? {})) &&
       live.calls[0]?.headers.Authorization === "Bearer access-marker" &&
       Object.keys(published).join() === AD_GROUP_PUBLISH_RESULT_KEYS.join() &&
       Object.keys(published.publishedAdGroup ?? {}).join() === PUBLISHED_AD_GROUP_KEYS.join() &&

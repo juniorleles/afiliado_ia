@@ -103,7 +103,7 @@ export function createCampaignPublisher(options: CampaignPublisherOptions = {}):
           return refused([{ field: "draft.status", message: "Invalid Campaign Draft: the only accepted status is PAUSED." }], metadata);
         }
         const accessToken = (input.session.accessToken as string).trim();
-        const developerToken = (input.developerToken as string).trim();
+        const developerToken = typeof input.developerToken === "string" ? input.developerToken.trim() : "";
         const mutated = await client.mutate(apiVersion, customerId, developerToken, accessToken, body);
         if (!mutated.ok) return refused(mutated.issues, metadata);
         publishedDrafts.add(draftId);

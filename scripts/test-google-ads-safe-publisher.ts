@@ -14,7 +14,7 @@ process.env.PRESELL_OS_DB = path.join(root, "safe.db");
 process.env.ADMIN_SESSION_SECRET = "test-session-secret-value";
 process.env.GOOGLE_ADS_CLIENT_ID = "client-safe-example";
 process.env.GOOGLE_ADS_CLIENT_SECRET = "secret-safe-example";
-process.env.GOOGLE_ADS_DEVELOPER_TOKEN = "developer-safe-example";
+delete process.env.GOOGLE_ADS_DEVELOPER_TOKEN;
 process.env.GOOGLE_ADS_REDIRECT_URI = "http://127.0.0.1:3000/configuracoes/integracoes/google-ads/retorno";
 process.env.PUBLIC_SITE_URL = "https://reviews.example";
 process.env.AIA_ENV = "test";

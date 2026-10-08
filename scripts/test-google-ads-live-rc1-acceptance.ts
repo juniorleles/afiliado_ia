@@ -539,7 +539,7 @@ Known Limitations
 The hosts do not read credentials from the environment. The authentication session does not keep the access token; a later publish call has to be given that grant again. Publication creates paused search resources only. The synchronizer does not change a campaign, a budget, a bid, or a serving status. Keywords, responsive-search-ad text, and budgets are copied from the draft or from the read; they are not chosen here. A refused call stores nothing. Snapshots live only inside the host that created them. This audit replays a scripted account service.
 
 Operational Notes
-Rejected inputs return REJECTED, a list of issues, and no snapshot. Clocks and id factories are injectable, and one call does not throw. A live test account still needs a developer token, an OAuth client, a refresh token, and a customer id supplied on the call. Public pages still need publication approval. This audit does not publish, deploy, enable an ad, or commit.
+Rejected inputs return REJECTED, a list of issues, and no snapshot. Clocks and id factories are injectable, and one call does not throw. A live test account still needs an OAuth client, a refresh token, and a customer id supplied on the call. Access follows the Cloud project that owns that client. Public pages still need publication approval. This audit does not publish, deploy, enable an ad, or commit.
 `);
   console.log("PUBLISH=NO");
   console.log("DEPLOY=NO");

@@ -21,7 +21,7 @@ process.env.ADMIN_SESSION_SECRET = "test-session-secret-value";
 process.env.GOOGLE_ADS_CLIENT_ID = CLIENT;
 process.env.GOOGLE_ADS_CLIENT_SECRET = SECRET;
 process.env.GOOGLE_ADS_REDIRECT_URI = "http://127.0.0.1:3000/configuracoes/integracoes/google-ads/retorno";
-process.env.GOOGLE_ADS_DEVELOPER_TOKEN = DEVELOPER;
+delete process.env.GOOGLE_ADS_DEVELOPER_TOKEN;
 process.env.GOOGLE_CLOUD_PROJECT = "demo-cloud-project";
 process.env.AIA_ENV = "test";
 
@@ -49,6 +49,9 @@ function customers(ok: boolean): (request: GoogleAuthHttpRequest) => Promise<Goo
     if (request.url.startsWith("https://oauth2.googleapis.com/token")) {
       const code = request.body?.includes("grant_type=authorization_code");
       return tokenResponse(code ? REFRESH : null);
+    }
+    if (request.url.includes("googleads.googleapis.com")) {
+      assert(!("developer-token" in request.headers), "Ads requests omit the developer-token header");
     }
     if (!ok) {
       return {

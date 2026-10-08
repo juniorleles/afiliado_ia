@@ -5,6 +5,7 @@
  * probes with search. This module never calls a mutate method.
  */
 import {
+  googleAdsRequestHeaders,
   googleAdsRoot,
   googleAuthErrorCodes,
   isGoogleAuthRecord,
@@ -39,7 +40,7 @@ function textOf(value: unknown): string | null {
 
 function denied(httpStatus: number, parsed: unknown): boolean {
   if (httpStatus === 401 || httpStatus === 403) return true;
-  return googleAuthErrorCodes(parsed).some((code) => code === "USER_PERMISSION_DENIED" || code === "ACTION_NOT_PERMITTED");
+  return googleAuthErrorCodes(parsed).some((code) => code === "USER_PERMISSION_DENIED" || code === "ACTION_NOT_PERMITTED" || code === "CLOUD_PROJECT_NOT_APPROVED_FOR_PRODUCTION");
 }
 
 async function search(
@@ -57,12 +58,7 @@ async function search(
   for (let page = 0; page < MAX_PAGES; page += 1) {
     const payload: Record<string, string> = { query };
     if (pageToken !== "") payload.pageToken = pageToken;
-    const headers: Record<string, string> = {
-      Authorization: `Bearer ${accessToken}`,
-      "developer-token": developerToken,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    };
+    const headers = googleAdsRequestHeaders(accessToken, true);
     if (loginCustomerId && /^\d{10}$/.test(loginCustomerId)) headers["login-customer-id"] = loginCustomerId;
     const response = await client.send({
       url: `${root}/customers/${customerId}/googleAds:search`,

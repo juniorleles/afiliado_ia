@@ -244,7 +244,6 @@ export function createPublisherValidator(): PublisherValidator {
     else issues.push(...validatePublishedCampaign(input.publishedCampaign));
     if (!("adGroupDraft" in input) || input.adGroupDraft === undefined) issues.push({ field: "adGroupDraft", message: "Invalid Ad Group Draft: an ad group draft is required." });
     else issues.push(...validateAdGroupDraft(input.adGroupDraft));
-    if (!("developerToken" in input) || textOf(input.developerToken) === "") issues.push({ field: "developerToken", message: "Missing Authentication: a developer token is required." });
     for (const key of ["executionMetadata", "runtimeMetadata"] as const) {
       if (key in input) issues.push(...validateMetadata(input[key]).map((item) => invalid(key, item.message.replace(/^Invalid Metadata:\s*/, ""))));
     }
@@ -265,7 +264,6 @@ export function createPublisherValidator(): PublisherValidator {
     else issues.push(...validatePublishedAdGroup(input.publishedAdGroup, input.publishedCampaign));
     if (!("rsaDraft" in input) || input.rsaDraft === undefined) issues.push({ field: "rsaDraft", message: "Invalid RSA Draft: a responsive search ad draft is required." });
     else issues.push(...validateRsaDraft(input.rsaDraft));
-    if (!("developerToken" in input) || textOf(input.developerToken) === "") issues.push({ field: "developerToken", message: "Missing Authentication: a developer token is required." });
     for (const key of ["executionMetadata", "runtimeMetadata"] as const) {
       if (key in input) issues.push(...validateMetadata(input[key]).map((item) => invalid(key, item.message.replace(/^Invalid Metadata:\s*/, ""))));
     }

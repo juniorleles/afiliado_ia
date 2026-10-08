@@ -143,7 +143,7 @@ async function main() {
       live.calls.length === 5 &&
       live.calls[0]?.body?.includes("grant_type=refresh_token") === true &&
       live.calls[0]?.body?.includes("refresh-marker") === true &&
-      live.calls[1]?.headers["developer-token"] === "developer-marker" &&
+      !("developer-token" in (live.calls[1]?.headers ?? {})) &&
       live.calls[1]?.headers.Authorization === "Bearer access-marker" &&
       Object.keys(authenticated).join() === GOOGLE_AUTH_RESULT_KEYS.join() &&
       Object.keys(authenticated.session ?? {}).join() === GOOGLE_AUTH_SESSION_KEYS.join() &&

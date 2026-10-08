@@ -138,7 +138,6 @@ export function createMetricsValidator(): MetricsValidator {
     const customerId = textOf(input.customerId);
     if (!("customerId" in input) || customerId === "") issues.push({ field: "customerId", message: "Missing Customer: a customer id is required." });
     else if (!CUSTOMER_ID.test(customerId)) issues.push({ field: "customerId", message: "Missing Customer: a customer id is required." });
-    if (!("developerToken" in input) || textOf(input.developerToken) === "") issues.push({ field: "developerToken", message: "Missing Authentication: a developer token is required." });
     if (!("campaignResourceNames" in input)) issues.push({ field: "campaignResourceNames", message: "Unknown Campaign: a campaign resource is required." });
     else if (CUSTOMER_ID.test(customerId)) issues.push(...validateNames(input.campaignResourceNames, customerId));
     for (const key of ["executionMetadata", "runtimeMetadata"] as const) {

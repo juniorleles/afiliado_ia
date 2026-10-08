@@ -125,7 +125,7 @@ async function main() {
       mutateBody.includes("Paused Test Draft") &&
       !mutateBody.includes("ENABLED") &&
       !mutateBody.includes("adGroup") &&
-      live.calls[0]?.headers["developer-token"] === "developer-marker" &&
+      !("developer-token" in (live.calls[0]?.headers ?? {})) &&
       live.calls[0]?.headers.Authorization === "Bearer access-marker" &&
       Object.keys(published).join() === CAMPAIGN_PUBLISH_RESULT_KEYS.join() &&
       Object.keys(published.publishedCampaign ?? {}).join() === PUBLISHED_CAMPAIGN_KEYS.join() &&

@@ -86,7 +86,7 @@ async function main() {
   check("Invalid Metadata: a non-object is rejected", has(validator.validateInput(null), /Invalid Metadata/));
   check("Missing Client ID: an empty client id is rejected", has(validator.validateConfiguration(configurationOf({ clientId: "" })), /Missing Client ID/));
   check("Missing Client Secret: an empty client secret is rejected", has(validator.validateConfiguration(configurationOf({ clientSecret: "" })), /Missing Client Secret/));
-  check("Missing Developer Token: an empty developer token is rejected", has(validator.validateConfiguration(configurationOf({ developerToken: "" })), /Missing Developer Token/));
+  check("an empty developer token is accepted", validator.validateConfiguration(configurationOf({ developerToken: "" })).length === 0);
   check("Missing Customer ID: an empty customer id is rejected", has(validator.validateConfiguration(configurationOf({ customerId: "" })), /Missing Customer ID/));
   check("Invalid Metadata: nested metadata is rejected", has(validator.validateMetadata({ a: { b: 1 } }), /Invalid Metadata/));
   check("Invalid Metadata: a live mode is rejected", has(validator.validateConfiguration(configurationOf({ mode: "LIVE" })), /Invalid Metadata/));
@@ -99,7 +99,7 @@ async function main() {
   const tokenIssues = store.put({ sessionId: "session-1", accessToken: "access-1", refreshToken: "refresh-1", developerToken: "dev-1" });
   check("the token store stores, gets, and lists records", tokenIssues.length === 0 && store.get("session-1")?.developerToken === "dev-1" && store.get("missing") === null && store.list().length === 1);
   check("the stored token record is frozen", Object.isFrozen(store.get("session-1")));
-  check("Missing Developer Token is rejected by the store", has(store.put({ sessionId: "session-2", accessToken: null, refreshToken: null, developerToken: "" }), /Missing Developer Token/) && store.get("session-2") === null);
+  check("the token store accepts a record without a developer token", store.put({ sessionId: "session-2", accessToken: null, refreshToken: null, developerToken: "" }).length === 0 && store.get("session-2")?.developerToken === "");
 
   const snap = createGoogleAdsAuthenticationSnapshot({
     authenticationId: "auth-1",
@@ -143,7 +143,7 @@ async function main() {
   const noSecret = authOf().authenticate(inputOf({ configuration: configurationOf({ clientSecret: "" }) }));
   check("Missing Client Secret is refused", noSecret.status === "REJECTED" && has(noSecret.issues, /Missing Client Secret/));
   const noDev = authOf().authenticate(inputOf({ configuration: configurationOf({ developerToken: "" }) }));
-  check("Missing Developer Token is refused", noDev.status === "REJECTED" && has(noDev.issues, /Missing Developer Token/));
+  check("an empty developer token does not block offline authentication", noDev.status === "OK" && noDev.issues.length === 0);
   const noCustomer = authOf().authenticate(inputOf({ configuration: configurationOf({ customerId: "" }) }));
   check("Missing Customer ID is refused", noCustomer.status === "REJECTED" && has(noCustomer.issues, /Missing Customer ID/));
   const nested = authOf().authenticate(inputOf({ executionMetadata: { a: { b: 1 } } }));

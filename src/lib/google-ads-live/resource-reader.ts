@@ -4,7 +4,7 @@
  * Reads campaign, budget, label, ad group, ad, and change rows. Every
  * request is a search. The grant is placed on the request and is not returned.
  */
-import { GOOGLE_ADS_API_VERSION, createGoogleAuthHttpClient, googleAdsRoot, isGoogleAuthRecord, parseGoogleAuthJson, type GoogleAuthTransport } from "./google-auth-client";
+import { GOOGLE_ADS_API_VERSION, createGoogleAuthHttpClient, googleAdsRequestHeaders, googleAdsRoot, isGoogleAuthRecord, parseGoogleAuthJson, type GoogleAuthTransport } from "./google-auth-client";
 import type { CampaignSyncIssue } from "./campaign-sync-snapshot";
 
 export const MAX_READ_PAGES = 10;
@@ -48,13 +48,8 @@ export function changeReadQuery(resourceName: string): string {
   return `${CHANGE_QUERY}${quoted(resourceName)} LIMIT 1000`;
 }
 
-function requestHeaders(developerToken: string, accessToken: string): Record<string, string> {
-  return {
-    Authorization: `Bearer ${accessToken}`,
-    "developer-token": developerToken,
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  };
+function requestHeaders(accessToken: string): Record<string, string> {
+  return googleAdsRequestHeaders(accessToken, true);
 }
 
 export function createResourceReader(transport?: GoogleAuthTransport) {
@@ -70,7 +65,7 @@ export function createResourceReader(transport?: GoogleAuthTransport) {
       const response = await client.send({
         url: `${googleAdsRoot(apiVersion || GOOGLE_ADS_API_VERSION)}/customers/${customerId}/googleAds:search`,
         method: "POST",
-        headers: requestHeaders(developerToken, accessToken),
+        headers: requestHeaders(accessToken),
         body: JSON.stringify(body),
       });
       if (optional && response.httpStatus === 400) return { ok: true, read: { rows: [], requestCount } };

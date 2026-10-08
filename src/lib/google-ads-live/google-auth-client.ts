@@ -5,7 +5,17 @@
  * address, headers, and body. This file is the only place a retrieval runs.
  */
 export const GOOGLE_OAUTH_TOKEN_URL = "https://oauth2.googleapis.com/token";
-export const GOOGLE_ADS_API_VERSION = "v21";
+export const GOOGLE_ADS_API_VERSION = "v25";
+
+/** Bearer authentication for Google Ads. The deprecated developer-token header is omitted. */
+export function googleAdsRequestHeaders(accessToken: string, json = false): Record<string, string> {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${accessToken}`,
+    Accept: "application/json",
+  };
+  if (json) headers["Content-Type"] = "application/json";
+  return headers;
+}
 
 export interface GoogleAuthHttpRequest {
   url: string;

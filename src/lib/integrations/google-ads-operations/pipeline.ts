@@ -5,7 +5,7 @@
  * recommendation engine, and pause/resume rules. It stores their snapshots
  * and leaves every action pending. It does not send a mutate.
  */
-import { GOOGLE_ADS_API_VERSION, createGoogleAuthHttpClient, googleAdsRoot, isGoogleAuthRecord, parseGoogleAuthJson, type GoogleAuthTransport } from "@/lib/google-ads-live/google-auth-client";
+import { GOOGLE_ADS_API_VERSION, createGoogleAuthHttpClient, googleAdsRequestHeaders, googleAdsRoot, isGoogleAuthRecord, parseGoogleAuthJson, type GoogleAuthTransport } from "@/lib/google-ads-live/google-auth-client";
 import { createCampaignSynchronizer } from "@/lib/google-ads-live/campaign-synchronizer";
 import type { CampaignState } from "@/lib/google-ads-live/campaign-sync-snapshot";
 import { exchangeRefreshToken } from "@/lib/google-ads-live/oauth-manager";
@@ -105,12 +105,7 @@ function operationalRules() {
 
 async function readRows(transport: GoogleAuthTransport | undefined, customerId: string, developerToken: string, accessToken: string, loginCustomerId: string | null, query: string): Promise<Record<string, unknown>[] | null> {
   const client = createGoogleAuthHttpClient(transport);
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${accessToken}`,
-    "developer-token": developerToken,
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  };
+  const headers = googleAdsRequestHeaders(accessToken, true);
   if (loginCustomerId && /^\d{10}$/.test(loginCustomerId) && loginCustomerId !== customerId) headers["login-customer-id"] = loginCustomerId;
   const response = await client.send({
     url: `${googleAdsRoot(GOOGLE_ADS_API_VERSION)}/customers/${customerId}/googleAds:search`,
@@ -140,7 +135,7 @@ export async function runLiveOperations(input: {
   const secrets = readGoogleAdsOAuthSecrets();
   const clientId = env.clientId || secrets.clientId;
   const clientSecret = env.clientSecret || secrets.clientSecret;
-  if (!clientId || !clientSecret || !secrets.refreshToken || !env.developerToken) {
+  if (!clientId || !clientSecret || !secrets.refreshToken) {
     return { ok: false, issues: ["A conta do Google Ads ainda não está pronta para sincronizar."] };
   }
   const http = createGoogleAuthHttpClient(input.transport);
@@ -163,7 +158,7 @@ export async function runLiveOperations(input: {
   const synced = await synchronizer.synchronize({
     session,
     customerId: input.customerId,
-    developerToken: env.developerToken,
+    developerToken: env.developerToken ?? "",
     campaignResourceNames: [input.campaignResourceName],
     executionMetadata: { source: "operations" },
   });
@@ -175,7 +170,7 @@ export async function runLiveOperations(input: {
   const keywordRows = await readRows(
     input.transport,
     input.customerId,
-    env.developerToken,
+    env.developerToken ?? "",
     oauth.grant.accessToken,
     loginCustomerId,
     `SELECT ad_group_criterion.resource_name, ad_group_criterion.status, ad_group_criterion.negative, ad_group_criterion.keyword.text, ad_group_criterion.keyword.match_type FROM ad_group_criterion WHERE campaign.resource_name = '${input.campaignResourceName}' AND ad_group_criterion.type = KEYWORD`,
@@ -183,7 +178,7 @@ export async function runLiveOperations(input: {
   const assetRows = await readRows(
     input.transport,
     input.customerId,
-    env.developerToken,
+    env.developerToken ?? "",
     oauth.grant.accessToken,
     loginCustomerId,
     `SELECT campaign_asset.resource_name, campaign_asset.status, campaign_asset.field_type, asset.resource_name FROM campaign_asset WHERE campaign.resource_name = '${input.campaignResourceName}'`,
@@ -194,7 +189,7 @@ export async function runLiveOperations(input: {
   const collected = await collector.collect({
     session,
     customerId: input.customerId,
-    developerToken: env.developerToken,
+    developerToken: env.developerToken ?? "",
     campaignResourceNames: [input.campaignResourceName],
     executionMetadata: metadata,
   });

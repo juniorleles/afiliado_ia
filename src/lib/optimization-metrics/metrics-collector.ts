@@ -81,7 +81,7 @@ export function createMetricsCollector(options: MetricsCollectorOptions = {}): M
         if (names === null) return refused(issues.length > 0 ? issues : [{ field: "campaignResourceNames", message: "Unknown Campaign: a campaign resource is required." }]);
         const metadata = isRecord(input.executionMetadata) ? ({ ...input.executionMetadata } as MetricsMetadata) : {};
         const accessToken = (input.session as { accessToken: string }).accessToken.trim();
-        const developerToken = (input.developerToken as string).trim();
+        const developerToken = typeof input.developerToken === "string" ? input.developerToken.trim() : "";
         const metricWindow = resolveMetricWindow(metadata);
         const campaignMetrics: CampaignMetrics[] = [];
         const adGroupMetrics: AdGroupMetrics[] = [];

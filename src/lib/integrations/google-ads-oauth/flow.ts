@@ -107,7 +107,7 @@ function publicFailure(message: string): GoogleAdsOAuthNotice {
 }
 
 function failureText(notice: GoogleAdsOAuthNotice): string {
-  if (notice === "desenvolvedor") return "O token de desenvolvedor não está configurado ou foi recusado.";
+  if (notice === "desenvolvedor") return "O projeto do Cloud associado a estas credenciais não foi aceito pelo Google Ads.";
   if (notice === "conta") return "A conta do Google Ads não está acessível para este usuário.";
   if (notice === "token") return "O Google recusou o token. Conecte a conta de novo.";
   if (notice === "escopo") return "Os escopos autorizados não incluem o Google Ads.";
@@ -150,22 +150,8 @@ export async function acceptGoogleAdsAuthorizationCode(input: {
 
 async function checkCustomers(accessToken: string, transport?: GoogleAuthTransport): Promise<GoogleAdsOAuthNotice> {
   const env = readGoogleAdsEnvironment();
-  if (!env.developerToken) {
-    writeGoogleAdsConnection({
-      oauthStatus: "connected",
-      apiStatus: "error",
-      customerId: null,
-      loginCustomerId: env.loginCustomerId,
-      accountName: null,
-      accessLevel: "Não verificado",
-      lastConnectionAt: new Date().toISOString(),
-      lastError: failureText("desenvolvedor"),
-    });
-    noteDiscoveryFailure("desenvolvedor");
-    return "desenvolvedor";
-  }
   const client = createGoogleAuthHttpClient(transport);
-  const customers = await readCustomers(client, GOOGLE_ADS_API_VERSION, env.developerToken, accessToken);
+  const customers = await readCustomers(client, GOOGLE_ADS_API_VERSION, env.developerToken ?? "", accessToken);
   if (!customers.ok) {
     const notice = publicFailure(customers.issues[0]?.message ?? "");
     writeGoogleAdsConnection({
@@ -181,7 +167,7 @@ async function checkCustomers(accessToken: string, transport?: GoogleAuthTranspo
     noteDiscoveryFailure(notice);
     return notice;
   }
-  const discovered = await discoverGoogleAdsAccounts(client, GOOGLE_ADS_API_VERSION, env.developerToken, accessToken, customers.read);
+  const discovered = await discoverGoogleAdsAccounts(client, GOOGLE_ADS_API_VERSION, env.developerToken ?? "", accessToken, customers.read);
   const selected = replaceGoogleAdsAccounts(discovered.accounts);
   const manager = customers.read.accounts.find((item) => item.manager);
   const now = new Date().toISOString();
@@ -220,19 +206,6 @@ export async function testStoredGoogleAdsConnection(transport?: GoogleAuthTransp
   const credentials = credentialsForRefresh();
   if (!credentials) return "token";
   const env = readGoogleAdsEnvironment();
-  if (!env.developerToken) {
-    writeGoogleAdsConnection({
-      oauthStatus: "connected",
-      apiStatus: "error",
-      customerId: null,
-      loginCustomerId: env.loginCustomerId,
-      accountName: null,
-      accessLevel: "Não verificado",
-      lastConnectionAt: new Date().toISOString(),
-      lastError: failureText("desenvolvedor"),
-    });
-    return "desenvolvedor";
-  }
   const client = createGoogleAuthHttpClient(transport);
   const oauth = await exchangeRefreshToken(client, credentials);
   if (!oauth.ok) {

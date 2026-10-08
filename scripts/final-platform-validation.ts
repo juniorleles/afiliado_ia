@@ -60,14 +60,13 @@ async function main() {
     "DEMO_PUBLISH",
     "GOOGLE_ADS_CLIENT_ID",
     "GOOGLE_ADS_CLIENT_SECRET",
-    "GOOGLE_ADS_DEVELOPER_TOKEN",
     "GOOGLE_ADS_REFRESH_TOKEN",
     "GOOGLE_ADS_CUSTOMER_ID",
     "GOOGLE_ADS_LOGIN_CUSTOMER_ID",
     "GOOGLE_ADS_TEST_CUSTOMER_ID",
   ]);
   const demoPublish = keys.DEMO_PUBLISH === "SET" && (process.env.DEMO_PUBLISH ?? "").trim() === "true";
-  const googleReady = ["GOOGLE_ADS_CLIENT_ID", "GOOGLE_ADS_CLIENT_SECRET", "GOOGLE_ADS_DEVELOPER_TOKEN", "GOOGLE_ADS_REFRESH_TOKEN", "GOOGLE_ADS_CUSTOMER_ID"].every((name) => keys[name] === "SET");
+  const googleReady = ["GOOGLE_ADS_CLIENT_ID", "GOOGLE_ADS_CLIENT_SECRET", "GOOGLE_ADS_REFRESH_TOKEN", "GOOGLE_ADS_CUSTOMER_ID"].every((name) => keys[name] === "SET");
 
   const db: { name: string; size: number; mtime: string }[] = [];
   for (const name of ["presell-os.db", "presell-os.db-shm", "presell-os.db-wal"]) {

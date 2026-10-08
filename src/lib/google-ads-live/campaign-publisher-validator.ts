@@ -104,7 +104,6 @@ export function createCampaignPublishValidator(): CampaignPublishValidator {
     else issues.push(...validateSession(input.session));
     if (!("customerId" in input) || textOf(input.customerId) === "") issues.push({ field: "customerId", message: "Missing Customer: a customer id is required." });
     else if (!CUSTOMER_ID.test(textOf(input.customerId))) issues.push({ field: "customerId", message: "Missing Customer: a customer id is required." });
-    if (!("developerToken" in input) || textOf(input.developerToken) === "") issues.push({ field: "developerToken", message: "Missing Authentication: a developer token is required." });
     if (!("draft" in input) || input.draft === undefined) issues.push({ field: "draft", message: "Invalid Campaign Draft: a campaign draft is required." });
     else issues.push(...validateDraft(input.draft));
     for (const key of ["executionMetadata", "runtimeMetadata"] as const) {

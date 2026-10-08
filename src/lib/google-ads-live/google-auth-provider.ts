@@ -97,7 +97,8 @@ export function createGoogleAuthProvider(options: GoogleAuthProviderOptions = {}
           refreshToken: (configuration.refreshToken as string).trim(),
         });
         if (!oauth.ok) return refused(oauth.issues, metadata);
-        const customers = await readCustomers(client, apiVersion, (configuration.developerToken as string).trim(), oauth.grant.accessToken);
+        const developerToken = typeof configuration.developerToken === "string" ? configuration.developerToken.trim() : "";
+        const customers = await readCustomers(client, apiVersion, developerToken, oauth.grant.accessToken);
         if (!customers.ok) return refused(customers.issues, metadata);
         const createdAt = timestamp();
         const authenticationId = idFactory();

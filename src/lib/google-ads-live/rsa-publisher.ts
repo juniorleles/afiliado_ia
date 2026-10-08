@@ -6,7 +6,7 @@
  * sent at most once. This method never throws.
  */
 import { buildRsaMutateBody, type RsaMutateBody } from "./asset-builder";
-import { GOOGLE_ADS_API_VERSION, createGoogleAuthHttpClient, googleAdsRoot, isGoogleAuthRecord, parseGoogleAuthJson, type GoogleAuthTransport } from "./google-auth-client";
+import { GOOGLE_ADS_API_VERSION, createGoogleAuthHttpClient, googleAdsRequestHeaders, googleAdsRoot, isGoogleAuthRecord, parseGoogleAuthJson, type GoogleAuthTransport } from "./google-auth-client";
 import type { PublishIssue, PublishMetadata, PublishedAdGroup, PublishedCampaignRef, RsaDraft, RsaPublishResult, RsaPublishSnapshot } from "./publisher-context";
 import {
   copyPublishedCampaign,
@@ -50,13 +50,8 @@ function accountFailure(httpStatus: number): PublishIssue | null {
   return null;
 }
 
-function requestHeaders(developerToken: string, accessToken: string): Record<string, string> {
-  return {
-    Authorization: `Bearer ${accessToken}`,
-    "developer-token": developerToken,
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  };
+function requestHeaders(accessToken: string): Record<string, string> {
+  return googleAdsRequestHeaders(accessToken, true);
 }
 
 function copyPublishedAdGroup(adGroup: PublishedAdGroup): PublishedAdGroup {
@@ -117,8 +112,8 @@ export function createRsaPublisher(options: RsaPublisherOptions = {}): RsaPublis
           return refused([{ field: "rsaDraft.status", message: "Invalid RSA Draft: the only accepted status is PAUSED." }], metadata);
         }
         const accessToken = (input.session.accessToken as string).trim();
-        const developerToken = (input.developerToken as string).trim();
-        const headers = requestHeaders(developerToken, accessToken);
+        const developerToken = typeof input.developerToken === "string" ? input.developerToken.trim() : "";
+        const headers = requestHeaders(accessToken);
         const mutated = await client.send({
           url: `${googleAdsRoot(apiVersion)}/customers/${campaign.customerId}/googleAds:mutate`,
           method: "POST",

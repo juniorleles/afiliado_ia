@@ -215,7 +215,6 @@ export default async function GoogleAdsIntegrationPage({
             <PresenceField label="Segredo do cliente" value={status.clientSecret} />
             <PresenceField label="Refresh token" value={status.refreshToken} />
             <PresenceField label="URI de retorno" value={status.redirectUri} />
-            <PresenceField label="Token de desenvolvedor" value={status.developerToken} />
           </div>
         </section>
       </section>

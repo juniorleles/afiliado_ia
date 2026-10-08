@@ -4,7 +4,7 @@
  * A pending or rejected action never reaches the mutate call. Pause stays
  * paused on read-back. Resume and enable run only for an approved action of that kind.
  */
-import { GOOGLE_ADS_API_VERSION, createGoogleAuthHttpClient, googleAdsRoot, isGoogleAuthRecord, parseGoogleAuthJson, type GoogleAuthTransport } from "@/lib/google-ads-live/google-auth-client";
+import { GOOGLE_ADS_API_VERSION, createGoogleAuthHttpClient, googleAdsRequestHeaders, googleAdsRoot, isGoogleAuthRecord, parseGoogleAuthJson, type GoogleAuthTransport } from "@/lib/google-ads-live/google-auth-client";
 import { exchangeRefreshToken } from "@/lib/google-ads-live/oauth-manager";
 import { validateDescriptions } from "@/lib/google-ads-live/description-validator";
 import { validateHeadlines } from "@/lib/google-ads-live/headline-validator";
@@ -108,7 +108,7 @@ export async function executeApprovedAction(actionId: string, operator = "operad
   const secrets = readGoogleAdsOAuthSecrets();
   const clientId = env.clientId || secrets.clientId;
   const clientSecret = env.clientSecret || secrets.clientSecret;
-  if (!clientId || !clientSecret || !secrets.refreshToken || !env.developerToken) {
+  if (!clientId || !clientSecret || !secrets.refreshToken) {
     return { ok: false, issues: ["A conta do Google Ads ainda não está pronta para executar."] };
   }
   const adGroupResourceName = payloadOf(action.payloadJson).adGroupResourceName;
@@ -117,12 +117,7 @@ export async function executeApprovedAction(actionId: string, operator = "operad
   const client = createGoogleAuthHttpClient(transport);
   const oauth = await exchangeRefreshToken(client, { clientId, clientSecret, refreshToken: secrets.refreshToken });
   if (!oauth.ok) return { ok: false, issues: ["O Google recusou o refresh token."] };
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${oauth.grant.accessToken}`,
-    "developer-token": env.developerToken,
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  };
+  const headers = googleAdsRequestHeaders(oauth.grant.accessToken, true);
   const loginCustomerId = readGoogleAdsOAuthView().loginCustomerId;
   if (loginCustomerId && /^\d{10}$/.test(loginCustomerId) && loginCustomerId !== customerId) headers["login-customer-id"] = loginCustomerId;
   const mutated = await client.send({
@@ -133,7 +128,7 @@ export async function executeApprovedAction(actionId: string, operator = "operad
   });
   if (mutated.httpStatus !== 200) return { ok: false, issues: ["O Google Ads recusou a ação aprovada."] };
   if (PAUSE_KINDS.has(action.kind) || action.kind === "RESUME_CAMPAIGN") {
-    const observed = await observeStatus(client, customerId, env.developerToken, oauth.grant.accessToken, headers, action);
+    const observed = await observeStatus(client, customerId, env.developerToken ?? "", oauth.grant.accessToken, headers, action);
     if (!observed) return { ok: false, issues: ["A leitura posterior não confirmou o status pedido."] };
   }
   const marked = markOperationActionExecuted(action.id);
@@ -176,7 +171,7 @@ async function observeStatus(
   const response = await client.send({
     url: `${googleAdsRoot(GOOGLE_ADS_API_VERSION)}/customers/${customerId}/googleAds:search`,
     method: "POST",
-    headers: { ...headers, Authorization: `Bearer ${accessToken}`, "developer-token": developerToken },
+    headers,
     body: JSON.stringify({ query: `SELECT ${field}.status FROM ${field} WHERE ${field}.resource_name = '${action.resourceName}'` }),
   });
   const parsed = parseGoogleAuthJson(response.bodyText);

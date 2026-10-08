@@ -8,6 +8,7 @@
 import { randomUUID } from "node:crypto";
 import {
   GOOGLE_ADS_API_VERSION,
+  googleAdsRequestHeaders,
   createGoogleAuthHttpClient,
   googleAdsRoot,
   isGoogleAuthRecord,
@@ -52,19 +53,14 @@ export async function publishPausedSearchCampaign(plan: SafePlan, transport?: Go
   const secrets = readGoogleAdsOAuthSecrets();
   const clientId = env.clientId || secrets.clientId;
   const clientSecret = env.clientSecret || secrets.clientSecret;
-  if (!clientId || !clientSecret || !secrets.refreshToken || !env.developerToken) {
+  if (!clientId || !clientSecret || !secrets.refreshToken) {
     return { ok: false, issues: ["A conta do Google Ads ainda não está pronta para publicar."] };
   }
   const client = createGoogleAuthHttpClient(transport);
   const oauth = await exchangeRefreshToken(client, { clientId, clientSecret, refreshToken: secrets.refreshToken });
   if (!oauth.ok) return { ok: false, issues: ["O Google recusou o refresh token."] };
   const root = googleAdsRoot(GOOGLE_ADS_API_VERSION);
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${oauth.grant.accessToken}`,
-    "developer-token": env.developerToken,
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  };
+  const headers = googleAdsRequestHeaders(oauth.grant.accessToken, true);
   const loginCustomerId = readGoogleAdsOAuthView().loginCustomerId;
   if (loginCustomerId && /^\d{10}$/.test(loginCustomerId) && loginCustomerId !== plan.customerId) {
     headers["login-customer-id"] = loginCustomerId;

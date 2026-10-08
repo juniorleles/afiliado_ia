@@ -4,7 +4,7 @@
  * Reads campaign, ad group, and responsive search ad metric rows. Every
  * request is a search. The grant is placed on the request and is not returned.
  */
-import { GOOGLE_ADS_API_VERSION, createGoogleAuthHttpClient, googleAdsRoot, isGoogleAuthRecord, parseGoogleAuthJson, type GoogleAuthTransport } from "../google-ads-live/google-auth-client.ts";
+import { GOOGLE_ADS_API_VERSION, createGoogleAuthHttpClient, googleAdsRequestHeaders, googleAdsRoot, isGoogleAuthRecord, parseGoogleAuthJson, type GoogleAuthTransport } from "../google-ads-live/google-auth-client.ts";
 import { METRICS_DATE_RANGE, type MetricsIssue } from "./metrics-snapshot";
 
 export const MAX_METRIC_PAGES = 10;
@@ -63,13 +63,8 @@ export function rsaMetricsQuery(resourceName: string, range?: string): string {
   return `SELECT ${AD_METRICS} FROM ad_group_ad WHERE campaign.resource_name = ${quoted(resourceName)} AND ad_group_ad.ad.type = 'RESPONSIVE_SEARCH_AD' AND ${windowClause(range)}`;
 }
 
-function requestHeaders(developerToken: string, accessToken: string): Record<string, string> {
-  return {
-    Authorization: `Bearer ${accessToken}`,
-    "developer-token": developerToken,
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  };
+function requestHeaders(accessToken: string): Record<string, string> {
+  return googleAdsRequestHeaders(accessToken, true);
 }
 
 export function createGoogleMetricsClient(transport?: GoogleAuthTransport) {
@@ -85,7 +80,7 @@ export function createGoogleMetricsClient(transport?: GoogleAuthTransport) {
       const response = await client.send({
         url: `${googleAdsRoot(apiVersion || GOOGLE_ADS_API_VERSION)}/customers/${customerId}/googleAds:search`,
         method: "POST",
-        headers: requestHeaders(developerToken, accessToken),
+        headers: requestHeaders(accessToken),
         body: JSON.stringify(body),
       });
       if (response.httpStatus !== 200) return { ok: false, issues: [{ field: "campaignResourceNames", message: "Google API Errors: the account service refused the read." }] };

@@ -166,6 +166,6 @@ export const GOOGLE_ADS_NOTICE: Record<string, { title: string; detail: string; 
   token: { title: "Token recusado", detail: "O Google não entregou um refresh token válido. Conecte de novo e aceite o consentimento.", tone: "danger" },
   escopo: { title: "Escopo inválido", detail: "A autorização não inclui o Google Ads.", tone: "danger" },
   teste: { title: "Falha na conexão", detail: "O Google Ads recusou a leitura da conta.", tone: "danger" },
-  desenvolvedor: { title: "Token de desenvolvedor", detail: "O refresh token foi guardado, mas a leitura da conta exige GOOGLE_ADS_DEVELOPER_TOKEN.", tone: "warning" },
+  desenvolvedor: { title: "Acesso do projeto", detail: "O Google Ads recusou o projeto do Cloud associado a estas credenciais OAuth.", tone: "warning" },
   conta: { title: "Conta inacessível", detail: "O usuário autorizado não consegue ler uma conta do Google Ads.", tone: "danger" },
 };
