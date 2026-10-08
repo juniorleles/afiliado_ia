@@ -1,10 +1,12 @@
 "use client";
 
 import { unpublishCampaignAction } from "@/app/admin/actions";
+import { Button } from "@/components/ui/button";
 
-export function UnpublishButton({ id, name }: { id: number; name: string }) {
+export function UnpublishButton({ id, name, appearance = "menu" }: { id: number; name: string; appearance?: "menu" | "button" }) {
   return (
     <form
+      className={appearance === "button" ? "inline" : undefined}
       action={unpublishCampaignAction.bind(null, id)}
       onSubmit={(event) => {
         if (!window.confirm(`Retirar “${name}” da publicação? A página pública passa a responder 404. A prévia continua disponível.`)) {
@@ -12,13 +14,17 @@ export function UnpublishButton({ id, name }: { id: number; name: string }) {
         }
       }}
     >
-      <button
-        type="submit"
-        role="menuitem"
-        className="flex w-full rounded-ds-sm px-ds-12 py-ds-8 text-left text-body outline-none hover:bg-secondary focus-visible:shadow-ds-focus"
-      >
-        Retirar publicação
-      </button>
+      {appearance === "button" ? (
+        <Button type="submit" variant="secondary">Retirar publicação</Button>
+      ) : (
+        <button
+          type="submit"
+          role="menuitem"
+          className="flex w-full rounded-ds-sm px-ds-12 py-ds-8 text-left text-body outline-none hover:bg-secondary focus-visible:shadow-ds-focus"
+        >
+          Retirar publicação
+        </button>
+      )}
     </form>
   );
 }

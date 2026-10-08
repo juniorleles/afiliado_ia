@@ -73,6 +73,13 @@ export const adminNav: ConsoleNavItem[] = [
 
 export function adminCrumbs(pathname: string): BreadcrumbItem[] {
   if (pathname === "/admin") return [{ label: "Início" }];
+  if (/^\/admin\/\d+\/edit\/?$/.test(pathname)) {
+    return [
+      { label: "Administração", href: "/admin" },
+      { label: "Campanhas", href: "/admin#campanhas" },
+      { label: "Campanha" },
+    ];
+  }
   if (pathname.startsWith("/admin/validation")) return [adminHome, { label: "Validação" }];
   if (pathname.startsWith("/admin/discovery")) return [adminHome, { label: "Descoberta" }];
   if (pathname.startsWith("/admin/system")) return [adminHome, { label: "Configurações" }];

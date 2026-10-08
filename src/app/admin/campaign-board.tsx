@@ -262,7 +262,7 @@ function CampaignCardView({ campaign, googleAds }: { campaign: AdminCampaignCard
         </div>
         <div className="flex flex-wrap gap-ds-8">
           <Button asChild>
-            <Link href={`/admin/${campaign.id}/edit`} aria-label={`Abrir ${campaign.name}`}>Abrir</Link>
+            <Link href={`/admin/${campaign.id}/edit`} aria-label={`Abrir campanha ${campaign.name}`}>Abrir campanha</Link>
           </Button>
           <Button asChild variant="secondary">
             <Link href={`/admin/${campaign.id}/publish`} aria-label={`Publicar ${campaign.name}`}>Publicar</Link>
