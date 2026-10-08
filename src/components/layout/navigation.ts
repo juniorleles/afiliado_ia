@@ -79,6 +79,13 @@ export const adminNav: ConsoleNavItem[] = [
 
 export function adminCrumbs(pathname: string): BreadcrumbItem[] {
   if (pathname === "/admin") return [{ label: "Início" }];
+  if (/^\/admin\/\d+\/google-ads\/?$/.test(pathname)) {
+    return [
+      { label: "Administração", href: "/admin" },
+      { label: "Campanhas", href: "/admin#campanhas" },
+      { label: "Google Ads" },
+    ];
+  }
   if (/^\/admin\/\d+\/edit\/?$/.test(pathname)) {
     return [
       { label: "Administração", href: "/admin" },

@@ -328,11 +328,13 @@ function PublicationPanel({
         <Card><CardContent><p className="text-caption text-muted-foreground">Aprovação</p><p className="mt-ds-4 text-h3">{gateLabel}</p><p className="mt-ds-4 text-caption text-muted-foreground">Aprovação interna. Não é aprovação do Google Ads.</p></CardContent></Card>
       </div>
       <div className="flex flex-wrap items-center gap-ds-8">
-        <Button type="button" variant="secondary" disabled aria-describedby="ads-sync-note">Sincronizar</Button>
+        <Button asChild variant="secondary">
+          <Link href={`/admin/${campaign.id}/google-ads`}>Publicar no Google Ads</Link>
+        </Button>
         {published ? <UnpublishButton id={campaign.id} name={campaign.name} appearance="button" /> : null}
       </div>
       <p id="ads-sync-note" className="text-body text-muted-foreground">
-        {adsConnected ? "A conta está conectada. Esta tela não envia a campanha para o Google Ads." : "Google Ads não conectado"}
+        {adsConnected ? "A conta está conectada. O assistente cria somente uma campanha de pesquisa pausada." : "Google Ads não conectado. O assistente continua exigindo uma conta ativa."}
       </p>
       <Embed>
         <PublishPage params={params} />

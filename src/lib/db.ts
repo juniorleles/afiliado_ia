@@ -717,6 +717,35 @@ export function migrate(db: Database.Database) {
       new Date().toISOString(),
     );
   }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS google_ads_publications (
+      id TEXT PRIMARY KEY,
+      local_campaign_id INTEGER NOT NULL,
+      customer_id TEXT NOT NULL,
+      google_campaign_id TEXT,
+      campaign_resource_name TEXT,
+      ad_group_id TEXT,
+      ad_group_resource_name TEXT,
+      ad_ids_json TEXT NOT NULL,
+      keyword_resource_names_json TEXT NOT NULL,
+      asset_resource_names_json TEXT NOT NULL,
+      status TEXT NOT NULL,
+      campaign_type TEXT NOT NULL,
+      bidding TEXT NOT NULL,
+      budget_micros INTEGER NOT NULL,
+      impressions INTEGER,
+      clicks INTEGER,
+      cost_micros INTEGER,
+      published_at TEXT NOT NULL
+    );
+  `);
+  const publications = db.prepare("SELECT version FROM schema_migrations WHERE version = 14").get() as { version: number } | undefined;
+  if (!publications) {
+    db.prepare("INSERT INTO schema_migrations (version, name, appliedAt) VALUES (14, 'google-ads-safe-publisher', ?)").run(
+      new Date().toISOString(),
+    );
+  }
 }
 
 export function schemaVersion(db = getDb()): number {
