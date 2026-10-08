@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageTemplate } from "@/components/layout/page-template";
 import { getDb } from "@/lib/db";
+import { GOOGLE_ADS_NOTICE, readGoogleAdsIntegrationStatus } from "@/lib/integrations/google-ads-oauth/status";
 import { readGoogleAdsAccounts } from "@/lib/integrations/google-ads-oauth/store";
 import { readOperationsDashboard } from "@/lib/integrations/google-ads-operations/reports";
 import { decideAction, executeAction, proposeAction, syncOperationsAction } from "./actions";
@@ -26,6 +27,10 @@ function Metric({ label, value }: { label: string; value: string }) {
 export default async function GoogleAdsOperationsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const query = await searchParams;
   const aviso = typeof query.aviso === "string" ? query.aviso : "";
+  const googleError = typeof query.erro === "string" && /^[a-z_]{1,40}$/.test(query.erro) ? query.erro : "";
+  const notice = aviso ? GOOGLE_ADS_NOTICE[aviso] : undefined;
+  const status = readGoogleAdsIntegrationStatus();
+  const connected = status.connection === "Conectado";
   const view = readOperationsDashboard();
   const account = readGoogleAdsAccounts().find((item) => item.selected) ?? null;
   const publications = getDb().prepare("SELECT local_campaign_id, customer_id, campaign_resource_name, published_at FROM google_ads_publications ORDER BY published_at DESC").all() as {
@@ -38,6 +43,28 @@ export default async function GoogleAdsOperationsPage({ searchParams }: { search
   return (
     <PageTemplate title="Operações do Google Ads" description="Sincronização, métricas e recomendações. Nenhuma ação roda sem aprovação." primaryAction={<Button asChild variant="secondary"><Link href="/admin">Voltar</Link></Button>}>
       <div className="flex flex-col gap-ds-24">
+        <section aria-labelledby="conexao-operacoes">
+          <h2 id="conexao-operacoes" className="text-h3">Status</h2>
+          <p className="mt-ds-8 text-body">{connected ? "Connected" : "Not Connected"}</p>
+          {connected ? (
+            <div className="mt-ds-16 grid grid-cols-1 gap-ds-16 sm:grid-cols-2 xl:grid-cols-3">
+              <Metric label="Google account" value={status.account} />
+              <Metric label="Customer ID" value={status.customerId} />
+              <Metric label="Manager account" value={status.manager} />
+              <Metric label="Timezone" value={status.timeZone} />
+              <Metric label="Currency" value={status.currency} />
+              <Metric label="Refresh token status" value={status.refreshToken} />
+              <Metric label="Last synchronization" value={status.lastSynchronization} />
+            </div>
+          ) : (
+            <a className={`${buttonVariants()} mt-ds-16`} href="/configuracoes/integracoes/google-ads/conectar">Connect Google Ads</a>
+          )}
+        </section>
+        {notice ? (
+          <Alert tone={notice.tone} title={notice.title}>
+            {aviso === "google" && googleError ? `${notice.detail} Código do Google: ${googleError}.` : notice.detail}
+          </Alert>
+        ) : null}
         {aviso === "sincronizada" ? <Alert tone="success" title="Sincronização gravada">As recomendações ficaram pendentes.</Alert> : null}
         {aviso === "approved" ? <Alert tone="success" title="Ação aprovada">A execução continua separada.</Alert> : null}
         {aviso === "rejected" ? <Alert tone="warning" title="Ação rejeitada">Nada foi enviado ao Google Ads.</Alert> : null}
@@ -80,10 +107,13 @@ export default async function GoogleAdsOperationsPage({ searchParams }: { search
               <label className="text-body">Fim
                 <input className="mt-ds-4 w-full rounded-ds-sm border border-input bg-card px-ds-12 py-ds-8" name="metricEnd" type="date" />
               </label>
-              <Button type="submit">Sincronizar</Button>
+              <Button type="submit" disabled={!connected}>Sincronizar</Button>
             </form>
           ) : (
-            <p className="mt-ds-8 text-body text-muted-foreground">Nenhuma campanha publicada está disponível para sincronizar.</p>
+            <div className="mt-ds-16 flex flex-col gap-ds-8">
+              <Button type="button" disabled>Sincronizar</Button>
+              <p className="text-body text-muted-foreground">{connected ? "Nenhuma campanha publicada está disponível para sincronizar." : "A sincronização fica indisponível até a conexão OAuth terminar."}</p>
+            </div>
           )}
         </section>
         <section aria-labelledby="aprovacoes-operacoes">

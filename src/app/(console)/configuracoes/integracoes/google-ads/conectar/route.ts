@@ -2,13 +2,26 @@ import { NextResponse } from "next/server";
 import { isProduction } from "@/lib/env";
 import { operatorMayManageGoogleAds } from "@/lib/integrations/google-ads-oauth/access";
 import { prepareGoogleAdsConsent } from "@/lib/integrations/google-ads-oauth/flow";
-import { GOOGLE_ADS_STATE_COOKIE, sealGoogleAdsState } from "@/lib/integrations/google-ads-oauth/state-cookie";
+import { GOOGLE_ADS_RETURN_COOKIE, GOOGLE_ADS_STATE_COOKIE, sealGoogleAdsReturn, sealGoogleAdsState } from "@/lib/integrations/google-ads-oauth/state-cookie";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const PAGE = "/configuracoes/integracoes/google-ads";
+const OPERATIONS = "/admin/google-ads/operacoes";
+
+function returnPath(request: Request): string {
+  const referer = request.headers.get("referer");
+  if (!referer) return PAGE;
+  try {
+    const url = new URL(referer);
+    if (url.pathname === OPERATIONS) return OPERATIONS;
+  } catch {
+    return PAGE;
+  }
+  return PAGE;
+}
 
 function back(request: Request, notice: string): NextResponse {
   const url = new URL(PAGE, request.url);
@@ -38,5 +51,17 @@ export async function GET(request: Request): Promise<NextResponse> {
     path: PAGE,
     maxAge: 600,
   });
+  const returning = sealGoogleAdsReturn(returnPath(request));
+  if (returning) {
+    response.cookies.set({
+      name: GOOGLE_ADS_RETURN_COOKIE,
+      value: returning,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: isProduction(),
+      path: PAGE,
+      maxAge: 600,
+    });
+  }
   return response;
 }

@@ -41,11 +41,13 @@ function PresenceField({ label, value }: { label: string; value: Presence }) {
 export default async function GoogleAdsIntegrationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ aviso?: string | string[] }>;
+  searchParams: Promise<{ aviso?: string | string[]; erro?: string | string[] }>;
 }) {
   const status = readGoogleAdsIntegrationStatus();
   const query = await searchParams;
   const aviso = Array.isArray(query.aviso) ? query.aviso[0] : query.aviso;
+  const erro = Array.isArray(query.erro) ? query.erro[0] : query.erro;
+  const googleError = typeof erro === "string" && /^[a-z_]{1,40}$/.test(erro) ? erro : "";
   const notice = aviso ? GOOGLE_ADS_NOTICE[aviso] : undefined;
   return (
     <PageTemplate
@@ -75,7 +77,7 @@ export default async function GoogleAdsIntegrationPage({
         </div>
         {notice ? (
           <Alert tone={notice.tone} title={notice.title}>
-            {notice.detail}
+            {aviso === "google" && googleError ? `${notice.detail} Código do Google: ${googleError}.` : notice.detail}
           </Alert>
         ) : (
           status.blockers.map((blocker) => (

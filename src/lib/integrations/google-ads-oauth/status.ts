@@ -168,4 +168,5 @@ export const GOOGLE_ADS_NOTICE: Record<string, { title: string; detail: string; 
   teste: { title: "Falha na conexão", detail: "O Google Ads recusou a leitura da conta.", tone: "danger" },
   desenvolvedor: { title: "Acesso do projeto", detail: "O Google Ads recusou o projeto do Cloud associado a estas credenciais OAuth.", tone: "warning" },
   conta: { title: "Conta inacessível", detail: "O usuário autorizado não consegue ler uma conta do Google Ads.", tone: "danger" },
+  google: { title: "OAuth recusado", detail: "O Google recusou a autorização.", tone: "danger" },
 };
