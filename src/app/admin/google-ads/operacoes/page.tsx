@@ -9,7 +9,7 @@ import { getDb } from "@/lib/db";
 import { GOOGLE_ADS_NOTICE, readGoogleAdsIntegrationStatus } from "@/lib/integrations/google-ads-oauth/status";
 import { readGoogleAdsAccounts } from "@/lib/integrations/google-ads-oauth/store";
 import { readOperationsDashboard } from "@/lib/integrations/google-ads-operations/reports";
-import { decideAction, executeAction, proposeAction, syncOperationsAction } from "./actions";
+import { decideAction, executeAction, proposeAction, selectOperationsAccount, syncOperationsAction } from "./actions";
 
 export const metadata: Metadata = { title: "Operações do Google Ads" };
 export const dynamic = "force-dynamic";
@@ -31,6 +31,7 @@ export default async function GoogleAdsOperationsPage({ searchParams }: { search
   const notice = aviso ? GOOGLE_ADS_NOTICE[aviso] : undefined;
   const status = readGoogleAdsIntegrationStatus();
   const connected = status.connection === "Conectado";
+  const awaitingAccount = connected && status.accounts.length > 1 && !status.accounts.some((item) => item.selected);
   const view = readOperationsDashboard();
   const account = readGoogleAdsAccounts().find((item) => item.selected) ?? null;
   const publications = getDb().prepare("SELECT local_campaign_id, customer_id, campaign_resource_name, published_at FROM google_ads_publications ORDER BY published_at DESC").all() as {
@@ -59,6 +60,32 @@ export default async function GoogleAdsOperationsPage({ searchParams }: { search
           ) : (
             <a className={`${buttonVariants()} mt-ds-16`} href="/configuracoes/integracoes/google-ads/conectar">Connect Google Ads</a>
           )}
+          {awaitingAccount ? (
+            <div className="mt-ds-16 flex flex-col gap-ds-16">
+              <h3 className="text-h3">Selecionar conta</h3>
+              <ul className="grid grid-cols-1 gap-ds-16 lg:grid-cols-2">
+                {status.accounts.map((item) => (
+                  <li key={item.customerId}>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>{item.accountName || "Conta sem nome"}</CardTitle>
+                        {item.manager ? <Badge tone="info">Gerente</Badge> : null}
+                      </CardHeader>
+                      <CardContent className="flex flex-col gap-ds-8">
+                        <p className="text-body">Customer ID {item.customerId}</p>
+                        <p className="text-body">Currency {item.currencyCode || "Não observada"}</p>
+                        <p className="text-body">Timezone {item.timeZone || "Não observado"}</p>
+                        <form action={selectOperationsAccount}>
+                          <input type="hidden" name="customerId" value={item.customerId} />
+                          <Button type="submit" variant="secondary">Selecionar conta</Button>
+                        </form>
+                      </CardContent>
+                    </Card>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </section>
         {notice ? (
           <Alert tone={notice.tone} title={notice.title}>

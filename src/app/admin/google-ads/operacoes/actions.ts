@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { getDb } from "@/lib/db";
 import { operatorMayManageGoogleAds } from "@/lib/integrations/google-ads-oauth/access";
+import { activateGoogleAdsAccount } from "@/lib/integrations/google-ads-oauth/flow";
 import { decideOperationAction, insertOperationAction, insertOperationEvent } from "@/lib/integrations/google-ads-operations/store";
 import { executeApprovedAction } from "@/lib/integrations/google-ads-operations/execute";
 import { runLiveOperations, type OperationWindow } from "@/lib/integrations/google-ads-operations/pipeline";
@@ -25,6 +26,12 @@ function knownResource(resourceName: string): boolean {
 function windowOf(value: string): OperationWindow {
   if (value === "TODAY" || value === "YESTERDAY" || value === "LAST_7_DAYS" || value === "LAST_30_DAYS" || value === "CUSTOM") return value;
   return "LAST_30_DAYS";
+}
+
+export async function selectOperationsAccount(formData: FormData): Promise<void> {
+  if (!(await operatorMayManageGoogleAds())) redirect(`/admin/login?next=${encodeURIComponent(PAGE)}`);
+  const selected = activateGoogleAdsAccount(String(formData.get("customerId") ?? ""));
+  redirect(`${PAGE}?aviso=${selected ? "selecionada" : "conta"}`);
 }
 
 export async function syncOperationsAction(formData: FormData): Promise<void> {
