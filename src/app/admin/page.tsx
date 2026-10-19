@@ -10,6 +10,7 @@ import { readIntegrationConfiguration } from "@/lib/console/configuration";
 import { lintCampaign } from "@/lib/policy-linter";
 import { parseCampaignFacts, withResolvedCampaign } from "@/lib/manual-overrides";
 import { analyzeImportCompleteness } from "@/lib/completeness-engine";
+import { campaignHasLanding, landingDocumentCampaignIds } from "@/lib/landing-catalog";
 import { productionReadiness } from "@/lib/readiness";
 
 const NOTICE: Record<string, string> = {
@@ -42,6 +43,7 @@ export default async function AdminPage({
   const config = readIntegrationConfiguration();
   const health = productionReadiness();
   const now = new Date();
+  const documents = landingDocumentCampaignIds();
   const rows = campaigns.map((campaign) => {
     const gate = lintCampaign(withResolvedCampaign(campaign)).gate;
     const published = campaign.publicationStatus === "published";
@@ -63,6 +65,7 @@ export default async function AdminPage({
       gate,
       completion: completeness.score,
       updatedAt: campaign.updatedAt,
+      hasLanding: campaignHasLanding(campaign, documents),
     } satisfies AdminCampaignCard;
   });
   const drafts = rows.filter((row) => !row.published);
@@ -100,6 +103,7 @@ export default async function AdminPage({
         <SectionHeader id="quick-actions-heading" title="Ações rápidas" />
         <div className="mt-ds-16 flex flex-wrap gap-ds-8">
           <Button asChild variant="secondary"><Link href="#campanhas">Campanhas</Link></Button>
+          <Button asChild variant="secondary"><Link href="/admin/landing-pages">Landing pages</Link></Button>
           <Button asChild variant="secondary"><Link href="#analises">Análises</Link></Button>
         </div>
       </section>

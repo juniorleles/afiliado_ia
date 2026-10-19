@@ -3,7 +3,7 @@ import { recordImportRefresh } from "@/lib/evidence-manager";
 import type { PublicationGate } from "@/lib/policy-linter";
 import { PUBLICATION_STATUS, tryPublish, type PublicationStatus } from "@/lib/publication";
 
-const CAMPAIGN_COLUMNS = `id, name, slug, headline, body, ctaLabel, affiliateUrl, headScript, adHeadline, publicationStatus, publishedAt, createdAt, updatedAt, pageTemplate, pageComposition, productImageSrc, productImageProvenance, subheadline, sourceFactsJson, designPlanJson, visualTheme, designVersion, productAssetStatus, productAssetMetadata, creativeCompositionJson, creativeCompositionVersion, productionPageComposition, productionCreativeCompositionJson, productionPresentation`;
+const CAMPAIGN_COLUMNS = `id, name, slug, headline, body, ctaLabel, affiliateUrl, headScript, adHeadline, publicationStatus, publishedAt, createdAt, updatedAt, pageTemplate, pageComposition, productImageSrc, productImageProvenance, subheadline, sourceFactsJson, designPlanJson, visualTheme, designVersion, productAssetStatus, productAssetMetadata, creativeCompositionJson, creativeCompositionVersion, productionPageComposition, productionCreativeCompositionJson, productionPresentation, presentationTemplate`;
 
 export type Campaign = {
   id: number;
@@ -36,6 +36,8 @@ export type Campaign = {
   productionPageComposition?: string | null;
   productionCreativeCompositionJson?: string | null;
   productionPresentation?: string | null;
+  /** Null keeps the current renderer. Never inferred for existing rows. */
+  presentationTemplate?: string | null;
 };
 
 export type CampaignInput = {
@@ -105,6 +107,7 @@ function normalizeCampaign(row: Campaign): Campaign {
     productionPageComposition: row.productionPageComposition ?? null,
     productionCreativeCompositionJson: row.productionCreativeCompositionJson ?? null,
     productionPresentation: row.productionPresentation ?? null,
+    presentationTemplate: row.presentationTemplate ?? null,
   };
 }
 
@@ -200,6 +203,13 @@ export function createCampaign(input: CampaignInput): Campaign {
     }
     throw err;
   }
+}
+
+export function writeCampaignSourceFacts(id: number, sourceFactsJson: string): void {
+  const result = getDb()
+    .prepare("UPDATE campaigns SET sourceFactsJson = ?, updatedAt = ? WHERE id = ?")
+    .run(sourceFactsJson, new Date().toISOString(), id);
+  if (result.changes === 0) throw new Error("Campaign not found.");
 }
 
 export function updateCampaign(id: number, input: CampaignInput): Campaign {
@@ -333,6 +343,22 @@ export function updateCampaignDesign(
   return updated;
 }
 
+/** Visual template only. Does not rewrite copy, facts, or publicationStatus. */
+export function setCampaignPresentationTemplate(id: number, template: string | null): Campaign {
+  const existing = getCampaignById(id);
+  if (!existing) throw new Error("Campaign not found.");
+  const stored = template === "PRODUCT_SHOWCASE_PREMIUM_V1" ? "PRODUCT_SHOWCASE_PREMIUM_V1" : null;
+  getDb()
+    .prepare("UPDATE campaigns SET presentationTemplate = ?, updatedAt = ? WHERE id = ?")
+    .run(stored, new Date().toISOString(), id);
+  const updated = getCampaignById(id);
+  if (!updated) throw new Error("Campaign not found.");
+  if (updated.publicationStatus !== existing.publicationStatus || updated.publishedAt !== existing.publishedAt) {
+    throw new Error("Publication status changed.");
+  }
+  return updated;
+}
+
 /** Presentation-only creative composition. Does not rewrite copy or publish. */
 export function updateCampaignCreative(
   id: number,
@@ -363,6 +389,46 @@ export function updateCampaignCreative(
   const updated = getCampaignById(id);
   if (!updated) {
     throw new Error("Failed to read the campaign after creative update.");
+  }
+  return updated;
+}
+
+/**
+ * Assign or clear the Premium V1 hero packshot.
+ * Touches only the image pointer. Facts, publication, and the renderer stay as they are.
+ */
+export function setCampaignHeroPackshot(
+  id: number,
+  src: string | null,
+  provenance: "MANUAL" | null,
+): Campaign {
+  const existing = getCampaignById(id);
+  if (!existing) throw new Error("Campaign not found.");
+  if (src?.includes("demo-assets")) throw new Error("Demo assets cannot be assigned to a campaign.");
+  const now = new Date().toISOString();
+  getDb()
+    .prepare(
+      `UPDATE campaigns
+       SET productImageSrc = @productImageSrc,
+           productImageProvenance = @productImageProvenance,
+           updatedAt = @updatedAt
+       WHERE id = @id`,
+    )
+    .run({
+      productImageSrc: src,
+      productImageProvenance: provenance,
+      updatedAt: now,
+      id,
+    });
+  const updated = getCampaignById(id);
+  if (!updated) throw new Error("Failed to read the campaign after hero assignment.");
+  if (
+    updated.sourceFactsJson !== existing.sourceFactsJson
+    || updated.publicationStatus !== existing.publicationStatus
+    || updated.publishedAt !== existing.publishedAt
+    || updated.presentationTemplate !== existing.presentationTemplate
+  ) {
+    throw new Error("Hero assignment must not change facts, publication, or the renderer.");
   }
   return updated;
 }
@@ -519,7 +585,7 @@ export function duplicateCampaign(id: number): Campaign {
     suffix += 1;
   }
 
-  return createCampaign({
+  const created = createCampaign({
     name: `${source.name} (copy)`,
     slug: candidateSlug,
     headline: source.headline,
@@ -542,4 +608,11 @@ export function duplicateCampaign(id: number): Campaign {
     creativeCompositionJson: source.creativeCompositionJson,
     creativeCompositionVersion: source.creativeCompositionVersion,
   });
+  const brief = getDb().prepare("SELECT campaignBriefJson FROM campaigns WHERE id = ?").get(source.id) as
+    | { campaignBriefJson: string | null }
+    | undefined;
+  if (brief?.campaignBriefJson) {
+    getDb().prepare("UPDATE campaigns SET campaignBriefJson = ? WHERE id = ?").run(brief.campaignBriefJson, created.id);
+  }
+  return created;
 }

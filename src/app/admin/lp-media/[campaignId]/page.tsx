@@ -8,6 +8,8 @@ import { mediaSeedsFor } from "@/lib/lp-media-render";
 import { parsePresellPage } from "@/lib/presell-page";
 import { resolvePresellRenderAssets } from "@/lib/presell-render-assets-server";
 import { MediaEditor } from "@/app/admin/lp-media/[campaignId]/media-editor";
+import { OfficialAssetsPanel } from "@/components/admin/official-assets-panel";
+import { listOfficialPromoAssets } from "@/lib/official-assets/store";
 
 export default async function MediaManagerPage({
   params,
@@ -46,6 +48,7 @@ export default async function MediaManagerPage({
           <Link href="/admin" className="text-zinc-300 hover:underline">Admin</Link>
         </div>
       </div>}
+      <OfficialAssetsPanel campaignId={campaign.id} assets={listOfficialPromoAssets(campaign.id)} />
       <MediaEditor
         campaignId={campaign.id}
         initialSlots={slots}

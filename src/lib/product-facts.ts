@@ -170,6 +170,10 @@ export type ProductFacts = {
   confidence: FieldConfidence;
   importQuality: ImportQuality;
   productImageUrl?: string;
+  /** Operator or source image addresses. The first may also be productImageUrl. */
+  imageUrls?: string[];
+  /** Operator or source video addresses. */
+  videoUrls?: string[];
   productImageProvenance: "DIRECT_SOURCE" | "MANUAL" | "PLACEHOLDER" | "NOT_FOUND";
   webDiscovery?: {
     triggered: boolean;

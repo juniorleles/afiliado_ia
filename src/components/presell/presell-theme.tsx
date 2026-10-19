@@ -1,7 +1,7 @@
 import "@/app/presell-design.css";
 import type { CSSProperties } from "react";
 import type { Campaign } from "@/lib/campaigns";
-import { parseDesignPlan, type DesignPlan, type VisualTheme } from "@/lib/design/plan";
+import { isVisualTheme, parseDesignPlan, type DesignPlan, type VisualTheme } from "@/lib/design/plan";
 import { createDesignPlan } from "@/lib/design/planner";
 import { parsePresellPage } from "@/lib/presell-page";
 import { parseCreativeCompositionPlan } from "@/lib/creative/plan";
@@ -29,7 +29,7 @@ export function PresellThemeRoot({
   sourceVisual?: SourceVisual | null;
 }) {
   const plan = designPlanForCampaign(campaign);
-  const theme = plan?.visualTheme || "PREMIUM";
+  const theme = plan?.visualTheme || (isVisualTheme(campaign.visualTheme) ? campaign.visualTheme : "PREMIUM");
   const composition = creative ?? parseCreativeCompositionPlan(campaign.creativeCompositionJson);
   const identityStyle = sourceVisual ? (sourceVisual.style as CSSProperties) : undefined;
   return (

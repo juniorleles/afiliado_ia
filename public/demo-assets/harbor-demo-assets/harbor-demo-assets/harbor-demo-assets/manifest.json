@@ -1,0 +1,158 @@
+[
+  {
+    "file": "hero-photo.jpg",
+    "pixels": [
+      743,
+      378
+    ],
+    "crop": [
+      568,
+      81,
+      1311,
+      459
+    ]
+  },
+  {
+    "file": "capsules-photo.jpg",
+    "pixels": [
+      284,
+      193
+    ],
+    "crop": [
+      399,
+      768,
+      683,
+      961
+    ]
+  },
+  {
+    "file": "ingredient-northpetal.jpg",
+    "pixels": [
+      113,
+      96
+    ],
+    "crop": [
+      415,
+      478,
+      528,
+      574
+    ]
+  },
+  {
+    "file": "ingredient-ambergill.jpg",
+    "pixels": [
+      113,
+      96
+    ],
+    "crop": [
+      586,
+      478,
+      699,
+      574
+    ]
+  },
+  {
+    "file": "ingredient-cinder-cap.jpg",
+    "pixels": [
+      113,
+      96
+    ],
+    "crop": [
+      753,
+      478,
+      866,
+      574
+    ]
+  },
+  {
+    "file": "ingredient-pale-gill.jpg",
+    "pixels": [
+      113,
+      96
+    ],
+    "crop": [
+      926,
+      478,
+      1039,
+      574
+    ]
+  },
+  {
+    "file": "ingredient-moss-button.jpg",
+    "pixels": [
+      112,
+      96
+    ],
+    "crop": [
+      1097,
+      478,
+      1209,
+      574
+    ]
+  },
+  {
+    "file": "ingredient-river-ear.jpg",
+    "pixels": [
+      113,
+      97
+    ],
+    "crop": [
+      415,
+      608,
+      528,
+      705
+    ]
+  },
+  {
+    "file": "ingredient-salt-cap.jpg",
+    "pixels": [
+      113,
+      97
+    ],
+    "crop": [
+      586,
+      608,
+      699,
+      705
+    ]
+  },
+  {
+    "file": "ingredient-ember-gill.jpg",
+    "pixels": [
+      113,
+      97
+    ],
+    "crop": [
+      753,
+      608,
+      866,
+      705
+    ]
+  },
+  {
+    "file": "ingredient-paper-cap.jpg",
+    "pixels": [
+      113,
+      97
+    ],
+    "crop": [
+      926,
+      608,
+      1039,
+      705
+    ]
+  },
+  {
+    "file": "ingredient-night-ear.jpg",
+    "pixels": [
+      112,
+      97
+    ],
+    "crop": [
+      1097,
+      608,
+      1209,
+      705
+    ]
+  }
+]

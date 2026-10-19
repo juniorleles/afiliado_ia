@@ -26,6 +26,15 @@ export const MAX_MARKET_SOURCES = 8;
 export const MAX_MARKET_SEARCH_QUERIES = 10;
 const SEARCH_CONCURRENCY = 2;
 
+export type MarketResearchQueryProgress = {
+  query: string;
+  family: QueryFamilyId;
+  provider: MarketSearchProvider;
+  resultCount: number;
+  durationMs: number;
+  status: MarketQueryOutcomeStatus;
+};
+
 export type RunMarketResearchInput = {
   facts: ProductFacts;
   searchWeb?: SearchFn;
@@ -33,6 +42,7 @@ export type RunMarketResearchInput = {
   fallbackConfigured?: boolean;
   now?: Date;
   signal?: AbortSignal;
+  onProgress?: (event: MarketResearchQueryProgress) => void;
 };
 
 type QueryPass = {
@@ -108,6 +118,14 @@ export async function runMarketResearch(input: RunMarketResearchInput): Promise<
       fallback,
       fallbackConfigured,
       signal: input.signal,
+    });
+    input.onProgress?.({
+      query: item.query,
+      family: item.family,
+      provider: searched.providerUsed,
+      resultCount: searched.hits.length,
+      durationMs: searched.durationMs,
+      status: searched.status,
     });
     if (searched.status === "ABORTED") rejectNew = true;
 

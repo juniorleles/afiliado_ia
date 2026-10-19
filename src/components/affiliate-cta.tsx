@@ -13,8 +13,9 @@ type Props = {
   campaignId: number;
   trackClicks?: boolean;
   clickId?: string;
-  layout?: "block" | "compact" | "sticky";
+  layout?: "block" | "compact" | "sticky" | "inline";
   disableAffiliateNavigation?: boolean;
+  appearance?: "default" | "theme";
 };
 
 export function AffiliateCta({
@@ -26,6 +27,7 @@ export function AffiliateCta({
   clickId,
   layout = "block",
   disableAffiliateNavigation = false,
+  appearance = "default",
 }: Props) {
   function handleClick(event: MouseEvent<HTMLAnchorElement>) {
     if (disableAffiliateNavigation) {
@@ -70,15 +72,38 @@ export function AffiliateCta({
   }
 
   const wrapClass =
-    layout === "sticky"
+    layout === "inline"
+      ? ""
+      : layout === "sticky"
       ? "w-full"
       : layout === "compact"
         ? "my-6 flex justify-center"
         : "my-10 flex justify-center";
-  const linkClass =
-    layout === "sticky"
+  const themeButton = "bg-[var(--ps-accent,#1e4f48)] text-[var(--ps-on-accent,#f4f1ea)] hover:bg-[var(--ps-accent-strong,#163d38)] focus:outline-none focus:ring-2 focus:ring-[var(--ps-accent,#1e4f48)]";
+  const linkClass = layout === "inline"
+    ? "psp-cta"
+    : appearance === "theme"
+    ? layout === "sticky"
+      ? `flex w-full items-center justify-center rounded-full px-4 py-3 text-base font-medium ${themeButton}`
+      : `rounded-full px-6 py-3 text-base font-medium transition ${themeButton}`
+    : layout === "sticky"
       ? "flex w-full items-center justify-center rounded-md bg-emerald-500 px-4 py-3 text-base font-medium text-zinc-950 hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300"
       : "rounded-md bg-emerald-500 px-6 py-3 text-base font-medium text-zinc-950 transition hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300";
+
+  if (layout === "inline") {
+    return (
+      <a
+        href={disableAffiliateNavigation ? VALIDATION_SAFE_HREF : href}
+        rel={AFFILIATE_CTA_REL}
+        data-cta-position={position}
+        data-validation-cta={disableAffiliateNavigation ? "disabled" : undefined}
+        onClick={handleClick}
+        className={linkClass}
+      >
+        {label}
+      </a>
+    );
+  }
 
   return (
     <div className={wrapClass}>

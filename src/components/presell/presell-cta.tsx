@@ -16,8 +16,9 @@ export function PresellCta(props: {
   campaignId: number;
   trackClicks: boolean;
   clickId?: string;
-  layout?: "block" | "compact" | "sticky";
+  layout?: "block" | "compact" | "sticky" | "inline";
   disableAffiliateNavigation?: boolean;
+  appearance?: "default" | "theme";
 }) {
   return <AffiliateCta {...props} />;
 }

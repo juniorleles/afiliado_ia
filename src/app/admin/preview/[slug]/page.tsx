@@ -2,6 +2,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getCampaignBySlug } from "@/lib/campaigns";
 import { withResolvedCampaign } from "@/lib/manual-overrides";
+import { applyLandingDocument } from "@/lib/landing-composer/apply";
+import { HEALTH_CLAIM_OMISSION, presentLandingDocument, restoredDescription } from "@/lib/landing-composer/present";
+import { readStoredLandingDocument } from "@/lib/landing-composer/store";
+import { LandingDocumentSchema } from "@/components/presell/landing-document-schema";
 import { withBuilderContent } from "@/lib/lp-content-render";
 import { withBuilderMedia } from "@/lib/lp-media-render";
 import { listPresentationOverlay } from "@/lib/presentation-overrides";
@@ -12,9 +16,12 @@ import { ThemeFrame } from "@/components/presell/theme-frame";
 import { LayoutFrame } from "@/components/presell/layout-frame";
 import { PublicFooter } from "@/components/public-footer";
 import { DesignStudioPanel } from "@/components/admin/design-studio-panel";
+import { PresentationTemplateForm } from "@/components/admin/presentation-template-form";
+import { ShowcaseLanding } from "@/components/presell/showcase-landing";
+import { presentationUsesShowcase } from "@/lib/product-showcase/adapt";
 import { getLatestVisualQaReport } from "@/lib/visual-qa/store";
 import { snapshotContentGate } from "@/lib/visual-qa/run";
-import { designPlanForCampaign } from "@/components/presell/presell-theme";
+import { designPlanForCampaign, PresellThemeRoot } from "@/components/presell/presell-theme";
 import {
   applyProductionCandidate,
   hasProductionCandidate,
@@ -50,7 +57,9 @@ export default async function PreviewPage({
 
   const layer = layerParam === "imported" ? "imported" : "effective";
   const prepared = applyProductionCandidate(stored);
-  const campaign = withBuilderMedia(withBuilderContent(layer === "imported" ? prepared : withResolvedCampaign(prepared))).campaign;
+  const document = readStoredLandingDocument(stored.id);
+  const sourced = layer === "imported" ? prepared : withResolvedCampaign(prepared);
+  const campaign = withBuilderMedia(withBuilderContent(applyLandingDocument(sourced, document))).campaign;
   const overlay = layer === "effective" ? listPresentationOverlay(stored.id) : null;
   const order = overlay?.order ?? defaultSectionOrder();
   const visibility = overlay?.visibility ?? defaultVisibility();
@@ -60,6 +69,9 @@ export default async function PreviewPage({
 
   const unpublished = stored.publicationStatus !== "published";
   const plan = designPlanForCampaign(stored);
+  const heroSubheadline = document?.sections.find((item) => item.sectionId === "hero")?.content.subheadline;
+  const clipped = typeof heroSubheadline === "string" ? heroSubheadline : "";
+  const omitted = document ? presentLandingDocument(document, { description: restoredDescription(stored.sourceFactsJson, clipped) }).omitted : [];
 
   return (
     <div data-preview-wide>
@@ -69,6 +81,11 @@ export default async function PreviewPage({
         ) : (
           <p className="text-base font-semibold tracking-wide">PREVIEW</p>
         )}
+        {omitted.length > 0 ? (
+          <p className="mt-1 text-amber-50">
+            {omitted.length} alegações de saúde da fonte ficaram fora da página: {HEALTH_CLAIM_OMISSION} A publicação continua bloqueada.
+          </p>
+        ) : null}
         {embedded ? null : (
         <p className="mt-1 text-zinc-300">
           Showing {layer === "imported" ? "imported" : "effective"} values.{" "}
@@ -100,11 +117,16 @@ export default async function PreviewPage({
             History
           </Link>
           {" · "}
+          <Link href={`/visual-frame/${slug}`} className="text-emerald-400 hover:underline">
+            Clean LP preview
+          </Link>
+          {" · "}
           <Link href="/admin" className="text-emerald-400 hover:underline">
             Back to admin
           </Link>
         </p>
         )}
+        <PresentationTemplateForm campaignId={stored.id} selected={stored.presentationTemplate} />
       </div>
       {overlay ? (
         <PreviewOverlay
@@ -126,14 +148,23 @@ export default async function PreviewPage({
       />
       {/* renderPixel fica false (padrão) de propósito — preview nunca
           dispara pixel de conversão/visualização real. */}
-      <div className="-mx-6" data-presell-presentation={presentation}>
-        <LayoutFrame campaignId={stored.id}>
-          <ThemeFrame campaignId={stored.id}>
-            <PreviewFrame campaign={campaign} />
-          </ThemeFrame>
-        </LayoutFrame>
-        <PublicFooter />
-      </div>
+      <LandingDocumentSchema schema={document?.schema ?? null} />
+      {presentationUsesShowcase(stored.presentationTemplate) && document ? (
+        <div className="-mx-6">
+          <ShowcaseLanding campaign={campaign} document={document} disableAffiliateNavigation />
+        </div>
+      ) : (
+      <PresellThemeRoot campaign={campaign}>
+        <div className="-mx-6" data-presell-presentation={presentation}>
+          <LayoutFrame campaignId={stored.id}>
+            <ThemeFrame campaignId={stored.id}>
+              <PreviewFrame campaign={campaign} document={document} />
+            </ThemeFrame>
+          </LayoutFrame>
+          {document ? null : <PublicFooter />}
+        </div>
+      </PresellThemeRoot>
+      )}
     </div>
   );
 }

@@ -25,6 +25,7 @@ export type AdminCampaignCard = {
   gate: "READY" | "REVIEW_REQUIRED" | "BLOCKED";
   completion: number;
   updatedAt: string;
+  hasLanding: boolean;
 };
 
 const ALL = "all";
@@ -278,7 +279,7 @@ function CampaignCardView({ campaign, googleAds }: { campaign: AdminCampaignCard
             <MenuLink href={`/admin/${campaign.id}/edit?aba=produto&ferramenta=saude`}>Saúde do produto</MenuLink>
             <MenuLink href={`/admin/${campaign.id}/edit?aba=produto&ferramenta=editor`}>Editor do produto</MenuLink>
             <MenuLink href={`/admin/product-editor/${campaign.id}#completeness`}>Completude</MenuLink>
-            <MenuLink href={`/admin/${campaign.id}/edit?aba=landing`}>Landing page</MenuLink>
+            <MenuLink href={campaign.hasLanding ? `/admin/landing-pages/${campaign.id}` : `/admin/${campaign.id}/edit?aba=landing`}>Landing page</MenuLink>
             <MenuLink href={`/admin/${campaign.id}/edit?aba=landing&ferramenta=visual`}>Visual</MenuLink>
             <MenuLink href={`/admin/${campaign.id}/edit?aba=landing&ferramenta=media`}>Mídia</MenuLink>
             <MenuLink href={`/admin/${campaign.id}/edit?aba=landing&ferramenta=layout`}>Layout</MenuLink>

@@ -5,6 +5,9 @@ import { getCampaignById } from "@/lib/campaigns";
 import { CONTENT_LIMITS } from "@/lib/lp-builder/content";
 import { builderEditorState } from "@/lib/lp-content-render";
 import { BuilderEditor } from "@/app/admin/lp-builder/[campaignId]/builder-editor";
+import { PresentationTemplateForm } from "@/components/admin/presentation-template-form";
+import { presellHopAllowed } from "@/lib/product-showcase/adapt";
+import { getPublicSiteName, HEALTH_DISCLAIMER_TEXT, isHealthDisclaimerEnabled } from "@/lib/public-site";
 
 export default async function LandingPageBuilderPage({
   params,
@@ -30,6 +33,7 @@ export default async function LandingPageBuilderPage({
           <p className="mt-2 max-w-2xl text-sm text-zinc-400">
             Generated copy stays the source. A builder override changes only the effective text on the page.
           </p>
+          <PresentationTemplateForm campaignId={campaign.id} selected={campaign.presentationTemplate} />
         </div>
         <div className="flex gap-4 text-sm">
           <span className="text-zinc-200">Content Editor</span>
@@ -56,6 +60,10 @@ export default async function LandingPageBuilderPage({
       <BuilderEditor
         campaignId={campaign.id}
         previewHref={`/admin/preview/${campaign.slug}`}
+        presentation={campaign.presentationTemplate === "PRODUCT_SHOWCASE_PREMIUM_V1" ? "PRODUCT_SHOWCASE_PREMIUM_V1" : "LEGACY"}
+        hopAllowed={presellHopAllowed(campaign.affiliateUrl)}
+        siteName={getPublicSiteName()}
+        healthDisclaimer={isHealthDisclaimerEnabled() ? HEALTH_DISCLAIMER_TEXT : null}
         initialAudit={audit}
         initialFields={fields.map((field) => ({
           id: field.id,

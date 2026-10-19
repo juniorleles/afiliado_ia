@@ -18,6 +18,7 @@ import {
   validateSafePlan,
 } from "@/lib/integrations/google-ads-publish/plan";
 import { readGoogleAdsPublication } from "@/lib/integrations/google-ads-publish/store";
+import { readStoredStrategyDecision } from "@/lib/strategy-decision/store";
 import { publishSafeCampaignAction } from "./actions";
 
 export const metadata: Metadata = { title: "Publicar no Google Ads" };
@@ -65,6 +66,7 @@ export default async function GoogleAdsPublishPage({
     bidding,
   });
   const publication = readGoogleAdsPublication(campaign.id);
+  const decision = readStoredStrategyDecision(campaign.id);
   const headlines = existingHeadlines(campaign);
   const descriptions = existingDescriptions(campaign);
   const keywords = existingKeywords(campaign);
@@ -81,6 +83,18 @@ export default async function GoogleAdsPublishPage({
         {aviso === "pausada" ? <Alert tone="success" title="Campanha pausada">Os identificadores foram gravados. Nada ficou elegível para veicular.</Alert> : null}
         {aviso === "bloqueado" ? <Alert tone="warning" title="Publicação bloqueada">A prévia ainda tem pendências.</Alert> : null}
         {aviso === "recusada" ? <Alert tone="danger" title="Publicação recusada">O Google Ads não confirmou uma campanha pausada sem veiculação.</Alert> : null}
+        <Card>
+          <CardHeader><CardTitle>Direção do anúncio</CardTitle></CardHeader>
+          <CardContent className="flex flex-col gap-ds-12">
+            {decision ? (
+              <>
+                <p className="text-body">{decision.adDirection}</p>
+                <p className="text-body">SEO: {decision.seoDirection}</p>
+                <p className="text-body">Ângulo: {decision.copyAngle}</p>
+              </>
+            ) : <p className="text-body text-muted-foreground">Não há uma decisão de estratégia salva.</p>}
+          </CardContent>
+        </Card>
         <div className="grid grid-cols-1 gap-ds-16 sm:grid-cols-2 xl:grid-cols-3">
           <Field label="Campanha" value={campaign.name} />
           <Field label="Conta do Google Ads" value={account?.accountName || account?.customerId || "Nenhuma conta ativa"} />

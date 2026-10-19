@@ -62,6 +62,7 @@ export function AppLayout({
   const resolvedMark = mark ?? (shell === "admin" ? "A" : "C");
   const resolvedTone = tone ?? shell;
   const pathname = usePathname();
+  const bareLab = pathname.startsWith("/admin/lab/");
   const [theme, setTheme] = useState<ThemeName>("light");
   const [expanded, setExpanded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -134,11 +135,11 @@ export function AppLayout({
           Ir para o conteúdo
         </a>
         <div className="flex min-h-screen">
-          <Sidebar expanded={expanded} onExpandedChange={setExpanded} nav={resolvedNav} homeHref={resolvedHome} homeLabel={resolvedLabel} mark={resolvedMark} />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <Header theme={theme} onThemeChange={setTheme} menuOpen={menuOpen} onMenuOpen={setMenuOpen} crumbsFor={resolvedCrumbs} extra={headerExtra} />
-            <main id="conteudo" key={pathname} className="ds-page-enter flex-1">
-              {resolvedTone === "admin" && pathname !== "/admin" && !pathname.startsWith("/admin/system") && !pathname.startsWith("/admin/validation") && !/^\/admin\/\d+\/edit\/?$/.test(pathname) && !/^\/admin\/\d+\/google-ads\/?$/.test(pathname) && !pathname.startsWith("/admin/google-ads") ? (
+          {bareLab ? null : <Sidebar expanded={expanded} onExpandedChange={setExpanded} nav={resolvedNav} homeHref={resolvedHome} homeLabel={resolvedLabel} mark={resolvedMark} />}
+          <div className={bareLab ? "min-h-screen w-full" : "flex min-w-0 flex-1 flex-col"}>
+            {bareLab ? null : <Header theme={theme} onThemeChange={setTheme} menuOpen={menuOpen} onMenuOpen={setMenuOpen} crumbsFor={resolvedCrumbs} extra={headerExtra} />}
+            <main id="conteudo" key={pathname} className={bareLab ? "min-h-screen" : "ds-page-enter flex-1"}>
+              {resolvedTone === "admin" && !bareLab && pathname !== "/admin" && !pathname.startsWith("/admin/system") && !pathname.startsWith("/admin/validation") && !pathname.startsWith("/admin/landing-pages/") && !/^\/admin\/\d+\/edit\/?$/.test(pathname) && !/^\/admin\/\d+\/google-ads\/?$/.test(pathname) && !pathname.startsWith("/admin/google-ads") ? (
                 <div className="mx-auto min-h-full w-full max-w-3xl bg-zinc-950 px-6 py-10 text-zinc-100 has-[[data-preview-wide]]:max-w-[1480px]">
                   {children}
                 </div>

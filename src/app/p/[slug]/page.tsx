@@ -4,9 +4,14 @@ import { notFound } from "next/navigation";
 import { getPublishedCampaignBySlug } from "@/lib/campaigns";
 import { isReleasePublication } from "@/lib/publication";
 import { withResolvedCampaign } from "@/lib/manual-overrides";
+import { applyLandingDocument } from "@/lib/landing-composer/apply";
+import { readStoredLandingDocument } from "@/lib/landing-composer/store";
+import { LandingDocumentSchema } from "@/components/presell/landing-document-schema";
 import { withBuilderContent } from "@/lib/lp-content-render";
 import { withBuilderMedia } from "@/lib/lp-media-render";
 import { CampaignTemplate } from "@/components/campaign-template";
+import { ShowcaseLanding } from "@/components/presell/showcase-landing";
+import { presentationUsesShowcase } from "@/lib/product-showcase/adapt";
 import { ThemeFrame } from "@/components/presell/theme-frame";
 import { LayoutFrame } from "@/components/presell/layout-frame";
 import { PublicFooter } from "@/components/public-footer";
@@ -67,18 +72,21 @@ export async function generateMetadata({ params }: Omit<PageParams, "searchParam
     return { title: "Not found", robots: { index: false, follow: false } };
   }
 
-  const campaign = withBuilderMedia(withBuilderContent(withResolvedCampaign(applyProductionCandidate(stored)))).campaign;
+  const document = readStoredLandingDocument(stored.id);
+  const campaign = withBuilderMedia(withBuilderContent(applyLandingDocument(withResolvedCampaign(applyProductionCandidate(stored)), document))).campaign;
   const page = parsePresellPage(campaign.pageComposition);
-  const description = page?.hero.summary || presellMetaDescription(campaign.headline, campaign.body);
+  const seoTitle = typeof document?.seo?.title === "string" ? document.seo.title : "";
+  const seoDescription = typeof document?.seo?.description === "string" ? document.seo.description : "";
+  const description = seoDescription || page?.hero.summary || presellMetaDescription(campaign.headline, campaign.body);
   const image = page?.hero.image.src && page.hero.image.provenance !== "PLACEHOLDER" ? page.hero.image.src : undefined;
 
   return {
-    title: campaign.headline,
+    title: seoTitle || campaign.headline,
     description,
     alternates: { canonical: publicAbsoluteUrl(`/p/${slug}`) },
     robots: { index: true, follow: true },
     openGraph: {
-      title: campaign.headline,
+      title: seoTitle || campaign.headline,
       description,
       url: publicAbsoluteUrl(`/p/${slug}`),
       ...(image ? { images: [{ url: image.startsWith("http") ? image : publicAbsoluteUrl(image) }] } : {}),
@@ -108,7 +116,8 @@ export default async function PublicPresellPage({ params, searchParams }: PagePa
     notFound();
   }
 
-  const contentCampaign = withBuilderContent(withResolvedCampaign(applyProductionCandidate(stored)));
+  const document = readStoredLandingDocument(stored.id);
+  const contentCampaign = withBuilderContent(applyLandingDocument(withResolvedCampaign(applyProductionCandidate(stored)), document));
   const presented = withBuilderMedia(contentCampaign, resolvePresellRenderAssets(contentCampaign));
   const campaign = presented.campaign;
   const presentation = hasProductionCandidate(stored) ? PRODUCTION_PRESENTATION_ID : undefined;
@@ -147,17 +156,34 @@ export default async function PublicPresellPage({ params, searchParams }: PagePa
     console.error("[analytics] visit recording failed");
   }
 
+  if (presentationUsesShowcase(stored.presentationTemplate) && document) {
+    return (
+      <>
+        <LandingDocumentSchema schema={document.schema} />
+        <ShowcaseLanding
+          campaign={campaign}
+          document={document}
+          incomingQuery={incomingParams.toString()}
+          renderPixel
+          trackClicks
+        />
+      </>
+    );
+  }
+
   // renderPixel=true SÓ aqui, na rota pública de verdade — nunca no
   // preview do admin, pra não disparar tracking de conversão/visualização
   // enquanto alguém só está editando a campanha internamente.
   return (
     <PresellThemeRoot campaign={campaign} sourceVisual={sourceVisual}>
+      <LandingDocumentSchema schema={document?.schema ?? null} />
       <div className="flex min-h-screen flex-col" data-presell-presentation={presentation}>
         <div className="flex-1">
           <LayoutFrame campaignId={campaign.id}>
             <ThemeFrame campaignId={campaign.id}>
               <CampaignTemplate
                 campaign={campaign}
+                document={document}
                 incomingQuery={incomingParams.toString()}
                 renderPixel
                 trackClicks
@@ -167,7 +193,7 @@ export default async function PublicPresellPage({ params, searchParams }: PagePa
             </ThemeFrame>
           </LayoutFrame>
         </div>
-        {campaignRendersSiteFooter(campaign) ? null : <PublicFooter />}
+        {document || campaignRendersSiteFooter(campaign) ? null : <PublicFooter />}
       </div>
     </PresellThemeRoot>
   );

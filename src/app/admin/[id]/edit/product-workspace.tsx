@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MetricCard } from "@/components/ui/metric-card";
 import { listCampaigns, type Campaign } from "@/lib/campaigns";
 import { listFieldEvidence } from "@/lib/evidence-manager";
+import { campaignHasLanding } from "@/lib/landing-catalog";
 import { analyzeImportCompleteness } from "@/lib/completeness-engine";
 import { loadResolvedProductFacts, listManualOverrides, parseCampaignFacts, withResolvedCampaign } from "@/lib/manual-overrides";
 import { lintCampaign } from "@/lib/policy-linter";
@@ -96,7 +97,7 @@ export function ProductWorkspace({
   const price = currentPrice(facts);
   const related = listCampaigns().filter((item) => sameProduct(loadResolvedProductFacts(item)?.productName ?? "", facts?.productName ?? ""));
   const sources = uniqueSources(facts);
-  const landingHref = `/admin/${campaign.id}/edit?aba=landing`;
+  const landingHref = campaignHasLanding(campaign) ? `/admin/landing-pages/${campaign.id}` : `/admin/${campaign.id}/edit?aba=landing`;
   const studioQuery = Promise.resolve({ embedded: "studio" });
 
   return (

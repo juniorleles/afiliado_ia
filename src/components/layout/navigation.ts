@@ -58,17 +58,17 @@ export function operatorCrumbs(pathname: string): BreadcrumbItem[] {
 const adminHome: BreadcrumbItem = { label: "Início", href: "/admin" };
 
 function campaignTool(pathname: string): boolean {
-  return pathname === "/admin/new" || pathname.startsWith("/admin/preview/") || /^\/admin\/\d+\/(edit|publish|lint)(\/|$)/.test(pathname);
+  return pathname === "/admin/new" || pathname.startsWith("/admin/preview/") || /^\/admin\/\d+\/(edit|publish|lint|research|fatos|estrategia|bloqueada|gerando)(\/|$)/.test(pathname);
 }
 
 export const adminNav: ConsoleNavItem[] = [
   { href: "/admin", label: "Dashboard", icon: "dashboard", exact: true },
   { href: "/admin#campanhas", label: "Campanhas", icon: "campanhas", active: campaignTool },
   {
-    href: "/admin#landing-pages",
+    href: "/admin/landing-pages",
     label: "Landing pages",
     icon: "landingPage",
-    active: (pathname) => pathname.startsWith("/admin/lp-") || pathname.startsWith("/admin/visual-concepts/"),
+    active: (pathname) => pathname.startsWith("/admin/landing-pages") || pathname.startsWith("/admin/lp-") || pathname.startsWith("/admin/visual-concepts/"),
   },
   { href: "/admin#produtos", label: "Produtos", icon: "produtos", active: (pathname) => pathname.startsWith("/admin/product-") },
   { href: "/admin/validation", label: "Validação", icon: "recommendation", active: (pathname) => pathname.startsWith("/admin/validation") },
@@ -94,6 +94,41 @@ export function adminCrumbs(pathname: string): BreadcrumbItem[] {
       { label: "Google Ads" },
     ];
   }
+  if (/^\/admin\/\d+\/fatos\/?$/.test(pathname)) {
+    return [
+      { label: "Administração", href: "/admin" },
+      { label: "Campanhas", href: "/admin#campanhas" },
+      { label: "Fatos do produto" },
+    ];
+  }
+  if (/^\/admin\/\d+\/research\/?$/.test(pathname)) {
+    return [
+      { label: "Administração", href: "/admin" },
+      { label: "Campanhas", href: "/admin#campanhas" },
+      { label: "Inteligência de mercado" },
+    ];
+  }
+  if (/^\/admin\/\d+\/bloqueada\/?$/.test(pathname)) {
+    return [
+      { label: "Administração", href: "/admin" },
+      { label: "Campanhas", href: "/admin#campanhas" },
+      { label: "Landing page bloqueada" },
+    ];
+  }
+  if (/^\/admin\/\d+\/gerando\/?$/.test(pathname)) {
+    return [
+      { label: "Administração", href: "/admin" },
+      { label: "Campanhas", href: "/admin#campanhas" },
+      { label: "Gerando landing page" },
+    ];
+  }
+  if (/^\/admin\/\d+\/estrategia\/?$/.test(pathname)) {
+    return [
+      { label: "Administração", href: "/admin" },
+      { label: "Campanhas", href: "/admin#campanhas" },
+      { label: "Estratégia da campanha" },
+    ];
+  }
   if (/^\/admin\/\d+\/edit\/?$/.test(pathname)) {
     return [
       { label: "Administração", href: "/admin" },
@@ -101,6 +136,14 @@ export function adminCrumbs(pathname: string): BreadcrumbItem[] {
       { label: "Campanha" },
     ];
   }
+  if (pathname.startsWith("/admin/landing-pages/")) {
+    return [
+      { label: "Administração", href: "/admin" },
+      { label: "Landing pages", href: "/admin/landing-pages" },
+      { label: "Landing page" },
+    ];
+  }
+  if (pathname.startsWith("/admin/landing-pages")) return [adminHome, { label: "Landing pages" }];
   if (pathname.startsWith("/admin/validation")) return [adminHome, { label: "Validação" }];
   if (pathname.startsWith("/admin/discovery")) return [adminHome, { label: "Descoberta" }];
   if (pathname.startsWith("/admin/system")) return [adminHome, { label: "Sistema" }];

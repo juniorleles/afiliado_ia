@@ -14,6 +14,8 @@ import { parsePresellPage } from "@/lib/presell-page";
 import { PresellPageView } from "@/components/presell/presell-page-view";
 import type { PresellRenderAssets } from "@/lib/presell-render-assets";
 import type { SourceVisual } from "@/lib/visual-identity/types";
+import type { LandingDocument } from "@/lib/landing-composer/types";
+import { LandingDocumentView } from "@/components/presell/landing-document-view";
 
 /**
  * Template Review — hero + disclosure de afiliado (sempre visível, nunca
@@ -124,6 +126,7 @@ export function CampaignTemplate({
   disableAffiliateNavigation = false,
   renderAssets,
   sourceVisual = null,
+  document = null,
 }: {
   campaign: Campaign;
   /** Query string from the public URL (no leading ?). Serializable across RSC. */
@@ -141,6 +144,8 @@ export function CampaignTemplate({
   /** Visual sources resolved on the server; client previews omit them. */
   renderAssets?: PresellRenderAssets;
   sourceVisual?: SourceVisual | null;
+  /** Structured landing. When present, the page is not rendered from flattened markdown. */
+  document?: LandingDocument | null;
 }) {
   const incomingParams = new URLSearchParams(incomingQuery);
   const composed = parsePresellPage(campaign.pageComposition);
@@ -155,6 +160,20 @@ export function CampaignTemplate({
         disableAffiliateNavigation={disableAffiliateNavigation}
         renderAssets={renderAssets}
         sourceVisual={sourceVisual}
+      />
+    );
+  }
+
+  if (document && document.sections.length > 0) {
+    return (
+      <LandingDocumentView
+        campaign={campaign}
+        document={document}
+        incomingQuery={incomingQuery}
+        renderPixel={renderPixel}
+        trackClicks={trackClicks}
+        disableAffiliateNavigation={disableAffiliateNavigation}
+        showImagePlaceholder={!renderPixel}
       />
     );
   }
@@ -199,6 +218,7 @@ export function CampaignTemplate({
       <HealthDisclaimer />
 
       {/* CTA do hero — logo após o disclosure, antes de qualquer conteúdo */}
+      {campaign.ctaLabel.trim() ? (
       <CtaButton
         href={heroCta.href}
         label={campaign.ctaLabel}
@@ -208,10 +228,11 @@ export function CampaignTemplate({
         clickId={heroCta.clickId}
         disableAffiliateNavigation={disableAffiliateNavigation}
       />
+      ) : null}
 
       <div>{firstHalf.map(renderBlock)}</div>
 
-      {secondHalf.length > 0 && (
+      {secondHalf.length > 0 && campaign.ctaLabel.trim() ? (
         <CtaButton
           href={middleCta.href}
           label={campaign.ctaLabel}
@@ -221,10 +242,11 @@ export function CampaignTemplate({
           clickId={middleCta.clickId}
           disableAffiliateNavigation={disableAffiliateNavigation}
         />
-      )}
+      ) : null}
 
       <div>{secondHalf.map((block, i) => renderBlock(block, midpoint + i))}</div>
 
+      {campaign.ctaLabel.trim() ? (
       <CtaButton
         href={finalCta.href}
         label={campaign.ctaLabel}
@@ -234,6 +256,7 @@ export function CampaignTemplate({
         clickId={finalCta.clickId}
         disableAffiliateNavigation={disableAffiliateNavigation}
       />
+      ) : null}
     </article>
   );
 }

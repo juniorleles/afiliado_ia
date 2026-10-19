@@ -166,6 +166,60 @@ export type MarketResearchReport = {
   };
   maxAgeHours: number;
   discardedFabrications: string[];
+  pageInsights?: MarketPageInsight[];
+  landingStructures?: MarketStructureCount[];
+  ctaPatterns?: MarketCtaPattern[];
+  benefits?: MarketCountedPhrase[];
+  ingredients?: MarketNamedSource[];
+  pricing?: MarketPriceObservation[];
+  guarantees?: MarketGuaranteeObservation[];
+  claims?: MarketCountedPhrase[];
+  policyRisks?: MarketPolicyRisk[];
+  faq?: MarketFaqItem[];
+  scientificEvidence?: MarketScientificEvidence[];
+  audience?: MarketAudienceObservation;
+};
+
+export type MarketPageStatus = "ENRICHED" | "CACHED" | "SKIPPED" | "ERROR";
+
+export type MarketPageInsight = {
+  url: string;
+  domain: string;
+  status: MarketPageStatus;
+  reason: string | null;
+  durationMs: number;
+  headline: string | null;
+  subheadline: string | null;
+  heroText: string | null;
+  extractVersion: number;
+  structures: string[];
+  ctas: MarketCtaPattern[];
+  benefits: string[];
+  ingredients: string[];
+  faq: Array<{ question: string; answer: string }>;
+  pricing: Array<{ price: string; currency: string }>;
+  guarantees: Array<{ text: string; days: string | null }>;
+  claims: string[];
+  policyRisks: Array<{ claim: string; risk: string }>;
+  scientificEvidence: Array<{ ingredient: string; type: string }>;
+  audience: MarketAudienceObservation;
+};
+
+export type MarketStructureCount = { structure: string; frequency: number };
+export type MarketCtaPattern = { text: string; position: string; frequency: number };
+export type MarketCountedPhrase = { text: string; source: string; domain: string; count: number };
+export type MarketNamedSource = { name: string; source: string; domain: string };
+export type MarketPriceObservation = { price: string; currency: string; source: string; domain: string };
+export type MarketGuaranteeObservation = { text: string; days: string | null; source: string; domain: string };
+export type MarketPolicyRisk = { claim: string; risk: string; source: string; domain: string };
+export type MarketFaqItem = { question: string; answer: string; source: string; domain: string };
+export type MarketScientificEvidence = { ingredient: string; source: string; type: string; domain: string };
+export type MarketAudienceObservation = {
+  ages: string[];
+  sexes: string[];
+  pains: string[];
+  goals: string[];
+  personas: string[];
 };
 
 /** Reserved for later real campaign outcomes. Never populate with simulated values. */

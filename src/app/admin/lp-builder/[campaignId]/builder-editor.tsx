@@ -64,11 +64,19 @@ async function copyText(value: string): Promise<boolean> {
 export function BuilderEditor({
   campaignId,
   previewHref,
+  presentation,
+  hopAllowed,
+  siteName,
+  healthDisclaimer,
   initialFields,
   initialAudit,
 }: {
   campaignId: number;
   previewHref: string;
+  presentation: "LEGACY" | "PRODUCT_SHOWCASE_PREMIUM_V1";
+  hopAllowed: boolean;
+  siteName: string;
+  healthDisclaimer: string | null;
   initialFields: BuilderEditorField[];
   initialAudit: BuilderAuditItem[];
 }) {
@@ -364,6 +372,10 @@ export function BuilderEditor({
           showHighlights={showHighlights}
           flashSection={flashSection}
           refreshToken={refreshToken}
+          presentation={presentation}
+          hopAllowed={hopAllowed}
+          siteName={siteName}
+          healthDisclaimer={healthDisclaimer}
           onView={setView}
           onViewport={setViewport}
           onHighlights={setShowHighlights}

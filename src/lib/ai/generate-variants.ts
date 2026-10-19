@@ -71,6 +71,8 @@ import { resolveGenerationRoute } from "@/lib/ai/generation-router";
 import { generateDeterministicThinCopy } from "@/lib/ai/deterministic-thin-generation";
 import { assertModelSlotProjectionIsolation } from "@/lib/ai/slot-projection-isolation";
 import { formatSafeMarketContext } from "@/lib/market-research/signals";
+import { formatObservedEnrichment } from "@/lib/market-research/page-enrichment";
+import { decisionShell, formatStrategyDecisionPrompt, type StrategyDecision } from "@/lib/strategy-decision/decide";
 import type { MarketResearchReport } from "@/lib/market-research/types";
 import type { StrategyFamily } from "@/lib/strategy/types";
 
@@ -101,6 +103,7 @@ export type GenerateVariantsInput = {
   extractedBullets?: string[];
   targetApproach?: VariantApproach;
   marketResearch?: MarketResearchReport;
+  strategyDecision?: StrategyDecision;
   recommendedStrategy?: StrategyFamily;
   /**
    * Controlled MODEL runs only. Omitted in production.
@@ -379,9 +382,15 @@ function renderPrompt(input: GenerateVariantsInput, loaded: ReturnType<typeof lo
   }
   if (input.marketResearch) {
     lines.push(formatSafeMarketContext(input.marketResearch.signals));
+    const observed = formatObservedEnrichment(input.marketResearch);
+    if (observed) lines.push(observed);
     lines.push("");
   }
-  if (input.targetApproach) {
+  if (input.strategyDecision) {
+    lines.push(formatStrategyDecisionPrompt(input.strategyDecision));
+    lines.push("Fill only Evidence Slot Plan slots. Do not choose evidence IDs.");
+    lines.push("Do not add blocks. Do not discuss missing fields. Do not use outside knowledge.");
+  } else if (input.targetApproach) {
     lines.push(
       `STRATEGY CONTEXT: recommended approach ${input.targetApproach}. This is an editorial angle, not a product fact.`,
       `Generate exactly one variant now using approach ${input.targetApproach}.`,
@@ -810,11 +819,13 @@ export async function generateVariants(input: GenerateVariantsInput): Promise<Va
   const loaded = loadGeneration(input);
   const { plan, projection, slotPlan } = loaded;
   const route = resolveGenerationRoute(plan);
-  const approach = (input.targetApproach || "REVIEW") as VariantApproach;
+  const approach = (
+    input.strategyDecision ? decisionShell(input.strategyDecision.approachId) : input.targetApproach || "REVIEW"
+  ) as VariantApproach;
 
   if (route === "DETERMINISTIC_THIN") {
     const generated = generateDeterministicThinCopy({ plan, slotPlan, projection });
-    const page = hydrateSlotFillsToPage(generated.fills, slotPlan, generated.ctaLabel, input.targetApproach);
+    const page = hydrateSlotFillsToPage(generated.fills, slotPlan, generated.ctaLabel, approach);
     const adapted = adaptStructuredToVariantCopy(page, plan);
     return [
       {
@@ -863,7 +874,7 @@ export async function generateVariants(input: GenerateVariantsInput): Promise<Va
     const question = deterministicFaqQuestion(slot, loaded.facts.productName);
     if (question) fill.question = question;
   }
-  const page = hydrateSlotFillsToPage(parsed.fills, slotPlan, parsed.ctaLabel, input.targetApproach);
+  const page = hydrateSlotFillsToPage(parsed.fills, slotPlan, parsed.ctaLabel, approach);
   const adapted = adaptStructuredToVariantCopy(page, plan);
   return [
     {

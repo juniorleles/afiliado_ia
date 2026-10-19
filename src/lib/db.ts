@@ -140,6 +140,58 @@ export function migrate(db: Database.Database) {
     db.exec("ALTER TABLE campaigns ADD COLUMN productionPresentation TEXT");
     names.add("productionPresentation");
   }
+  if (!names.has("presentationTemplate")) {
+    db.exec("ALTER TABLE campaigns ADD COLUMN presentationTemplate TEXT");
+    names.add("presentationTemplate");
+  }
+  if (!names.has("campaignBriefJson")) {
+    db.exec("ALTER TABLE campaigns ADD COLUMN campaignBriefJson TEXT");
+    names.add("campaignBriefJson");
+  }
+  if (!names.has("affiliateProgramJson")) {
+    db.exec("ALTER TABLE campaigns ADD COLUMN affiliateProgramJson TEXT");
+    names.add("affiliateProgramJson");
+  }
+  if (!names.has("marketResearchJson")) {
+    db.exec("ALTER TABLE campaigns ADD COLUMN marketResearchJson TEXT");
+    names.add("marketResearchJson");
+  }
+  if (!names.has("marketIntelligenceAnalysisJson")) {
+    db.exec("ALTER TABLE campaigns ADD COLUMN marketIntelligenceAnalysisJson TEXT");
+    names.add("marketIntelligenceAnalysisJson");
+  }
+  if (!names.has("strategyDecisionJson")) {
+    db.exec("ALTER TABLE campaigns ADD COLUMN strategyDecisionJson TEXT");
+    names.add("strategyDecisionJson");
+  }
+  if (!names.has("landingBlueprintJson")) {
+    db.exec("ALTER TABLE campaigns ADD COLUMN landingBlueprintJson TEXT");
+    names.add("landingBlueprintJson");
+  }
+  if (!names.has("generatedSectionsJson")) {
+    db.exec("ALTER TABLE campaigns ADD COLUMN generatedSectionsJson TEXT");
+    names.add("generatedSectionsJson");
+  }
+  if (!names.has("landingDocumentJson")) {
+    db.exec("ALTER TABLE campaigns ADD COLUMN landingDocumentJson TEXT");
+    names.add("landingDocumentJson");
+  }
+  if (!names.has("copyGenerationJson")) {
+    db.exec("ALTER TABLE campaigns ADD COLUMN copyGenerationJson TEXT");
+    names.add("copyGenerationJson");
+  }
+  if (!names.has("landingQualityJson")) {
+    db.exec("ALTER TABLE campaigns ADD COLUMN landingQualityJson TEXT");
+    names.add("landingQualityJson");
+  }
+  if (!names.has("autoFixHistoryJson")) {
+    db.exec("ALTER TABLE campaigns ADD COLUMN autoFixHistoryJson TEXT");
+    names.add("autoFixHistoryJson");
+  }
+  if (!names.has("googleAdsPackageJson")) {
+    db.exec("ALTER TABLE campaigns ADD COLUMN googleAdsPackageJson TEXT");
+    names.add("googleAdsPackageJson");
+  }
 
   // Published means the public route. Rows backfilled to published before
   // source facts existed are drafts. The predicate is structural and names
@@ -801,6 +853,55 @@ export function migrate(db: Database.Database) {
       new Date().toISOString(),
     );
   }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS landing_generation_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campaignId INTEGER NOT NULL,
+      createdAt TEXT NOT NULL,
+      strategy TEXT NOT NULL,
+      language TEXT NOT NULL,
+      model TEXT NOT NULL,
+      durationMs INTEGER NOT NULL,
+      result TEXT NOT NULL CHECK (result IN ('success', 'error')),
+      error TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_landing_generation_history_campaign
+      ON landing_generation_history(campaignId, id);
+  `);
+  const generationHistory = db.prepare("SELECT version FROM schema_migrations WHERE version = 16").get() as { version: number } | undefined;
+  if (!generationHistory) {
+    db.prepare("INSERT INTO schema_migrations (version, name, appliedAt) VALUES (16, 'landing-generation-history', ?)").run(
+      new Date().toISOString(),
+    );
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS official_promo_assets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campaignId INTEGER NOT NULL,
+      sourcePage TEXT NOT NULL,
+      section TEXT NOT NULL,
+      originalUrl TEXT NOT NULL,
+      fileName TEXT NOT NULL,
+      status TEXT NOT NULL,
+      blockReason TEXT,
+      reviewNote TEXT,
+      width INTEGER,
+      height INTEGER,
+      bytes INTEGER,
+      format TEXT,
+      productMatch TEXT NOT NULL,
+      permissionEvidence TEXT NOT NULL,
+      verifiedAt TEXT NOT NULL,
+      localFile TEXT,
+      isHero INTEGER NOT NULL DEFAULT 0,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      UNIQUE(campaignId, originalUrl)
+    );
+    CREATE INDEX IF NOT EXISTS idx_official_promo_assets_campaign ON official_promo_assets(campaignId, id);
+  `);
 }
 
 export function schemaVersion(db = getDb()): number {

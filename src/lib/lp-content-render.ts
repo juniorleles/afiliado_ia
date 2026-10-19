@@ -16,6 +16,8 @@ import {
   type ContentContext,
   type ResolvedContentField,
 } from "@/lib/lp-builder/content";
+import { documentContentFields } from "@/lib/landing-composer/apply";
+import { readStoredLandingDocument } from "@/lib/landing-composer/store";
 import { listBuilderAudit, listBuilderOverrides, type BuilderAuditRow } from "@/lib/lp-builder/store";
 
 export function contentContextForCampaign(campaign: Campaign): ContentContext {
@@ -39,6 +41,19 @@ export function contentContextForCampaign(campaign: Campaign): ContentContext {
 
 function fieldsFor(campaign: Campaign): ResolvedContentField[] {
   const context = contentContextForCampaign(campaign);
+  const document = readStoredLandingDocument(campaign.id);
+  if (document) {
+    const rows = listBuilderOverrides(campaign.id).map((row) => ({
+      fieldId: row.fieldId,
+      value: row.value,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      createdBy: row.createdBy,
+      updatedBy: row.updatedBy,
+      version: row.version,
+    }));
+    return resolveContentFields(documentContentFields(document), rows);
+  }
   const page = parsePresellPage(campaign.pageComposition);
   const generated = page
     ? projectContentFields(page, context)
