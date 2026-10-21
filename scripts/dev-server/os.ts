@@ -21,6 +21,9 @@ function execText(command: string, args: string[]): Promise<string> {
   });
 }
 
+/** A lock file that cannot be read is treated as a dead owner only after this long, so a lock being written is not taken. */
+const UNREADABLE_LOCK_GRACE_MS = 5_000;
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -187,6 +190,23 @@ export function createSessionDeps(repoRoot: string, userArgs: string[]): Session
 
   const ensureDir = () => fs.mkdirSync(stateDir, { recursive: true });
 
+  // pid is null when the file is missing, empty or not valid JSON. ageMs tells a half-written lock from an old one.
+  const readLockFile = (): { pid: number | null; ageMs: number } => {
+    try {
+      const ageMs = Date.now() - fs.statSync(lockPath).mtimeMs;
+      const owner = JSON.parse(fs.readFileSync(lockPath, "utf8")) as { pid?: unknown };
+      return { pid: typeof owner.pid === "number" ? owner.pid : null, ageMs };
+    } catch {
+      let ageMs = 0;
+      try {
+        ageMs = Date.now() - fs.statSync(lockPath).mtimeMs;
+      } catch {
+        ageMs = 0;
+      }
+      return { pid: null, ageMs };
+    }
+  };
+
   const releaseLock = () => {
     try {
       const raw = fs.readFileSync(lockPath, "utf8");
@@ -276,13 +296,24 @@ export function createSessionDeps(repoRoot: string, userArgs: string[]): Session
     isAlive,
     acquireLock: () => {
       ensureDir();
-      try {
-        fs.writeFileSync(lockPath, JSON.stringify({ pid: process.pid }), { flag: "wx" });
-        return "acquired";
-      } catch (error) {
-        if (errorCode(error) === "EEXIST") return "busy";
-        throw error;
-      }
+      const attempt = (): "acquired" | "busy" => {
+        try {
+          fs.writeFileSync(lockPath, JSON.stringify({ pid: process.pid }), { flag: "wx" });
+          return "acquired";
+        } catch (error) {
+          if (errorCode(error) === "EEXIST") return "busy";
+          throw error;
+        }
+      };
+      if (attempt() === "acquired") return "acquired";
+      // A lock left by a manager that died blocks every later start, because releaseLock only removes the
+      // current process's own lock. Reclaim it only when the owner is gone, and re-read it right before removing.
+      const owner = readLockFile();
+      if (owner.pid !== null ? owner.pid === process.pid || isAlive(owner.pid) : owner.ageMs < UNREADABLE_LOCK_GRACE_MS) return "busy";
+      const again = readLockFile();
+      if (again.pid !== owner.pid) return "busy";
+      fs.rmSync(lockPath, { force: true });
+      return attempt();
     },
     readLockOwner: () => {
       try {

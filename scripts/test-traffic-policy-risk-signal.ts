@@ -520,7 +520,9 @@ async function main() {
   check("no product, slug, or source-path-specific logic", code.every((c) => !/gizmo|example\.test|https?:\/\/|\/products\/|slug/i.test(c.text)));
   check("the code never writes to its inputs", code.every((c) => !/\b(opportunityAnalysis|opportunityExplanation|candidate|executionMetadata|inputs)(\.[A-Za-z]+)*\s*(=[^=]|\.push\(|\.splice\(|\.sort\()/.test(c.text)));
   const sourceTree = walk(join(process.cwd(), "src")).filter((file) => file.endsWith(".ts") || file.endsWith(".tsx"));
-  const outsiders = sourceTree.filter((file) => !file.includes(join("src", "lib", "traffic")) && /policy-risk|policy-rule|traffic-dimension-reader/.test(readFileSync(file, "utf8")));
+  // Using the signal means importing it. A user-facing sentence that happens to say "policy-risk wording" is not a use.
+  const importsSignal = /(?:from|import\()\s*["'][^"']*(?:policy-risk|policy-rule|traffic-dimension-reader)[^"']*["']/;
+  const outsiders = sourceTree.filter((file) => !file.includes(join("src", "lib", "traffic")) && importsSignal.test(readFileSync(file, "utf8")));
   check("nothing outside the traffic module uses the signal: Opportunity, Discovery, and the LP Builder are untouched", outsiders.length === 0);
   const channelText = readdirSync(trafficDir).filter((n) => n.startsWith("channel-")).map((n) => readFileSync(join(trafficDir, n), "utf8")).join("\n");
   check("the Channel Suitability Signal does not depend on the Policy Risk Signal, and the signals share only the dimension reader", !/policy-risk|policy-rule/.test(channelText) && /traffic-dimension-reader/.test(channelText));

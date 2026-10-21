@@ -255,7 +255,9 @@ async function main() {
 
   const moduleSource = readDir("src/lib/lp-builder");
   assert(!/visiflora|prime biome|neuro serge|joint genesis|prodentim|audifort/i.test(moduleSource), "the builder has no product names");
-  assert(!/anthropic|openai|product-facts|presentation-plan|grounding-validator|policy-linter|publication|analytics-store/i.test(moduleSource), "the builder does not call facts, presentation, grounding, policy, publication, or tracking");
+  // The check is about what the module imports or calls. A comment that mentions publication is not a dependency.
+  const moduleCode = moduleSource.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
+  assert(!/anthropic|openai|product-facts|presentation-plan|grounding-validator|policy-linter|publication|analytics-store/i.test(moduleCode), "the builder does not call facts, presentation, grounding, policy, publication, or tracking");
 
   for (const label of ["VisiFlora", "Joint Genesis", "Prime Biome", "Neuro Serge", "Prodentim", "Audifort", "Unknown Product"]) replay(label);
 

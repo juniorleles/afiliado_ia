@@ -6,6 +6,7 @@ import { applyLandingDocument } from "@/lib/landing-composer/apply";
 import { readStoredLandingDocument } from "@/lib/landing-composer/store";
 import { withBuilderContent } from "@/lib/lp-content-render";
 import { withBuilderMedia } from "@/lib/lp-media-render";
+import { resolvePresellRenderAssets } from "@/lib/presell-render-assets-server";
 import { CampaignTemplate } from "@/components/campaign-template";
 import { ShowcaseLanding } from "@/components/presell/showcase-landing";
 import { presentationUsesShowcase } from "@/lib/product-showcase/adapt";
@@ -34,7 +35,9 @@ export default async function VisualFramePage({
   const stored = getCampaignBySlug(slug);
   if (!stored) notFound();
   const document = readStoredLandingDocument(stored.id);
-  const prepared = withBuilderMedia(withBuilderContent(applyLandingDocument(withResolvedCampaign(stored), document)));
+  // Same asset resolution as the public route (/p/[slug]): a QA frame that renders without them would not show the page that ships.
+  const contentCampaign = withBuilderContent(applyLandingDocument(withResolvedCampaign(stored), document));
+  const prepared = withBuilderMedia(contentCampaign, resolvePresellRenderAssets(contentCampaign));
   const campaign = prepared.campaign;
 
   return presentationUsesShowcase(stored.presentationTemplate) && document ? (

@@ -16,6 +16,8 @@ import { ThemeFrame } from "@/components/presell/theme-frame";
 import { LayoutFrame } from "@/components/presell/layout-frame";
 import { PublicFooter } from "@/components/public-footer";
 import { DesignStudioPanel } from "@/components/admin/design-studio-panel";
+import { LpQualityPanel } from "@/components/admin/lp-quality-panel";
+import { EditorialDepthPanel } from "@/components/admin/editorial-depth-panel";
 import { PresentationTemplateForm } from "@/components/admin/presentation-template-form";
 import { ShowcaseLanding } from "@/components/presell/showcase-landing";
 import { presentationUsesShowcase } from "@/lib/product-showcase/adapt";
@@ -127,6 +129,10 @@ export default async function PreviewPage({
         </p>
         )}
         <PresentationTemplateForm campaignId={stored.id} selected={stored.presentationTemplate} />
+      </div>
+      <div className="px-6 py-4">
+        <LpQualityPanel campaignId={stored.id} />
+        <EditorialDepthPanel campaignId={stored.id} />
       </div>
       {overlay ? (
         <PreviewOverlay

@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
+﻿import type { ReactNode } from "react";
 import { Newsreader, Source_Sans_3 } from "next/font/google";
 import Link from "next/link";
 import type { ProductShowcaseModel } from "@/lib/product-showcase/model";
+import { PremiumV3 } from "@/components/product-showcase/product-showcase-premium-v3";
 import "@/app/product-showcase.css";
 
 const display = Newsreader({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--psp-display" });
@@ -19,6 +20,27 @@ function ChipIcon() {
 }
 
 export function ProductShowcasePremiumV1({
+  model,
+  labHref,
+  showLabBar = true,
+  ctaSlot = null,
+  ctaPreview = false,
+}: {
+  model: ProductShowcaseModel;
+  labHref: string;
+  showLabBar?: boolean;
+  ctaSlot?: ReactNode;
+  /** Preview/QA only: shows a disabled placeholder when no authorized offer link exists. Never set on public pages. */
+  ctaPreview?: boolean;
+}) {
+  if (model.editorial && model.adaptivePlan) {
+    // Adaptive path: Premium V3. The template id stays PRODUCT_SHOWCASE_PREMIUM_V1 so no persisted template changes.
+    return <PremiumV3 model={model} labHref={labHref} showLabBar={showLabBar} ctaSlot={ctaSlot} ctaPreview={ctaPreview} fontClassName={`${display.variable} ${body.variable}`} />;
+  }
+  return <LegacyPremium model={model} labHref={labHref} showLabBar={showLabBar} ctaSlot={ctaSlot} />;
+}
+
+function LegacyPremium({
   model,
   labHref,
   showLabBar = true,

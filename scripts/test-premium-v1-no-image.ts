@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { getCampaignById } from "../src/lib/campaigns.ts";
 import { readStoredLandingDocument } from "../src/lib/landing-composer/store.ts";
-import { adaptLandingToShowcase } from "../src/lib/product-showcase/adapt.ts";
+import { adaptLandingToShowcase } from "../src/lib/product-showcase/adapt-campaign.ts";
 
 function assert(condition: boolean, message: string) {
   if (!condition) throw new Error("FALHOU: " + message);

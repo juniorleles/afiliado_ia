@@ -16,6 +16,8 @@ import { CATEGORY_LABELS, type LintCategory, type LintResult, type LintRuleFindi
 import { listValidationRuns } from "@/lib/validation/store";
 import { getLatestVisualQaReport } from "@/lib/visual-qa/store";
 import type { VisualQaFinding, VisualQaReport } from "@/lib/visual-qa/types";
+import { LpQualityPanel } from "@/components/admin/lp-quality-panel";
+import { EditorialDepthPanel } from "@/components/admin/editorial-depth-panel";
 
 export const QUALITY_TOOL_IDS = ["painel", "verificacao", "laboratorio", "analytics"] as const;
 export type QualityTool = (typeof QUALITY_TOOL_IDS)[number];
@@ -211,7 +213,10 @@ export function QualityCenter({
       />
 
       {ferramenta === "painel" ? (
-        <Dashboard
+        <>
+          <LpQualityPanel campaignId={campaign.id} />
+          <EditorialDepthPanel campaignId={campaign.id} />
+          <Dashboard
           campaign={campaign}
           lint={lint}
           report={report}
@@ -221,6 +226,7 @@ export function QualityCenter({
           policyHref={policyHref}
           previewHref={previewHref}
         />
+        </>
       ) : null}
       {ferramenta === "verificacao" ? (
         <Embed>

@@ -52,7 +52,8 @@ assert(!pageView.includes('navCta={cta("middle"'), "header CTA is no longer attr
 
 // Disclosure precedes every affiliate link; footer does not repeat the disclosure sentence.
 const view = read("src/components/presell/visual-master-view.tsx");
-const disclosureAt = view.indexOf("{AFFILIATE_DISCLOSURE_TEXT}");
+// The view shows the stored page disclosure and falls back to the fixed disclosure text. Either form is the disclosure.
+const disclosureAt = Math.max(view.indexOf("{content?.disclosure || AFFILIATE_DISCLOSURE_TEXT}"), view.indexOf("{AFFILIATE_DISCLOSURE_TEXT}"));
 assert(disclosureAt > 0, "visual master renders the affiliate disclosure");
 for (const cta of ["{navCta}", "{heroCta}", "{finalCta}"]) {
   assert(view.indexOf(cta) > disclosureAt, `disclosure renders before ${cta}`);

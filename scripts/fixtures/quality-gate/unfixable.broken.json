@@ -1,0 +1,16 @@
+{
+  "productName": "Synthetic Gate Sample",
+  "claims": [
+    {
+      "id": "invented-result",
+      "text": "Clinically proven to restore enamel in 7 days",
+      "class": "FACT",
+      "restriction": "PUBLISHABLE",
+      "evidenceRefs": [],
+      "sourceUrl": null,
+      "verification": "ABSENT"
+    }
+  ],
+  "offers": [],
+  "cta": { "state": "MISSING" }
+}

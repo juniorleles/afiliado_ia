@@ -3,7 +3,7 @@ import type { Campaign } from "@/lib/campaigns";
 import type { LandingDocument } from "@/lib/landing-composer/types";
 import { buildAffiliateHref } from "@/lib/affiliate-url";
 import { builderEditorState } from "@/lib/lp-content-render";
-import { adaptLandingToShowcase } from "@/lib/product-showcase/adapt";
+import { adaptLandingToShowcase } from "@/lib/product-showcase/adapt-campaign";
 import { ProductShowcasePremiumV1 } from "@/components/product-showcase/product-showcase-premium-v1";
 import { outboundCta, PresellCta } from "@/components/presell/presell-cta";
 import {
@@ -51,6 +51,7 @@ export function ShowcaseLanding({
         model={model}
         labHref={`/admin/preview/${campaign.slug}`}
         showLabBar={false}
+        ctaPreview={disableAffiliateNavigation}
         ctaSlot={action && model.cta ? (
           <PresellCta
             href={action.href}

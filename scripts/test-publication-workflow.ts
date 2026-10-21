@@ -253,7 +253,8 @@ const previewSrc = readFileSync(joinSrc("src/app/admin/preview/[slug]/page.tsx")
 assert(previewSrc.includes("PREVIEW — NOT PUBLISHED"), "draft preview shows PREVIEW — NOT PUBLISHED");
 assert(previewSrc.includes("getCampaignBySlug"), "preview loads draft or published by slug");
 assert(
-  previewSrc.includes("<PreviewFrame campaign={campaign} />") &&
+  // The frame now also receives the stored landing document. It still gets no pixel and no click tracking.
+  /<PreviewFrame campaign=\{campaign\}(?: document=\{document\})? \/>/.test(previewSrc) &&
     !previewSrc.includes("renderPixel={") &&
     !previewSrc.includes("trackClicks"),
   "preview renders CampaignTemplate without renderPixel",

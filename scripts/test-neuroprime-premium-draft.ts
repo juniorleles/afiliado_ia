@@ -5,7 +5,7 @@ import { readAffiliateProgram } from "../src/lib/affiliate-program.ts";
 import { presentLandingDocument } from "../src/lib/landing-composer/present.ts";
 import { readStoredLandingDocument } from "../src/lib/landing-composer/store.ts";
 import { listOfficialPromoAssets } from "../src/lib/official-assets/store.ts";
-import { adaptLandingToShowcase } from "../src/lib/product-showcase/adapt.ts";
+import { adaptLandingToShowcase } from "../src/lib/product-showcase/adapt-campaign.ts";
 import { getDb } from "../src/lib/db.ts";
 
 function assert(condition: boolean, message: string) {

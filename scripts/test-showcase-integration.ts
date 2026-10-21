@@ -2,13 +2,13 @@ import { getCampaignById, setCampaignPresentationTemplate } from "../src/lib/cam
 import { getDb } from "../src/lib/db.ts";
 import { readStoredLandingDocument } from "../src/lib/landing-composer/store.ts";
 import {
-  adaptLandingToShowcase,
   applyAuthorizedOverrides,
   isDemoAssetSrc,
   officialCampaignImage,
   presentationUsesShowcase,
   presellShowcaseCta,
 } from "../src/lib/product-showcase/adapt.ts";
+import { adaptLandingToShowcase } from "../src/lib/product-showcase/adapt-campaign.ts";
 import { demoDocument } from "../src/lib/product-showcase/demo-art.ts";
 
 function assert(cond: boolean, msg: string) {

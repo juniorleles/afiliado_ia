@@ -11,3 +11,12 @@ Thumbs.db
 
 # Local SQLite (Phase 2) — do not version campaign data
 data/
+
+# TypeScript incremental build cache (generated)
+*.tsbuildinfo
+
+# Third-party reference imagery (not ours to version)
+design-references/product-showcase-reference.png
+
+# Isolated quality-gate work copies (Execution 50D)
+scripts/fixtures/quality-gate/work/

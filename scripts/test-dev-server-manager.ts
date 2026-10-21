@@ -254,6 +254,9 @@ async function main() {
   const holder = spawn(process.execPath, ["-e", "const fs=require('fs'); fs.openSync(process.argv[1], 'a'); setInterval(() => {}, 1000);", traceFile], {
     stdio: "ignore",
   });
+  // The holder is a separate node process. Under load it can take longer than a fixed 300 ms to open the file, so wait for the file itself.
+  const holderStarted = Date.now();
+  while (!fs.existsSync(traceFile) && Date.now() - holderStarted < 10_000) await new Promise((resolve) => setTimeout(resolve, 100));
   await new Promise((resolve) => setTimeout(resolve, 300));
   assert((await probeTrace(temp)) === "locked", "an open .next/trace is detected as locked");
   if (holder.pid) {

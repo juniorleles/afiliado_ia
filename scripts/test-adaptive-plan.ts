@@ -5,8 +5,8 @@ import { validateGrounding } from "../src/lib/ai/grounding-validator.ts";
 import { getCampaignById } from "../src/lib/campaigns.ts";
 import { readStoredLandingDocument } from "../src/lib/landing-composer/store.ts";
 import { emptyProductFacts, type ProductFacts, type ProductFormatFact } from "../src/lib/product-facts.ts";
-import { buildAdaptivePlan, type AdaptivePresentationPlan } from "../src/lib/product-showcase/adaptive-plan.ts";
-import { adaptLandingToShowcase } from "../src/lib/product-showcase/adapt.ts";
+import { buildAdaptivePlan, parseVerifiedOffers, type AdaptivePresentationPlan } from "../src/lib/product-showcase/adaptive-plan.ts";
+import { adaptLandingToShowcase } from "../src/lib/product-showcase/adapt-campaign.ts";
 
 function assert(condition: boolean, message: string) {
   if (!condition) throw new Error("FALHOU: " + message);
@@ -55,6 +55,7 @@ assert(capsulePlan.format === "capsule" && capsulePlan.formatStatement === "Once
 assert(capsulePlan.hero === "image" && !capsulePlan.limitations.includes("NO_APPROVED_PACKSHOT"), "A packshot aprovado usa image hero");
 assert(capsulePlan.guarantee === "60-day refund" && !capsulePlan.limitations.includes("NO_ELIGIBLE_GUARANTEE"), "A garantia elegível");
 assert(capsulePlan.ingredientLayout === "sparse" && capsulePlan.ingredientCount === 2, "A poucos ingredientes");
+assert(capsulePlan.heroComposition === "split" && capsulePlan.price === null, "A hero com imagem não inventa oferta");
 assert(capsulePlan.cta?.href === "https://hop.example/northwind", "A CTA autorizado");
 assert(capsulePlan.features.filter((line) => line === capsulePlan.formatStatement).length <= 1, "A o formato não se multiplica");
 
@@ -83,6 +84,7 @@ const incomplete = facts("Blank Product");
 const incompletePlan = buildAdaptivePlan({ facts: incomplete });
 assert(incompletePlan.format === "unknown" && incompletePlan.benefits === "omit" && incompletePlan.features.length === 0, "D sem formato e sem benefícios");
 assert(incompletePlan.price === null && incompletePlan.usage.length === 0 && incompletePlan.guarantee === null, "D sem preço, uso ou garantia inventados");
+assert(incompletePlan.heroComposition === "short" && incompletePlan.contentVolume === "thin", "poucos fatos usam hero curto");
 assert(
   incompletePlan.limitations.includes("NO_ELIGIBLE_FEATURES") &&
     incompletePlan.limitations.includes("NO_ELIGIBLE_USAGE") &&
@@ -99,7 +101,10 @@ priced.confidence.pricingInformation = "HEURISTIC_EXTRACTION";
 assert(buildAdaptivePlan({ facts: priced }).limitations.includes("NO_VERIFIED_PRICE"), "preço heurístico não é verificável");
 eligible(priced, "pricingInformation");
 const verified = buildAdaptivePlan({ facts: priced });
-assert(verified.price?.statement === "One pouch for USD 49" && verified.price.currency === "USD", "preço elegível conserva a moeda escrita");
+assert(verified.price?.statement === "One pouch for USD 49" && verified.price.currency === "USD" && verified.price.layout === "single" && verified.price.offers.length === 0, "preço elegível conserva a moeda escrita");
+eligible(priced, "pricingInformation").pricingInformation = "$140";
+const isolated = buildAdaptivePlan({ facts: priced });
+assert(isolated.price === null && isolated.limitations.includes("PRICE_CONTEXT_INSUFFICIENT") && !isolated.limitations.includes("NO_VERIFIED_PRICE"), "valor isolado não é exibível");
 
 const blocked = facts("Blocked Feature");
 eligible(blocked, "features").features = ["Supports healthy cholesterol levels"];
@@ -124,12 +129,22 @@ const photos = buildAdaptivePlan({
   approvedIngredientImages: [{ name: "One", src: "/media/product/one.png", alt: "One" }],
 });
 assert(photos.ingredientPhotos === false && photos.ingredientLayout === "sparse", "foto parcial não libera a grade ilustrada");
+const many = facts("Many Names");
+eligible(many, "ingredientsOrComponents").ingredientsOrComponents = ["One", "Two", "Three", "Four", "Five", "Six"];
+assert(buildAdaptivePlan({ facts: many }).ingredientLayout === "grid", "5 a 9 ingredientes usam grade");
+eligible(many, "ingredientsOrComponents").ingredientsOrComponents = Array.from({ length: 10 }, (_, index) => `Name ${index + 1}`);
+assert(buildAdaptivePlan({ facts: many }).ingredientLayout === "compact", "10 ou mais ingredientes usam lista densa");
+const offers = parseVerifiedOffers("1 bottle $59; 3 bottles $147 total; 6 bottles $234 total.");
+assert(offers.length === 3 && offers[1]?.unitLabel === "$49" && offers[2]?.unitLabel === "$39", "ofertas múltiplas calculam unidade exata");
+assert(offers.every((offer) => !/save|discount|off\b/i.test(`${offer.quantityLabel} ${offer.totalLabel} ${offer.unitLabel ?? ""}`)), "oferta não inventa desconto");
+assert(parseVerifiedOffers("3 bottles $100; 6 bottles $200").every((offer) => offer.unitLabel === null), "unidade inexata fica de fora");
+assert(parseVerifiedOffers("One pouch for USD 36").length === 0, "uma oferta não vira comparação");
 assert(JSON.stringify(buildAdaptivePlan({ facts: capsules, approvedPackshot: capsulePlan.hero === "image" ? { src: "/media/product/northwind.png", alt: "Northwind Capsule product image" } : null, cta: capsulePlan.cta })) === JSON.stringify(capsulePlan), "o plano é determinístico");
 
 const engine = readFileSync(path.join(process.cwd(), "src/lib/product-showcase/adaptive-plan.ts"), "utf8");
 assert(!/neuroprime|cholibrium|joint genesis/i.test(engine), "nenhuma regra por marca");
 const view = readFileSync(path.join(process.cwd(), "src/components/product-showcase/product-showcase-premium-v1.tsx"), "utf8");
-assert(!/NO_APPROVED_PACKSHOT|NO_VERIFIED_PRICE|PPC_PROHIBITED/.test(view), "limitações não entram no componente");
+assert(!/NO_APPROVED_PACKSHOT|NO_VERIFIED_PRICE|PRICE_CONTEXT_INSUFFICIENT|PPC_PROHIBITED/.test(view), "limitações não entram no componente");
 
 function campaignPlan(id: number): AdaptivePresentationPlan {
   const before = getCampaignById(id);
@@ -151,6 +166,7 @@ const plan189 = campaignPlan(189);
 const plan190 = campaignPlan(190);
 assert(plan186.hero === "editorial" || plan186.hero === "image", "campanha 186 plano genérico");
 assert(plan188.ingredientCount === 10 && plan188.ingredientLayout === "compact", "campanha 188 muitos ingredientes");
+assert(plan188.price === null && plan188.limitations.includes("PRICE_CONTEXT_INSUFFICIENT"), "campanha 188 registra preço sem contexto");
 assert(plan189.limitations.every((code) => code.startsWith("NO_") || code.startsWith("PPC_")), "campanha 189 só códigos genéricos");
 assert(plan190.hero === "editorial" && plan190.benefits === "omit", "campanha 190 sem packshot e sem features");
 assert(
@@ -163,6 +179,9 @@ const program190 = readAffiliateProgram(190);
 assert(program190?.brandPpc === "BLOCKED" && plan190.limitations.includes("PPC_PROHIBITED"), "campanha 190 PPC proibido explícito");
 assert(program190?.genericSearchPpc === "UNKNOWN" && plan190.limitations.includes("PPC_PERMISSION_UNKNOWN"), "campanha 190 PPC desconhecido permanece desconhecido");
 assert(Boolean(plan190.price) && !plan190.limitations.includes("NO_VERIFIED_PRICE"), "campanha 190 conserva o preço elegível");
+assert(plan190.price?.layout === "comparison" && (plan190.price?.offers.length ?? 0) >= 2, "campanha 190 separa ofertas verificadas");
+assert(plan190.heroComposition === "balanced" && plan190.ingredientLayout === "grid", "campanha 190 hero editorial e grade de ingredientes");
+assert(!JSON.stringify(plan190.price).toLowerCase().includes("save"), "campanha 190 não ganha economia inventada");
 
 const document190 = readStoredLandingDocument(190);
 assert(document190?.metadata.gates?.grounding === "PASS" && document190.metadata.gates.structural === "PASS", "grounding e estrutura da 190 intactos");

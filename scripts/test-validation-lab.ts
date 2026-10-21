@@ -407,7 +407,8 @@ async function main() {
 
   const dash = readFileSync(joinSrc("src/app/admin/validation/page.tsx"), "utf8");
   const compare = readFileSync(joinSrc("src/app/admin/validation/[runId]/compare/page.tsx"), "utf8");
-  assert(dash.includes("Local Validation Lab"), "dashboard exists");
+  // The admin panel is Portuguese now: the dashboard heading is "Validações" and the run it creates is still named "Local validation lab".
+  assert(dash.includes("Validações") && dash.includes("createValidationRunAction"), "dashboard exists");
   assert(compare.includes("Comparison"), "comparison view exists");
   assert(readFileSync(joinSrc("src/app/robots.ts"), "utf8").includes("/visual-frame"), "robots still disallow visual-frame");
 

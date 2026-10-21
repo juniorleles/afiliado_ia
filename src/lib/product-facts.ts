@@ -1,5 +1,6 @@
 import { withNormalizedNumerals } from "@/lib/ai/operational-relations";
 import { isIngredientIdentityName, isUsageInstruction } from "@/lib/import-heuristics";
+import { parseSpecificationText } from "@/lib/specification-text";
 
 /**
  * ProductFacts — Phase 3 content engine.
@@ -126,6 +127,30 @@ export type ProductFormatFact = {
   retrievedAt?: string;
 };
 
+/**
+ * One structured specification the source stated as a name with a value (and unit when it has one).
+ * Optional on ProductFacts: facts stored before this field existed simply have none.
+ */
+export type SpecificationFact = {
+  name: string;
+  value: string;
+  unit?: string;
+  provenance: FactConfidence;
+  copyEligibility: CopyEligibilityFlag;
+  policyFindings: string[];
+  sourceUrl: string;
+  sourcePageCategory: SourcePageCategory;
+  sourceUnit?: string;
+  sourceLocation?: string;
+  retrievedAt?: string;
+};
+
+/**
+ * What the entries of ingredientsOrComponents are, when the source or the operator said so.
+ * Absent means "not stated", and every existing consumer keeps its previous wording.
+ */
+export type ComponentRole = "INGREDIENT" | "COMPONENT" | "MATERIAL" | "INCLUDED_ITEM";
+
 export type FieldConfidence = Record<FactField, FactConfidence>;
 
 /** Verbatim commercial fields from one source offer card. Absent fields were not stated. */
@@ -151,6 +176,10 @@ export type ProductFacts = {
   description?: string;
   features: string[];
   ingredientsOrComponents: string[];
+  /** Role of the entries above when stated. Absent keeps the pre-contract wording. */
+  componentRole?: ComponentRole;
+  /** Structured name/value specifications. Absent on facts stored before the universal contract. */
+  specifications?: SpecificationFact[];
   usageInformation: string[];
   cautions: string[];
   pricingInformation?: string;
@@ -229,6 +258,10 @@ export type ManualFactInput = {
   description?: string;
   featuresText?: string;
   ingredientsText?: string;
+  /** What the lines of ingredientsText are. Empty string clears it. */
+  componentRole?: ComponentRole | "";
+  /** One "Name: value unit" per line. Lines that are not a name and a value are ignored and reported. */
+  specificationsText?: string;
   usageText?: string;
   cautionsText?: string;
   pricingInformation?: string;
@@ -404,6 +437,42 @@ export function applyManualFacts(base: ProductFacts, manual: ManualFactInput): P
     );
   }
 
+  if (manual.componentRole !== undefined) {
+    if (manual.componentRole) next.componentRole = manual.componentRole;
+    else delete next.componentRole;
+  }
+
+  if (manual.specificationsText !== undefined) {
+    const parsed = parseSpecificationText(manual.specificationsText);
+    const previous = base.specifications ?? [];
+    const unchanged =
+      previous.length === parsed.items.length &&
+      previous.every((item, index) => {
+        const entry = parsed.items[index];
+        return entry && item.name === entry.name && item.value === entry.value && (item.unit ?? "") === (entry.unit ?? "");
+      });
+    if (unchanged) {
+      next.specifications = previous;
+    } else {
+      next.specifications = parsed.items.map((item) => ({
+        name: item.name,
+        value: item.value,
+        ...(item.unit ? { unit: item.unit } : {}),
+        provenance: "MANUAL" as const,
+        copyEligibility: "YES" as const,
+        policyFindings: [],
+        sourceUrl: next.sourceUrl,
+        sourcePageCategory: "PRIMARY" as const,
+      }));
+    }
+    if (parsed.ignored.length > 0) {
+      next.importWarnings = uniqueWarnings([
+        ...next.importWarnings,
+        `${parsed.ignored.length} specification line(s) were ignored because they are not in the form "Name: value".`,
+      ]);
+    }
+  }
+
   const usage = lines(manual.usageText);
   if (manual.usageText !== undefined) {
     next.usageInformation = usage;
@@ -517,6 +586,8 @@ function factsDiffer(a: ProductFacts, b: ProductFacts): boolean {
     a.description !== b.description ||
     a.features.join("\n") !== b.features.join("\n") ||
     a.ingredientsOrComponents.join("\n") !== b.ingredientsOrComponents.join("\n") ||
+    a.componentRole !== b.componentRole ||
+    JSON.stringify(a.specifications ?? []) !== JSON.stringify(b.specifications ?? []) ||
     a.usageInformation.join("\n") !== b.usageInformation.join("\n") ||
     a.cautions.join("\n") !== b.cautions.join("\n") ||
     a.pricingInformation !== b.pricingInformation ||

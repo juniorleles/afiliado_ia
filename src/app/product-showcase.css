@@ -55,6 +55,10 @@
 }
 
 .psp-mark {
+  display: inline-flex;
+  align-items: center;
+  min-width: 44px;
+  min-height: 44px;
   margin-right: auto;
   color: var(--psp-ink);
   font-family: var(--psp-display), Georgia, serif;
@@ -71,11 +75,21 @@
   max-width: 100%;
 }
 
+.psp-nav a,
+.psp-footer a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
 .psp-nav a {
   color: var(--psp-muted);
   font-size: 0.95rem;
-  text-decoration: none;
-  white-space: nowrap;
 }
 
 .psp-nav a:hover,
@@ -87,6 +101,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 999px;
   background: var(--psp-forest);
   color: #f7f4ee;
@@ -216,10 +233,20 @@
 
 .psp-lead {
   margin: 0.9rem 0 0;
-  max-width: 28rem;
-  color: var(--psp-muted);
+  max-width: 34rem;
+  color: var(--psp-ink);
   font-size: 1.2rem;
   line-height: 1.45;
+}
+
+.psp-summary {
+  margin: 0.35rem 0 0;
+  max-width: 34rem;
+  font-family: var(--psp-display), Georgia, serif;
+  font-size: 1.28rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
 }
 
 .psp-chips {
@@ -302,7 +329,7 @@
 .psp-hero-figure img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
 }
 
@@ -504,7 +531,7 @@
 .psp-footer-inner {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 0.8rem 1.25rem;
 }
@@ -524,7 +551,6 @@
 .psp-footer a {
   color: var(--psp-forest);
   font-size: 0.95rem;
-  text-decoration: none;
 }
 
 @media (max-width: 700px) {
@@ -537,6 +563,7 @@
   .psp-nav {
     order: 3;
     width: 100%;
+    flex-wrap: wrap;
   }
 
   .psp-stage {
@@ -576,12 +603,20 @@
     width: min(var(--psp-max), calc(100% - 3rem));
   }
 
-  .psp-hero-editorial {
+  .psp-hero-editorial:has(.psp-hero-aside) {
     grid-template-columns: minmax(0, 1.2fr) minmax(14rem, 0.8fr);
     gap: 2rem;
-    align-items: end;
+    align-items: start;
     padding-top: 2.25rem;
     padding-bottom: 2.75rem;
+  }
+
+  .psp-names.psp-names-type[data-layout="grid"][data-depth="names"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .psp-names.psp-names-type[data-layout="compact"][data-depth="names"] {
+    grid-template-columns: 1fr 1fr;
   }
 
   .psp-hero-copy {
@@ -593,9 +628,14 @@
     width: min(100%, 22rem);
   }
 
-  .psp-names-type {
+  .psp-names-type,
+  .psp-names-type[data-layout="grid"] {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.85rem;
+  }
+
+  .psp-names-type[data-layout="sparse"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .psp-split {
@@ -639,14 +679,19 @@
 
   .psp-hero-split:has(.psp-hero-media) {
     display: grid;
-    grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.85fr);
     gap: 3rem;
     align-items: center;
     padding-top: 1.5rem;
     padding-bottom: 3rem;
   }
 
-  .psp-hero-editorial {
+  .psp[data-hero-composition="split"] .psp-hero-figure {
+    aspect-ratio: 1 / 1;
+    max-height: 28rem;
+  }
+
+  .psp-hero-editorial:has(.psp-hero-aside) {
     grid-template-columns: minmax(0, 1.35fr) minmax(16rem, 0.75fr);
     gap: 3rem;
     padding-top: 2.75rem;
@@ -684,16 +729,300 @@
     row-gap: 1.8rem;
   }
 
-  .psp-names-type {
+  .psp-names-type,
+  .psp-names-type[data-layout="grid"],
+  .psp-names-type[data-count="9"] {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.9rem;
   }
 
-  .psp-names-type[data-count="9"] {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .psp-names-type[data-layout="sparse"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .psp-names-type[data-layout="compact"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
   }
 
   .psp-type-name {
     font-size: 1.08rem;
+  }
+
+  .psp-names-type[data-layout="compact"] .psp-type-name {
+    font-size: 1rem;
+  }
+}
+
+.psp-hero-editorial:not(:has(.psp-hero-aside)) {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  padding-bottom: 1.75rem;
+}
+
+.psp[data-has-image="0"] .psp-disclosure {
+  margin-top: 1.25rem;
+  font-size: 0.84rem;
+}
+
+.psp-names.psp-names-type[data-layout="sparse"][data-depth="names"] {
+  display: block;
+  margin-top: 0.35rem;
+}
+
+.psp-names.psp-names-type[data-layout="sparse"][data-depth="names"] li {
+  display: inline;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.psp-names.psp-names-type[data-layout="sparse"][data-depth="names"] .psp-type-name {
+  display: inline;
+  font-size: 1.12rem;
+  font-weight: 500;
+  line-height: 1.7;
+}
+
+.psp-names.psp-names-type[data-layout="sparse"][data-depth="names"] li:not(:last-child) .psp-type-name::after {
+  content: "  ·  ";
+  color: var(--psp-soft);
+  font-weight: 400;
+}
+
+.psp-names.psp-names-type[data-layout="grid"][data-depth="names"],
+.psp-names.psp-names-type[data-layout="compact"][data-depth="names"] {
+  display: grid;
+  gap: 0.15rem 1.5rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .psp-names.psp-names-type[data-layout="grid"][data-depth="names"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .psp-names.psp-names-type[data-layout="compact"][data-depth="names"] {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.psp-names.psp-names-type[data-layout="grid"][data-depth="names"] li,
+.psp-names.psp-names-type[data-layout="compact"][data-depth="names"] li {
+  display: block;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--psp-line);
+}
+
+.psp-names.psp-names-type[data-layout="grid"][data-depth="names"] .psp-type-name,
+.psp-names.psp-names-type[data-layout="compact"][data-depth="names"] .psp-type-name {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.psp-stage-type:has(.psp-names-type[data-depth="names"]) {
+  gap: 0.65rem;
+}
+
+.psp-stage-type:has(.psp-names-type[data-depth="names"]) .psp-composition-intro h2 {
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
+}
+
+.psp-offers,
+.psp-offers-head {
+  display: grid;
+  gap: 0.35rem 1rem;
+  margin: 0.55rem 0 0;
+}
+
+.psp-offers {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.psp-price[data-units="1"] .psp-offers-head,
+.psp-price[data-units="1"] .psp-offers li {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 0.8fr);
+}
+
+.psp-price[data-units="0"] .psp-offers-head,
+.psp-price[data-units="0"] .psp-offers li {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+}
+
+.psp-offers-head {
+  color: var(--psp-soft);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.psp-offers li {
+  display: grid;
+  align-items: baseline;
+  padding: 0.45rem 0;
+  border-top: 1px solid var(--psp-line);
+  font-family: var(--psp-display), Georgia, serif;
+  font-size: 1.15rem;
+  line-height: 1.3;
+}
+
+.psp[data-volume="thin"] .psp-section {
+  padding-bottom: 1.6rem;
+}
+
+.psp[data-volume="thin"] .psp-section h2 {
+  font-size: clamp(1.6rem, 3vw, 2.15rem);
+}
+
+.psp[data-volume="thin"] .psp-split.psp-info {
+  display: block;
+}
+
+.psp[data-volume="thin"] .psp-review {
+  max-width: 38rem;
+  margin-top: 1.15rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--psp-line);
+  border-left: 0;
+  padding-left: 0;
+}
+
+.psp[data-volume="thin"] .psp-review h3 {
+  font-size: 1.25rem;
+}
+
+.psp[data-volume="thin"] .psp-review p {
+  font-size: 0.95rem;
+}
+
+.psp[data-hero-composition="split"] .psp-hero-figure {
+  aspect-ratio: 4 / 3;
+}
+
+.psp[data-warnings="extended"] .psp-notices li {
+  margin-bottom: 0.35rem;
+}
+
+.psp-note-line {
+  margin: 0.35rem 0 0;
+  color: var(--psp-muted);
+  font-family: var(--psp-body), "Segoe UI", sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.psp-facts {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.psp-fact-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.psp-fact-list li {
+  border-bottom: 1px solid var(--psp-line);
+  padding: 0.45rem 0;
+  font-family: var(--psp-display), Georgia, serif;
+  font-size: 1.08rem;
+  line-height: 1.35;
+}
+
+.psp-facts h2 {
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
+}
+
+.psp-commercial {
+  display: grid;
+  gap: 1rem;
+}
+
+.psp-commercial[data-density="sparse"] {
+  gap: 0;
+}
+
+.psp-commercial[data-density="sparse"] .psp-card {
+  border-radius: 0;
+  background: transparent;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--psp-line);
+}
+
+.psp-commercial[data-density="sparse"] h2 {
+  margin-top: 0.2rem;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+}
+
+.psp-commercial[data-density="layered"] {
+  gap: 0.75rem;
+}
+
+.psp-commercial[data-density="layered"] .psp-card {
+  padding: 0.95rem 1.05rem 1rem;
+}
+
+.psp-commercial[data-density="layered"] .psp-usage {
+  grid-column: 1 / -1;
+}
+
+.psp-commercial[data-density="layered"] h2 {
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+}
+
+.psp-price h2,
+.psp-usage h2 {
+  margin-top: 0.45rem;
+  font-family: var(--psp-display), Georgia, serif;
+  font-size: clamp(1.7rem, 3vw, 2.35rem);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.psp-commercial[data-density="layered"] .psp-price h2,
+.psp-commercial[data-density="layered"] .psp-usage h2,
+.psp-commercial[data-density="layered"] .psp-guarantee h2 {
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
+  line-height: 1.4;
+}
+
+@media (min-width: 768px) {
+  .psp-commercial[data-density="layered"] {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .psp-commercial[data-density="layered"] .psp-usage {
+    grid-column: 1 / -1;
+  }
+
+  .psp-commercial[data-density="sparse"] {
+    grid-template-columns: minmax(0, 40rem);
+  }
+
+  .psp-facts {
+    grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+    align-items: start;
+    column-gap: 2rem;
   }
 }

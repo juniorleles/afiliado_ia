@@ -1,0 +1,6 @@
+{
+  "requestedPath": "src/lib/product-assets/authorization.ts",
+  "reason": "weaken the commercial authorization policy",
+  "oldString": "PROHIBITED_ORIGINS",
+  "newString": "PROHIBITED_ORIGINS_DISABLED"
+}

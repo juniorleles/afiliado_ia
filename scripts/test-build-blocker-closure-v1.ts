@@ -97,10 +97,18 @@ const serverCallers = [
   "src/app/visual-frame/validation/[candidateId]/page.tsx",
   "src/app/preview/[slug]/[candidate]/page.tsx",
 ];
+// A server caller hands the renderer assets resolved on the server. Two forms do that:
+//  - renderAssets={resolvePresellRenderAssets(...)}
+//  - withBuilderMedia(campaign, resolvePresellRenderAssets(campaign)) with its result passed as renderAssets={x.assets}
+// A caller that resolves nothing is reported at the end, after the remaining checks have run, so one caller cannot hide the others.
+const callersWithoutServerAssets: string[] = [];
 for (const file of serverCallers) {
   const src = fs.readFileSync(file, "utf8");
   assert(!/^\s*["']use client["']/.test(src), `${file} is a server module`);
-  assert(src.includes("renderAssets={resolvePresellRenderAssets("), `${file} passes server-resolved assets`);
+  const direct = src.includes("renderAssets={resolvePresellRenderAssets(");
+  const throughMedia = /withBuilderMedia\([^;]*,\s*resolvePresellRenderAssets\(/.test(src) && /renderAssets=\{\w+\.assets\}/.test(src);
+  if (direct || throughMedia) assert(true, `${file} passes server-resolved assets`);
+  else callersWithoutServerAssets.push(file);
 }
 
 function fixture(overrides: Partial<Campaign>): Campaign {
@@ -130,5 +138,7 @@ assert(
 );
 const traversal = resolvePresellRenderAssets(fixture({ slug: "../fictional", productionPresentation: PRODUCTION_PRESENTATION_ID }));
 assert(Object.keys(traversal.visualAssets).length === 0 && Object.keys(traversal.productVisuals).length === 0, "path-like slug binds nothing");
+
+assert(callersWithoutServerAssets.length === 0, `every server caller passes server-resolved assets (missing: ${callersWithoutServerAssets.join(", ") || "none"})`);
 
 console.log("\nBuild blocker closure V1: server/client boundary tests passed.");

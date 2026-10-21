@@ -14,7 +14,7 @@ import { refreshLandingDocument } from "../src/lib/landing-composer/refresh.ts";
 import { readStoredLandingDocument } from "../src/lib/landing-composer/store.ts";
 import { refreshLandingQuality } from "../src/lib/landing-quality/refresh.ts";
 import { listOfficialPromoAssets } from "../src/lib/official-assets/store.ts";
-import { adaptLandingToShowcase } from "../src/lib/product-showcase/adapt.ts";
+import { adaptLandingToShowcase } from "../src/lib/product-showcase/adapt-campaign.ts";
 import { refreshGeneratedSections } from "../src/lib/section-generation/refresh.ts";
 import { refreshStrategyDecision } from "../src/lib/strategy-decision/refresh.ts";
 import { getDb } from "../src/lib/db.ts";

@@ -1,6 +1,8 @@
 import type { LandingDocument } from "@/lib/landing-composer/types";
 import { presentLandingDocument } from "@/lib/landing-composer/present";
 import type { AdaptivePresentationPlan } from "@/lib/product-showcase/adaptive-plan";
+import type { EditorialDocument } from "@/lib/product-showcase/editorial";
+import type { PresentationGuidance } from "@/lib/product-showcase/presentation-order";
 
 export const PRODUCT_SHOWCASE_PREMIUM_V1 = "PRODUCT_SHOWCASE_PREMIUM_V1";
 
@@ -34,6 +36,10 @@ export type ProductShowcaseModel = {
   footerLinks: Array<{ href: string; label: string }>;
   /** Internal presentation plan. Not consumer copy. */
   adaptivePlan: AdaptivePresentationPlan | null;
+  /** Editorial blocks derived from the plan. Not rendered in this pass. */
+  editorial: EditorialDocument | null;
+  /** Strategy guidance for section ORDER only. Never copy. Absent means the default order. */
+  presentation?: PresentationGuidance | null;
 };
 
 function keyOf(value: string): string {
@@ -169,5 +175,6 @@ export function buildProductShowcase(
     siteName: options.siteName,
     footerLinks: options.footerLinks,
     adaptivePlan: null,
+    editorial: null,
   };
 }

@@ -2,11 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductShowcasePremiumV1 } from "@/components/product-showcase/product-showcase-premium-v1";
 import { getCampaignBySlug } from "@/lib/campaigns";
-import { restoredDescription } from "@/lib/landing-composer/present";
 import { readStoredLandingDocument } from "@/lib/landing-composer/store";
-import { isHttpUrl } from "@/lib/editor-layers";
-import { isCopyEligibleImageProvenance } from "@/lib/product-facts";
-import { buildProductShowcase } from "@/lib/product-showcase/model";
+import { adaptLandingToShowcase } from "@/lib/product-showcase/adapt-campaign";
 import {
   AFFILIATE_DISCLOSURE_TEXT,
   HEALTH_DISCLAIMER_TEXT,
@@ -34,18 +31,8 @@ export default async function ProductShowcaseLabPage({
   if (!campaign) notFound();
   const document = readStoredLandingDocument(campaign.id);
   if (!document) notFound();
-  const hero = document.sections.find((section) => section.sectionId === "hero");
-  const clipped = typeof hero?.content.subheadline === "string" ? hero.content.subheadline : "";
-  const name = campaign.headline.trim() || "Product";
-  const image = campaign.productImageSrc?.trim() && isCopyEligibleImageProvenance(campaign.productImageProvenance ?? undefined)
-    ? { src: campaign.productImageSrc.trim(), alt: `${name} product image` }
-    : null;
-  const label = campaign.ctaLabel.trim();
-  const href = campaign.affiliateUrl.trim();
-  const model = buildProductShowcase(document, {
-    description: restoredDescription(campaign.sourceFactsJson, clipped),
-    image,
-    cta: label && isHttpUrl(href) ? { label, href } : null,
+  const model = adaptLandingToShowcase(campaign, document, {
+    channel: "presell",
     siteName: getPublicSiteName(),
     affiliateDisclosure: AFFILIATE_DISCLOSURE_TEXT,
     healthDisclaimer: isHealthDisclaimerEnabled() ? HEALTH_DISCLAIMER_TEXT : null,
@@ -54,5 +41,5 @@ export default async function ProductShowcaseLabPage({
   });
   if (!model.productName) notFound();
 
-  return <ProductShowcasePremiumV1 model={model} labHref={`/admin/preview/${slug}`} />;
+  return <ProductShowcasePremiumV1 model={model} labHref={`/admin/preview/${slug}`} showLabBar={false} ctaPreview />;
 }

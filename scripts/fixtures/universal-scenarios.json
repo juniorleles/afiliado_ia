@@ -1,0 +1,275 @@
+{
+  "note": "Fictional products only. Domains use the reserved .example TLD. Execution 49 universal contract scenarios; Execution 48 matrix S1-S6.",
+  "scenarios": [
+    {
+      "id": "S1_COMPLETE_SUPPLEMENT",
+      "assets": "APPROVED",
+      "cta": { "href": "https://hop.example/aldermoor-greens", "label": "View offer" },
+      "benefitCandidates": ["Made without artificial colors"],
+      "traps": [
+        "Clinically proven to boost energy and cure fatigue.",
+        "The best greens supplement on the market.",
+        "Recommended by doctors worldwide.",
+        "Immune support complex"
+      ],
+      "facts": {
+        "productName": "Aldermoor Greens",
+        "sourceUrl": "https://shop.aldermoor.example/greens",
+        "description": "A daily greens blend in vegetable capsules.",
+        "features": [
+          "Vegetable capsule shell",
+          "Made without artificial colors",
+          "Each batch is tested by an outside laboratory",
+          "Clinically proven to boost energy and cure fatigue.",
+          "The best greens supplement on the market.",
+          "Recommended by doctors worldwide."
+        ],
+        "componentRole": "INGREDIENT",
+        "ingredientsOrComponents": ["Spirulina", "Chlorella", "Barley grass", "Immune support complex"],
+        "ingredientContext": [
+          {
+            "ingredient": "Spirulina",
+            "statement": "Spirulina is a blue-green algae.",
+            "relation": "DESCRIBED_AS",
+            "attribution": "SELLER",
+            "provenance": "DIRECT_SOURCE",
+            "kind": "NEUTRAL_CONTEXT",
+            "copyEligibility": "YES",
+            "policyFindings": [],
+            "sourceUrl": "https://shop.aldermoor.example/greens",
+            "sourcePageCategory": "PRIMARY"
+          }
+        ],
+        "specifications": [
+          {
+            "name": "Capsules per bottle",
+            "value": "60",
+            "provenance": "DIRECT_SOURCE",
+            "copyEligibility": "YES",
+            "policyFindings": [],
+            "sourceUrl": "https://shop.aldermoor.example/greens",
+            "sourcePageCategory": "PRODUCT_DETAILS"
+          }
+        ],
+        "usageInformation": ["Take two capsules with water each day."],
+        "cautions": ["Keep out of reach of children.", "Ask a healthcare professional before use if you are pregnant or nursing."],
+        "pricingInformation": "1 bottle $49; 3 bottles $117 total",
+        "guaranteeInformation": "60-day money-back guarantee.",
+        "manufacturer": "Aldermoor Labs, Inc.",
+        "returnsInformation": [
+          {
+            "statement": "Unopened bottles may be returned within 60 days of delivery.",
+            "kind": "RETURN_WINDOW",
+            "provenance": "DIRECT_SOURCE",
+            "copyEligibility": "YES",
+            "policyFindings": [],
+            "sourceUrl": "https://shop.aldermoor.example/returns",
+            "sourcePageCategory": "RETURNS"
+          }
+        ],
+        "shippingInformation": [
+          {
+            "statement": "Orders ship within two business days.",
+            "kind": "PROCESSING",
+            "provenance": "DIRECT_SOURCE",
+            "copyEligibility": "YES",
+            "policyFindings": [],
+            "sourceUrl": "https://shop.aldermoor.example/shipping",
+            "sourcePageCategory": "SHIPPING"
+          }
+        ],
+        "productFormat": {
+          "value": "capsule",
+          "statement": "Vegetable capsules, 60 per bottle.",
+          "provenance": "DIRECT_SOURCE",
+          "copyEligibility": "YES",
+          "policyFindings": [],
+          "sourceUrl": "https://shop.aldermoor.example/greens",
+          "sourcePageCategory": "PRODUCT_DETAILS"
+        },
+        "sourceSnippets": [
+          {
+            "field": "faq",
+            "text": "Yes, the capsules are vegetarian.",
+            "question": "Are the capsules vegetarian?",
+            "sourceUrl": "https://shop.aldermoor.example/faq",
+            "confidence": "DIRECT_SOURCE",
+            "sourcePageCategory": "FAQ"
+          }
+        ],
+        "confidence": {
+          "productName": "DIRECT_SOURCE",
+          "description": "DIRECT_SOURCE",
+          "features": "DIRECT_SOURCE",
+          "ingredientsOrComponents": "DIRECT_SOURCE",
+          "usageInformation": "DIRECT_SOURCE",
+          "cautions": "DIRECT_SOURCE",
+          "pricingInformation": "DIRECT_SOURCE",
+          "guaranteeInformation": "DIRECT_SOURCE",
+          "manufacturer": "DIRECT_SOURCE"
+        }
+      }
+    },
+    {
+      "id": "S2_PARTIAL_COSMETIC",
+      "assets": "NONE",
+      "cta": { "href": "https://hop.example/pellucid-balm", "label": "See details" },
+      "benefitCandidates": [],
+      "traps": ["Dermatologist recommended.", "Erases wrinkles in 7 days."],
+      "facts": {
+        "productName": "Pellucid Rose Balm",
+        "sourceUrl": "https://pellucid.example/balm",
+        "description": "A tinted lip balm in a twist-up tube.",
+        "features": ["Fragrance-free formula", "Dermatologist recommended.", "Erases wrinkles in 7 days."],
+        "componentRole": "INGREDIENT",
+        "ingredientsOrComponents": ["Shea butter", "Beeswax", "Rose oil"],
+        "specifications": [
+          {
+            "name": "Net weight",
+            "value": "4.5",
+            "unit": "g",
+            "provenance": "DIRECT_SOURCE",
+            "copyEligibility": "YES",
+            "policyFindings": [],
+            "sourceUrl": "https://pellucid.example/balm",
+            "sourcePageCategory": "PRODUCT_DETAILS"
+          }
+        ],
+        "usageInformation": ["Apply to lips as needed."],
+        "cautions": [],
+        "confidence": {
+          "productName": "DIRECT_SOURCE",
+          "description": "DIRECT_SOURCE",
+          "features": "DIRECT_SOURCE",
+          "ingredientsOrComponents": "DIRECT_SOURCE",
+          "usageInformation": "DIRECT_SOURCE"
+        }
+      }
+    },
+    {
+      "id": "S3_ELECTRONIC_WITH_SPECIFICATIONS",
+      "assets": "APPROVED",
+      "cta": { "href": "https://hop.example/quillon-x2", "label": "View offer" },
+      "benefitCandidates": [],
+      "traps": ["Never needs charging.", "The best sound ever made."],
+      "facts": {
+        "productName": "Quillon X2 Wireless Earbuds",
+        "sourceUrl": "https://quillon.example/x2",
+        "description": "True wireless earbuds with a charging case.",
+        "features": ["Water-resistant housing", "Touch controls", "Never needs charging.", "The best sound ever made."],
+        "componentRole": "INCLUDED_ITEM",
+        "ingredientsOrComponents": ["Earbuds (one pair)", "Charging case", "USB-C cable", "Three ear tip sizes"],
+        "specifications": [
+          { "name": "Battery life", "value": "8", "unit": "hours", "provenance": "DIRECT_SOURCE", "copyEligibility": "YES", "policyFindings": [], "sourceUrl": "https://quillon.example/x2", "sourcePageCategory": "PRODUCT_DETAILS" },
+          { "name": "Bluetooth version", "value": "5.3", "provenance": "DIRECT_SOURCE", "copyEligibility": "YES", "policyFindings": [], "sourceUrl": "https://quillon.example/x2", "sourcePageCategory": "PRODUCT_DETAILS" },
+          { "name": "Weight per earbud", "value": "5.2", "unit": "g", "provenance": "DIRECT_SOURCE", "copyEligibility": "YES", "policyFindings": [], "sourceUrl": "https://quillon.example/x2", "sourcePageCategory": "PRODUCT_DETAILS" },
+          { "name": "Case battery", "value": "480", "unit": "mAh", "provenance": "DIRECT_SOURCE", "copyEligibility": "YES", "policyFindings": [], "sourceUrl": "https://quillon.example/x2", "sourcePageCategory": "PRODUCT_DETAILS" }
+        ],
+        "usageInformation": [],
+        "cautions": ["Do not charge the case in wet conditions."],
+        "offerFacts": [
+          { "packageName": "1 pair", "unitPrice": "$59", "totalPrice": "$59", "quantity": "1 pair", "sourceUrl": "https://quillon.example/x2", "confidence": "DIRECT_SOURCE" },
+          { "packageName": "2 pairs", "unitPrice": "$54 per pair", "totalPrice": "$108", "quantity": "2 pairs", "originalPrice": "$118", "popularityLabel": "Most chosen", "sourceUrl": "https://quillon.example/x2", "confidence": "DIRECT_SOURCE" }
+        ],
+        "guaranteeInformation": "1-year limited warranty against manufacturing defects.",
+        "manufacturer": "Quillon Audio Ltd.",
+        "productFormat": {
+          "value": "wireless earbuds",
+          "statement": "True wireless in-ear design.",
+          "provenance": "DIRECT_SOURCE",
+          "copyEligibility": "YES",
+          "policyFindings": [],
+          "sourceUrl": "https://quillon.example/x2",
+          "sourcePageCategory": "PRODUCT_DETAILS"
+        },
+        "confidence": {
+          "productName": "DIRECT_SOURCE",
+          "description": "DIRECT_SOURCE",
+          "features": "DIRECT_SOURCE",
+          "ingredientsOrComponents": "DIRECT_SOURCE",
+          "cautions": "DIRECT_SOURCE",
+          "guaranteeInformation": "DIRECT_SOURCE",
+          "manufacturer": "DIRECT_SOURCE"
+        }
+      }
+    },
+    {
+      "id": "S4_ACCESSORY_SHORT_DESCRIPTION",
+      "assets": "NONE",
+      "cta": { "href": "https://hop.example/harlow-strap", "label": "View offer" },
+      "benefitCandidates": [],
+      "traps": [],
+      "facts": {
+        "productName": "Harlow Phone Strap",
+        "sourceUrl": "https://harlow.example/strap",
+        "description": "Adjustable crossbody strap for phones.",
+        "features": [],
+        "ingredientsOrComponents": [],
+        "specifications": [
+          { "name": "Length", "value": "120", "unit": "cm", "provenance": "DIRECT_SOURCE", "copyEligibility": "YES", "policyFindings": [], "sourceUrl": "https://harlow.example/strap", "sourcePageCategory": "PRODUCT_DETAILS" }
+        ],
+        "usageInformation": [],
+        "cautions": [],
+        "confidence": {
+          "productName": "DIRECT_SOURCE",
+          "description": "DIRECT_SOURCE"
+        }
+      }
+    },
+    {
+      "id": "S5_NO_AUTHORIZED_IMAGE",
+      "assets": "CANDIDATE_ONLY",
+      "cta": { "href": "https://hop.example/tessel-mugs", "label": "View offer" },
+      "benefitCandidates": [],
+      "traps": [],
+      "facts": {
+        "productName": "Tessel Stoneware Mugs",
+        "sourceUrl": "https://tessel.example/mugs",
+        "description": "Hand-glazed stoneware mugs sold in sets.",
+        "features": ["Dishwasher safe", "Stackable shape"],
+        "componentRole": "MATERIAL",
+        "ingredientsOrComponents": ["Stoneware", "Lead-free glaze"],
+        "specifications": [
+          { "name": "Capacity", "value": "350", "unit": "ml", "provenance": "DIRECT_SOURCE", "copyEligibility": "YES", "policyFindings": [], "sourceUrl": "https://tessel.example/mugs", "sourcePageCategory": "PRODUCT_DETAILS" }
+        ],
+        "usageInformation": [],
+        "cautions": [],
+        "pricingInformation": "2 sets $34 total; 4 sets $60 total",
+        "productImageUrl": "https://tessel.example/img/mug.jpg",
+        "productImageProvenance": "DIRECT_SOURCE",
+        "confidence": {
+          "productName": "DIRECT_SOURCE",
+          "description": "DIRECT_SOURCE",
+          "features": "DIRECT_SOURCE",
+          "ingredientsOrComponents": "DIRECT_SOURCE",
+          "pricingInformation": "DIRECT_SOURCE"
+        }
+      }
+    },
+    {
+      "id": "S6_INCOMPLETE_OFFER",
+      "assets": "NONE",
+      "cta": { "href": "", "label": "View offer", "previewOnly": true },
+      "benefitCandidates": [],
+      "traps": [],
+      "facts": {
+        "productName": "Brindle Travel Pillow",
+        "sourceUrl": "https://brindle.example/pillow",
+        "description": "A memory-foam neck pillow with a washable cover.",
+        "features": ["Washable cover", "Compresses into its carry bag"],
+        "ingredientsOrComponents": [],
+        "usageInformation": [],
+        "cautions": [],
+        "pricingInformation": "$29",
+        "guaranteeInformation": "Satisfaction guaranteed.",
+        "confidence": {
+          "productName": "DIRECT_SOURCE",
+          "description": "DIRECT_SOURCE",
+          "features": "DIRECT_SOURCE",
+          "pricingInformation": "DIRECT_SOURCE",
+          "guaranteeInformation": "DIRECT_SOURCE"
+        }
+      }
+    }
+  ]
+}

@@ -1,11 +1,13 @@
+import type { TrafficPolicyStatus } from "@/lib/affiliate-program";
 import type { Campaign } from "@/lib/campaigns";
 import type { LandingDocument } from "@/lib/landing-composer/types";
 import { restoredDescription } from "@/lib/landing-composer/present";
 import { isHttpUrl } from "@/lib/editor-layers";
-import { readAffiliateProgram } from "@/lib/affiliate-program";
 import { isCopyEligibleImageProvenance, type ProductFacts } from "@/lib/product-facts";
 import { buildAdaptivePlan } from "@/lib/product-showcase/adaptive-plan";
+import { buildEditorialDocument } from "@/lib/product-showcase/editorial";
 import { buildProductShowcase, type ProductShowcaseModel, type ShowcaseCta } from "@/lib/product-showcase/model";
+import { presentationGuidance } from "@/lib/product-showcase/presentation-order";
 
 /** The presell is the only channel this template may send to the affiliate hop. */
 export type ShowcaseChannel = "presell";
@@ -99,6 +101,14 @@ export function adaptLandingToShowcase(
     healthDisclaimer?: string | null;
     review?: { heading: string; paragraphs: readonly string[] } | null;
     footerLinks: Array<{ href: string; label: string }>;
+    ppc?: { brandPpc?: TrafficPolicyStatus | null; genericSearchPpc?: TrafficPolicyStatus | null } | null;
+    /** Stored strategy approach id. Guides section order only. */
+    strategyApproach?: string | null;
+    /**
+     * Hero image from the ProductAssets contract (approved, stored, documented). It takes
+     * precedence over the campaign's attached image. Null or absent keeps the previous path.
+     */
+    approvedImage?: { src: string; alt: string } | null;
   },
 ): ProductShowcaseModel {
   const patched = applyAuthorizedOverrides(document, options.fields);
@@ -108,7 +118,9 @@ export function adaptLandingToShowcase(
   const label = ctaField?.modified ? ctaField.effective : campaign.ctaLabel;
   const model = buildProductShowcase(patched, {
     description: restoredDescription(campaign.sourceFactsJson, clipped),
-    image: officialCampaignImage(campaign),
+    // undefined keeps the pre-contract path for callers that do not resolve ProductAssets. A resolved contract,
+    // including null, is final: an image outside it never renders.
+    image: options.approvedImage !== undefined ? options.approvedImage : officialCampaignImage(campaign),
     cta: presellShowcaseCta(label, campaign.affiliateUrl, options.channel),
     mode: "facts",
     siteName: options.siteName,
@@ -117,14 +129,22 @@ export function adaptLandingToShowcase(
     review: options.review,
     footerLinks: options.footerLinks,
   });
-  const program = readAffiliateProgram(campaign.id);
+  const facts = storedProductFacts(campaign.sourceFactsJson);
+  const adaptivePlan = buildAdaptivePlan({
+    facts,
+    approvedPackshot: model.image,
+    cta: model.cta,
+    ppc: options.ppc ?? null,
+  });
   return {
     ...model,
-    adaptivePlan: buildAdaptivePlan({
-      facts: storedProductFacts(campaign.sourceFactsJson),
-      approvedPackshot: model.image,
-      cta: model.cta,
-      ppc: program ? { brandPpc: program.brandPpc, genericSearchPpc: program.genericSearchPpc } : null,
+    adaptivePlan,
+    presentation: presentationGuidance(options.strategyApproach),
+    editorial: buildEditorialDocument({
+      facts,
+      plan: adaptivePlan,
+      affiliateDisclosure: options.affiliateDisclosure,
+      healthDisclaimer: options.healthDisclaimer,
     }),
   };
 }

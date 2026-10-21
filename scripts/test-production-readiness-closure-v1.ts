@@ -74,6 +74,9 @@ try {
   const sourceDb = path.join(tmp, "source", "os.db");
   fs.mkdirSync(path.dirname(sourceDb), { recursive: true });
   useDb(sourceDb);
+  // The current schema is whatever a freshly created database migrates to. A literal here goes stale with every migration.
+  const currentSchema = schemaVersion(getDb());
+  assert(currentSchema >= 3, "a fresh database migrates to a schema version", currentSchema);
   getDb().pragma("wal_autocheckpoint = 0");
   createCampaign(input("fictional-before-checkpoint"));
   getDb().pragma("wal_checkpoint(TRUNCATE)");
@@ -137,7 +140,7 @@ try {
 
   resetDbForTests();
   useDb(dest);
-  assert(schemaVersion(getDb()) === 3, "restored DB opens with the current schema", schemaVersion(getDb()));
+  assert(schemaVersion(getDb()) === currentSchema, "restored DB opens with the current schema", schemaVersion(getDb()));
   assert(String(getDb().pragma("journal_mode", { simple: true })) === "wal", "app reopens the restored DB in WAL mode");
   resetDbForTests();
 
