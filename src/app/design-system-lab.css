@@ -711,6 +711,13 @@ nextjs-portal,
   .ds-hero--split .ds-hero__media {
     order: 0;
   }
+
+  .ds-hero--editorial-full {
+    grid-template-columns: minmax(0, 1.15fr) minmax(16rem, 0.85fr);
+    gap: var(--ds-space-8);
+    align-items: stretch;
+    max-width: none;
+  }
 }
 
 .ds-offer-cta {

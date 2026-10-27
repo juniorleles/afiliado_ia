@@ -11,12 +11,14 @@ const SELLER_PREFIX = /^the seller states:\s*/i;
 const EDITORIAL_TITLE: Partial<Record<SectionType, string>> = {
   differentiators: "Features",
   benefits: "Product details",
-  specifications: "Specifications",
+  specifications: "Ingredients",
   faq: "Frequently asked questions",
   trust: "Cautions",
-  presentation: "Overview",
+  presentation: "Product Overview",
   demonstration: "Product image",
-  how_it_works: "How it works",
+  how_it_works: "Directions for Use",
+  guarantee: "Seller-Stated Guarantee",
+  legal: "Affiliate Transparency",
 };
 
 export type CommercialImage = { src: string; alt: string };
@@ -55,11 +57,15 @@ export function publicSectionTitle(
   titles?: Partial<Record<SectionType, string>>,
 ): string {
   if (titles?.[sectionType]) return titles[sectionType]!;
-  if (AUDIT_HEADLINE.test(headline) && EDITORIAL_TITLE[sectionType]) return EDITORIAL_TITLE[sectionType]!;
+  if (EDITORIAL_TITLE[sectionType] && (AUDIT_HEADLINE.test(headline) || /^(overview|details|ingredients|how (it works|to use)|returns?|guarantee|legal)$/i.test(headline))) {
+    return EDITORIAL_TITLE[sectionType]!;
+  }
   if (sectionType === "specifications" && /^(details|ingredients)$/i.test(headline)) {
     return /^ingredients$/i.test(headline) ? "Ingredients" : "Specifications";
   }
-  if (sectionType === "how_it_works" && /^how to use$/i.test(headline)) return "Directions for Use";
+  if (sectionType === "how_it_works") return "Directions for Use";
+  if (sectionType === "guarantee") return "Seller-Stated Guarantee";
+  if (sectionType === "presentation") return "Product Overview";
   return headline;
 }
 
@@ -82,4 +88,22 @@ export function publicLegalLines(input: {
 
 export function distinctText(value: string | undefined, ...others: Array<string | undefined>): value is string {
   return Boolean(value && !others.includes(value));
+}
+
+export function editorialHeroMode(hasCommercialImage: boolean): "EDITORIAL_NO_IMAGE" | "PACKSHOT_SPLIT" {
+  return hasCommercialImage ? "PACKSHOT_SPLIT" : "EDITORIAL_NO_IMAGE";
+}
+
+export function editorialIndexCards(input: {
+  visible: Array<{ type: SectionType; id: string }>;
+  titles?: Partial<Record<SectionType, string>>;
+}): Array<{ id: string; label: string }> {
+  const order: SectionType[] = ["presentation", "specifications", "how_it_works", "guarantee"];
+  return order
+    .map((type) => {
+      const match = input.visible.find((item) => item.type === type);
+      if (!match) return null;
+      return { id: match.id, label: publicSectionTitle(type, type.replace(/_/g, " "), input.titles) };
+    })
+    .filter((item): item is { id: string; label: string } => Boolean(item));
 }

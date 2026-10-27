@@ -4,6 +4,8 @@ import type { BlueprintSection } from "@/lib/page-blueprint/types";
 import { shouldRenderSection, type V4Model } from "@/lib/product-showcase/v4/model";
 import {
   distinctText,
+  editorialHeroMode,
+  editorialIndexCards,
   publicItemText,
   publicLegalLines,
   publicSectionTitle,
@@ -55,29 +57,40 @@ function toneFor(type: BlueprintSection["sectionType"]): "plain" | "alt" | "soft
 
 function Hero({ model }: { model: V4Model }) {
   const image = model.commercialImage;
+  const heroMode = editorialHeroMode(Boolean(image));
+  const editorial = heroMode === "EDITORIAL_NO_IMAGE";
   const split = Boolean(image);
-  const compact =
-    model.density === "thin" ||
-    model.blueprint.narrative.shape === "FACTS_LED" ||
-    Boolean(model.qualityPatch?.tightenHero && !image);
   const name = model.contract.identity.productName;
   const kind = model.contract.identity.productKind;
   const headline = model.copy.headline.text;
   const subheadline = model.copy.subheadline?.text;
   const value = model.copy.valueProposition?.text;
   const introduction = model.copy.introduction.text;
+  const index = editorial
+    ? editorialIndexCards({
+        visible: model.blueprint.sections
+          .filter((section) => visible(model, section.sectionType))
+          .map((section) => ({ type: section.sectionType, id: section.sectionType === "offers" ? "offers" : section.sectionId })),
+        titles: model.qualityPatch?.titles,
+      })
+    : [];
   return (
     <section
-      className={cx("ds-hero-band", compact && "ds-hero-band--compact", model.qualityPatch?.tightenHero && "ds-hero-band--quality-tight")}
+      className={cx(
+        "ds-hero-band",
+        editorial && "ds-hero-band--editorial-full",
+        model.qualityPatch?.tightenHero && editorial && "ds-hero-band--quality-tight",
+      )}
       id="hero"
       data-v4-section="hero"
+      data-hero-mode={heroMode}
       data-quality-hero={model.qualityPatch?.tightenHero ? "tight" : undefined}
     >
       <DsContainer>
         <div
           className={cx(
             "ds-hero",
-            split ? "ds-hero--split" : model.blueprint.narrative.shape === "FACTS_LED" ? "ds-hero--info" : "ds-hero--editorial",
+            split ? "ds-hero--split" : editorial ? "ds-hero--editorial-full" : "ds-hero--editorial",
           )}
         >
           <div className="v4-hero__copy">
@@ -104,6 +117,23 @@ function Hero({ model }: { model: V4Model }) {
                 </div>
               </div>
             </div>
+          ) : null}
+          {editorial ? (
+            <aside className="v4-hero-aside" aria-label="Approved sections">
+              <div className="v4-hero-aside__art" aria-hidden="true">
+                <span className="v4-hero-aside__orb" />
+                <span className="v4-hero-aside__band" />
+              </div>
+              {index.length ? (
+                <nav className="v4-hero-index">
+                  {index.map((card) => (
+                    <a className="v4-hero-index__card" href={`#${card.id}`} key={card.id}>
+                      <span className="v4-hero-index__label">{card.label}</span>
+                    </a>
+                  ))}
+                </nav>
+              ) : null}
+            </aside>
           ) : null}
         </div>
       </DsContainer>
@@ -329,6 +359,7 @@ export function V4Page({ model }: { model: V4Model }) {
       data-v4-composition={model.composition}
       data-v4-goal={model.blueprint.conversionGoal}
       data-v4-photo={model.commercialImage ? "commercial" : "none"}
+      data-hero-mode={editorialHeroMode(Boolean(model.commercialImage))}
       data-quality-fixes={patch?.applied.join(" ") || undefined}
     >
       {order.map((section) => {

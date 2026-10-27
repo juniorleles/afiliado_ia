@@ -238,3 +238,102 @@
 .ds-hero-band--quality-tight {
   padding-block: clamp(1.35rem, 1rem + 1.6vw, 2.4rem);
 }
+
+.ds-hero-band--editorial-full {
+  padding-block: clamp(2.75rem, 2rem + 4vw, 5.5rem);
+}
+
+.v4-hero-aside {
+  display: grid;
+  gap: var(--ds-space-4);
+  min-height: 100%;
+}
+
+.v4-hero-aside__art {
+  position: relative;
+  min-height: 11rem;
+  overflow: hidden;
+  border-radius: var(--ds-radius-lg);
+  background:
+    radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--ds-accent) 42%, transparent), transparent 42%),
+    radial-gradient(circle at 82% 78%, color-mix(in srgb, var(--ds-ink) 18%, transparent), transparent 46%),
+    linear-gradient(160deg, var(--ds-surface-alt), var(--ds-surface));
+  border: 1px solid var(--ds-line);
+}
+
+.v4-hero-aside__orb,
+.v4-hero-aside__band {
+  position: absolute;
+  pointer-events: none;
+}
+
+.v4-hero-aside__orb {
+  inset: 18% 22% auto auto;
+  width: 7.5rem;
+  height: 7.5rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ds-accent) 55%, white);
+  opacity: 0.35;
+}
+
+.v4-hero-aside__band {
+  left: -10%;
+  right: -10%;
+  bottom: 22%;
+  height: 2.4rem;
+  transform: rotate(-8deg);
+  background: color-mix(in srgb, var(--ds-ink) 8%, transparent);
+}
+
+.v4-hero-index {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.v4-hero-index__card {
+  display: block;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--ds-line);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-surface);
+  color: var(--ds-ink);
+  text-decoration: none;
+}
+
+.v4-hero-index__label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 639px) {
+  .ds-hero-band--editorial-full {
+    padding-block: clamp(1.75rem, 1.3rem + 3vw, 2.75rem);
+  }
+
+  .ds-root[data-lab="renderer-v4"][data-ds-sticky="on"] .ds-hero-band--editorial-full {
+    min-height: 0;
+  }
+
+  .ds-hero--editorial-full {
+    gap: var(--ds-space-5);
+  }
+
+  .v4-hero__copy .ds-display {
+    max-width: 14ch;
+    font-size: clamp(2.15rem, 1.6rem + 4.2vw, 2.85rem);
+    line-height: 1.02;
+  }
+
+  .v4-hero-aside__art {
+    min-height: 7.5rem;
+  }
+
+  .v4-hero-index {
+    grid-template-columns: 1fr;
+  }
+
+  .v4-hero-index__card {
+    padding: 0.95rem 1rem;
+  }
+}

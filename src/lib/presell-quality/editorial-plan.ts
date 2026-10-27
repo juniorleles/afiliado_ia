@@ -29,7 +29,7 @@ export function proposeEditorialPlan(input: {
   if (fields.has("description")) {
     sections.push({
       type: "hero",
-      title: "Product identity",
+      title: "Product Overview",
       sourceFields: ["description"],
       notes: ["Lead with the accepted description. Do not invent a benefit headline."],
     });
@@ -53,7 +53,7 @@ export function proposeEditorialPlan(input: {
   if (fields.has("guarantee")) {
     sections.push({
       type: "guarantee",
-      title: "Returns",
+      title: "Seller-Stated Guarantee",
       sourceFields: ["guarantee"],
       notes: ["Restate the accepted return window. Do not strengthen it into a promise."],
     });
@@ -64,6 +64,12 @@ export function proposeEditorialPlan(input: {
   if (fields.has("faq")) {
     sections.push({ type: "faq", title: "Frequently asked questions", sourceFields: ["faq"], notes: [] });
   }
+  sections.push({
+    type: "legal",
+    title: "Affiliate Transparency",
+    sourceFields: [],
+    notes: ["Keep the page informational. Do not treat a SANDBOX label as a live commercial hop."],
+  });
   const blockedPadding = [
     "Do not add generic wellness copy to raise the quality score.",
     "Do not invent testimonials, scarcity, or clinical results.",
