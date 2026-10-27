@@ -16,7 +16,7 @@ import {
 } from "@/lib/lp-generator/from-approved-review";
 import { loadEvidenceReviewWorkspace } from "@/lib/presell-quality/review-workspace";
 import { decideEvidenceCandidate } from "@/lib/presell-quality/review-decide";
-import { confirmSourceIdentity } from "@/lib/presell-quality/source-identity";
+import { confirmScopedIdentity, rejectScopedRelation, requestMoreIdentityEvidence, type RelationScope } from "@/lib/presell-quality/commercial-graph";
 
 function campaignOf(id: number) {
   if (!Number.isInteger(id) || id < 1 || !getCampaignById(id)) throw new Error("Campanha não encontrada.");
@@ -153,6 +153,7 @@ export async function decideEvidenceCandidateAction(input: {
     ledger: workspace.ledger,
     run: workspace.run,
     identity,
+    relations: workspace.graph.relations,
     decision: input.decision,
     expectedVersion: input.expectedVersion,
     officialHosts: workspace.identities.filter((item) => item.role === "MANUFACTURER").map((item) => item.host),
@@ -163,17 +164,52 @@ export async function decideEvidenceCandidateAction(input: {
 export async function confirmSourceIdentityAction(input: {
   campaignId: number;
   host: string;
-  state: "VERIFIED" | "PARTIALLY_SUPPORTED" | "UNRESOLVED" | "CONTRADICTED";
+  scope: RelationScope;
   documentation: string;
 }) {
   await requireAdmin();
   const campaignId = campaignOf(input.campaignId);
-  if (!input.documentation.trim()) throw new Error("Documente a identidade da fonte.");
-  confirmSourceIdentity({
+  if (!input.documentation.trim()) throw new Error("Documente exatamente a relação comercial observada.");
+  const workspace = loadEvidenceReviewWorkspace(campaignId);
+  confirmScopedIdentity({
     campaignId,
     host: input.host,
-    state: input.state,
+    scope: input.scope,
     documentation: input.documentation.trim(),
+    graph: workspace.graph,
+  });
+  return loadEvidenceReviewWorkspace(campaignId);
+}
+
+export async function rejectCommercialRelationAction(input: {
+  campaignId: number;
+  relationId: string;
+  documentation: string;
+}) {
+  await requireAdmin();
+  const campaignId = campaignOf(input.campaignId);
+  if (!input.documentation.trim()) throw new Error("Documente o motivo da rejeição.");
+  const workspace = loadEvidenceReviewWorkspace(campaignId);
+  rejectScopedRelation({
+    campaignId,
+    relationId: input.relationId,
+    documentation: input.documentation.trim(),
+    graph: workspace.graph,
+  });
+  return loadEvidenceReviewWorkspace(campaignId);
+}
+
+export async function requestSourceEvidenceAction(input: {
+  campaignId: number;
+  host: string;
+  documentation: string;
+}) {
+  await requireAdmin();
+  const campaignId = campaignOf(input.campaignId);
+  requestMoreIdentityEvidence({
+    campaignId,
+    host: input.host,
+    documentation: input.documentation.trim() || "More evidence requested.",
   });
   return loadEvidenceReviewWorkspace(campaignId);
 }

@@ -34,7 +34,15 @@ export {
 } from "@/lib/presell-quality/evidence-inventory";
 export { buildContentGapReport } from "@/lib/presell-quality/content-gap-report";
 export { reconcileStoredCandidates, loadStoredFactCandidates, loadOrReconcileLedger } from "@/lib/presell-quality/candidate-ledger";
-export { classifySourceIdentity, investigateCampaignSourceIdentity, confirmSourceIdentity } from "@/lib/presell-quality/source-identity";
+export { classifySourceIdentity, investigateCampaignSourceIdentity, confirmSourceIdentity, isGenericHostConfirmation } from "@/lib/presell-quality/source-identity";
+export {
+  buildCommercialGraph,
+  sellerReviewAllowed,
+  applyScopedConfirmation,
+  confirmScopedIdentity,
+  rejectRelation,
+  sourceIdentityPanel,
+} from "@/lib/presell-quality/commercial-graph";
 export { prepareReviewQueue, prepareReviewCandidate, reviewSummary } from "@/lib/presell-quality/review-prepare";
 export { decideEvidenceCandidate, evidenceReviewAuthGate } from "@/lib/presell-quality/review-decide";
 export { loadEvidenceReviewWorkspace } from "@/lib/presell-quality/review-workspace";

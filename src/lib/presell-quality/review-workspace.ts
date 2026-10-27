@@ -1,9 +1,17 @@
+import { getCampaignById } from "@/lib/campaigns";
 import { acceptedProposals } from "@/lib/product-research/approved-facts";
 import { readLatestProductResearch } from "@/lib/product-research/store";
 import { buildContentGapReport } from "@/lib/presell-quality/content-gap-report";
 import { buildEvidenceInventory } from "@/lib/presell-quality/evidence-inventory";
 import { loadStoredFactCandidates, loadOrReconcileLedger } from "@/lib/presell-quality/candidate-ledger";
 import { investigateCampaignSourceIdentity, readSourceIdentityReview } from "@/lib/presell-quality/source-identity";
+import {
+  buildCommercialGraph,
+  mergeStoredGraph,
+  readCommercialGraph,
+  sourceIdentityPanel,
+  writeCommercialGraph,
+} from "@/lib/presell-quality/commercial-graph";
 import { prepareReviewQueue, reviewSummary } from "@/lib/presell-quality/review-prepare";
 import { mapContentGapsToCandidates } from "@/lib/presell-quality/content-gap-map";
 import { readEvidenceAudit } from "@/lib/presell-quality/review-decide";
@@ -16,6 +24,12 @@ export type EvidenceReviewWorkspace = {
   summary: ReturnType<typeof reviewSummary>;
   acceptedCount: number;
   identities: ReturnType<typeof investigateCampaignSourceIdentity>["records"];
+  graph: ReturnType<typeof buildCommercialGraph>;
+  identityPanel: ReturnType<typeof sourceIdentityPanel>;
+  verifiedSellerRelationships: number;
+  verifiedManufacturerRelationships: number;
+  partiallySupportedRelationships: number;
+  unresolvedRelationships: number;
   gaps: ReturnType<typeof mapContentGapsToCandidates>;
   lastReview: ReturnType<typeof readEvidenceAudit>[number] | null;
   regenerationRequired: boolean;
@@ -46,12 +60,23 @@ export function loadEvidenceReviewWorkspace(campaignId: number): EvidenceReviewW
     if (record.confirmedByHuman) return record;
     return fresh ?? record;
   });
+  const campaign = getCampaignById(campaignId);
+  const graph = writeCommercialGraph(mergeStoredGraph(
+    buildCommercialGraph({
+      campaignId,
+      productName: campaign?.name,
+      run,
+      candidates: ledger.candidates,
+    }),
+    readCommercialGraph(campaignId),
+  ));
   const rejectedIds = new Set(readEvidenceAudit(campaignId).filter((item) => item.decision === "REJECT").map((item) => item.candidateId));
   const queue = prepareReviewQueue({
     campaignId,
     candidates: ledger.candidates,
     run,
     identities,
+    relations: graph.relations,
     rejectedIds,
   });
   const inventory = buildEvidenceInventory({
@@ -72,6 +97,12 @@ export function loadEvidenceReviewWorkspace(campaignId: number): EvidenceReviewW
     summary: reviewSummary(queue),
     acceptedCount: accepted.length,
     identities,
+    graph,
+    identityPanel: sourceIdentityPanel({ graph, identities }),
+    verifiedSellerRelationships: graph.relations.filter((item) => item.scope === "SELLER" && item.state === "VERIFIED").length,
+    verifiedManufacturerRelationships: graph.relations.filter((item) => item.scope === "MANUFACTURER" && item.state === "VERIFIED").length,
+    partiallySupportedRelationships: graph.relations.filter((item) => item.state === "PARTIALLY_SUPPORTED").length,
+    unresolvedRelationships: graph.relations.filter((item) => item.state === "UNRESOLVED").length,
     gaps,
     lastReview: readEvidenceAudit(campaignId).at(-1) ?? null,
     regenerationRequired: ledger.regenerationRequired,

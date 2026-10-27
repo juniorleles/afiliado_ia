@@ -4,6 +4,7 @@ import { PRODUCT_RESEARCH_FIELDS } from "@/lib/product-research/types";
 import { triageFactCandidate } from "@/lib/presell-quality/fact-triage";
 import type { LedgerCandidate } from "@/lib/presell-quality/candidate-ledger";
 import type { SourceIdentityRecord, SourceIdentityState } from "@/lib/presell-quality/source-identity";
+import { sellerReviewAllowed, type CommercialRelation } from "@/lib/presell-quality/commercial-graph";
 
 export const REVIEW_PREP_STATES = [
   "READY_FOR_REVIEW",
@@ -58,6 +59,7 @@ export function prepareReviewCandidate(input: {
   candidate: LedgerCandidate;
   run: ProductResearchRun | null;
   identity?: SourceIdentityRecord | null;
+  relations?: CommercialRelation[];
   rejectedIds?: Set<string>;
   officialHosts?: string[];
 }): PreparedReviewCandidate {
@@ -106,18 +108,30 @@ export function prepareReviewCandidate(input: {
   } else if (identityState === "CONTRADICTED") {
     state = "INSUFFICIENT_EVIDENCE";
     blocker = "Source identity is contradicted.";
-  } else if (identityState === "UNRESOLVED" || !identityConfirmed && identity?.role !== "MANUFACTURER") {
+  } else if (identity?.role === "CLONE") {
     state = "SOURCE_IDENTITY_UNRESOLVED";
-    blocker = "Source identity is not confirmed. Confirm identity before approving a fact.";
-  } else if (!contractField) {
-    state = "INSUFFICIENT_EVIDENCE";
-    blocker = "This operational note has no Product Contract field. Do not invent a field.";
-  } else if (acceptedField && acceptedField.status === "ACCEPTED") {
-    state = "ALREADY_ACCEPTED";
-    blocker = `Field ${input.candidate.field} is already accepted. Overwrite requires an explicit confirm.`;
+    blocker = "Lookalike hosts stay unresolved. Domain resemblance is not ownership.";
   } else {
-    state = "READY_FOR_REVIEW";
-    blocker = "";
+    const sellerGate = sellerReviewAllowed({
+      field: input.candidate.field,
+      host: input.candidate.sourceHost,
+      relations: input.relations ?? [],
+      identityRole: identity?.role,
+    });
+    const manufacturerBypass = identity?.role === "MANUFACTURER";
+    if (!sellerGate.allowed && !manufacturerBypass) {
+      state = "SOURCE_IDENTITY_UNRESOLVED";
+      blocker = sellerGate.reason;
+    } else if (!contractField) {
+      state = "INSUFFICIENT_EVIDENCE";
+      blocker = "This operational note has no Product Contract field. Do not invent a field.";
+    } else if (acceptedField && acceptedField.status === "ACCEPTED") {
+      state = "ALREADY_ACCEPTED";
+      blocker = `Field ${input.candidate.field} is already accepted. Overwrite requires an explicit confirm.`;
+    } else {
+      state = "READY_FOR_REVIEW";
+      blocker = sellerGate.allowed ? sellerGate.reason : "";
+    }
   }
 
   const availableActions: ReviewAction[] = ["REVIEW_EVIDENCE"];
@@ -155,6 +169,7 @@ export function prepareReviewQueue(input: {
   candidates: LedgerCandidate[];
   run: ProductResearchRun | null;
   identities?: SourceIdentityRecord[];
+  relations?: CommercialRelation[];
   rejectedIds?: Set<string>;
   officialHosts?: string[];
 }): PreparedReviewCandidate[] {
@@ -164,6 +179,7 @@ export function prepareReviewQueue(input: {
       candidate,
       run: input.run,
       identity: byHost.get(candidate.sourceHost) ?? null,
+      relations: input.relations,
       rejectedIds: input.rejectedIds,
       officialHosts: input.officialHosts,
     }),
@@ -174,6 +190,7 @@ export function reviewSummary(rows: PreparedReviewCandidate[]): {
   total: number;
   readyForReview: number;
   identityUnresolved: number;
+  insufficientEvidence: number;
   highRisk: number;
   duplicates: number;
   alreadyAccepted: number;
@@ -183,6 +200,7 @@ export function reviewSummary(rows: PreparedReviewCandidate[]): {
     total: rows.length,
     readyForReview: rows.filter((item) => item.state === "READY_FOR_REVIEW").length,
     identityUnresolved: rows.filter((item) => item.state === "SOURCE_IDENTITY_UNRESOLVED").length,
+    insufficientEvidence: rows.filter((item) => item.state === "INSUFFICIENT_EVIDENCE").length,
     highRisk: rows.filter((item) => item.state === "HIGH_RISK_CLAIM").length,
     duplicates: rows.filter((item) => item.state === "DUPLICATE").length,
     alreadyAccepted: rows.filter((item) => item.state === "ALREADY_ACCEPTED").length,

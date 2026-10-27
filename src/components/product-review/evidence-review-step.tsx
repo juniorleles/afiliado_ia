@@ -2,7 +2,9 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SourceIdentityPanel } from "@/components/product-review/source-identity-panel";
 import type { PreparedReviewCandidate } from "@/lib/presell-quality/review-prepare";
+import type { SourceIdentityPanelRow } from "@/lib/presell-quality/commercial-graph";
 
 const STATE_LABEL: Record<string, string> = {
   READY_FOR_REVIEW: "Pronto para revisão",
@@ -28,30 +30,56 @@ export function EvidenceReviewStep({
   gapsReady,
   lastReviewAt,
   queue,
+  identityPanel,
+  verifiedSellerRelationships,
+  verifiedManufacturerRelationships,
+  partiallySupportedRelationships,
+  unresolvedRelationships,
   busy,
   onDecide,
   onConfirmIdentity,
+  onRejectRelation,
+  onRequestEvidence,
 }: {
-  summary: { total: number; readyForReview: number; identityUnresolved: number; highRisk: number };
+  summary: { total: number; readyForReview: number; identityUnresolved: number; insufficientEvidence: number; highRisk: number };
   acceptedCount: number;
   gapsReady: number;
   lastReviewAt: string | null;
   queue: PreparedReviewCandidate[];
+  identityPanel: SourceIdentityPanelRow[];
+  verifiedSellerRelationships: number;
+  verifiedManufacturerRelationships: number;
+  partiallySupportedRelationships: number;
+  unresolvedRelationships: number;
   busy: boolean;
   onDecide: (candidateId: string, version: number, decision: "ACCEPT" | "REJECT") => void;
-  onConfirmIdentity: (host: string) => void;
+  onConfirmIdentity: (host: string, scope: "SELLER" | "AFFILIATE") => void;
+  onRejectRelation: (relationId: string) => void;
+  onRequestEvidence: (host: string) => void;
 }) {
   return (
     <div id="etapa-evidencias" className="flex flex-col gap-ds-24" data-evidence-review>
       <section className="grid gap-ds-12 md:grid-cols-3">
         <p className="text-body">Candidatos: {summary.total}</p>
         <p className="text-body">Fatos aprovados: {acceptedCount}</p>
-        <p className="text-body">Prontos para revisão: {summary.readyForReview}</p>
-        <p className="text-body">Fontes não verificadas: {summary.identityUnresolved}</p>
+        <p className="text-body">Desbloqueados para revisão: {summary.readyForReview}</p>
+        <p className="text-body">Ainda pendentes de identidade: {summary.identityUnresolved}</p>
+        <p className="text-body">Exigem evidência adicional: {summary.insufficientEvidence}</p>
         <p className="text-body">Alegações de alto risco: {summary.highRisk}</p>
         <p className="text-body">Lacunas com ação humana: {gapsReady}</p>
         <p className="text-caption text-muted-foreground md:col-span-3">Última revisão: {lastReviewAt || "Nenhuma"}</p>
       </section>
+      <SourceIdentityPanel
+        rows={identityPanel}
+        verifiedSellerRelationships={verifiedSellerRelationships}
+        verifiedManufacturerRelationships={verifiedManufacturerRelationships}
+        partiallySupportedRelationships={partiallySupportedRelationships}
+        unresolvedRelationships={unresolvedRelationships}
+        busy={busy}
+        onConfirm={onConfirmIdentity}
+        onReject={onRejectRelation}
+        onRequestEvidence={onRequestEvidence}
+      />
       <section className="flex flex-col gap-ds-16">
         {queue.length === 0 ? <p className="text-body text-muted-foreground">Nenhum candidato armazenado para esta campanha.</p> : null}
         {queue.map((item) => (
@@ -67,11 +95,6 @@ export function EvidenceReviewStep({
             <p className="mt-ds-8 text-caption">Risco: {item.riskClass}</p>
             <p className="mt-ds-4 text-caption">{item.blocker || "Este candidato pode ser decidido com o material apresentado."}</p>
             <div className="mt-ds-12 flex flex-wrap gap-ds-8">
-              {item.availableActions.includes("CONFIRM_SOURCE_IDENTITY") ? (
-                <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => onConfirmIdentity(item.sourceHost)}>
-                  Confirmar identidade da fonte
-                </Button>
-              ) : null}
               {item.availableActions.includes("ACCEPT_ELIGIBLE_FACT") ? (
                 <Button type="button" size="sm" disabled={busy || !item.eligible} onClick={() => onDecide(item.candidateId, item.version, "ACCEPT")}>
                   Aprovar fato elegível

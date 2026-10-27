@@ -122,6 +122,11 @@ export function readSourceIdentityReview(campaignId: number): SourceIdentityRevi
   }
 }
 
+export function isGenericHostConfirmation(host: string): boolean {
+  const value = host.trim().toLowerCase();
+  return !value || value.includes(",") || /\band\b|todos|all domains|todas as fontes/i.test(value);
+}
+
 export function confirmSourceIdentity(input: {
   campaignId: number;
   host: string;
@@ -129,6 +134,9 @@ export function confirmSourceIdentity(input: {
   documentation: string;
   review?: SourceIdentityReview | null;
 }): SourceIdentityReview {
+  if (isGenericHostConfirmation(input.host)) {
+    throw new Error("Confirm one host at a time. Generic multi-domain confirmation is blocked.");
+  }
   if (input.state === "VERIFIED" && !/manufacturer|official host|json-ld|organization/i.test(input.documentation)) {
     throw new Error("VERIFIED manufacturer identity requires documented proof.");
   }

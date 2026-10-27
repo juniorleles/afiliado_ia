@@ -8,6 +8,7 @@ import type { LedgerCandidate } from "@/lib/presell-quality/candidate-ledger";
 import { writeCandidateLedger, type CandidateLedger } from "@/lib/presell-quality/candidate-ledger";
 import { prepareReviewCandidate, type PreparedReviewCandidate } from "@/lib/presell-quality/review-prepare";
 import type { SourceIdentityRecord } from "@/lib/presell-quality/source-identity";
+import type { CommercialRelation } from "@/lib/presell-quality/commercial-graph";
 
 export type EvidenceDecision = "ACCEPT" | "REJECT" | "REQUEST_NEW_EVIDENCE" | "MARK_DUPLICATE";
 
@@ -86,6 +87,7 @@ export function decideEvidenceCandidate(input: {
   ledger: CandidateLedger;
   run: ProductResearchRun | null;
   identity?: SourceIdentityRecord | null;
+  relations?: CommercialRelation[];
   decision: EvidenceDecision;
   expectedVersion: number;
   rejectedIds?: Set<string>;
@@ -96,6 +98,7 @@ export function decideEvidenceCandidate(input: {
     candidate: input.candidate,
     run: input.run,
     identity: input.identity,
+    relations: input.relations,
     rejectedIds: input.rejectedIds,
     officialHosts: input.officialHosts,
   });

@@ -10,7 +10,7 @@ import { FactsStep } from "@/components/product-review/facts-step";
 import { EvidenceReviewStep } from "@/components/product-review/evidence-review-step";
 import { GalleryStep } from "@/components/product-review/gallery-step";
 import { PreviewStep } from "@/components/product-review/preview-step";
-import { confirmSourceIdentityAction, decideEvidenceCandidateAction, decideProductFactsAssetAction, decideProductFactsResearchAction, executeProductFactsResearchAction, readEvidenceReviewAction, readProductFactsResearchAction, startProductFactsResearchAction } from "@/app/admin/[id]/fatos/research-actions";
+import { confirmSourceIdentityAction, decideEvidenceCandidateAction, decideProductFactsAssetAction, decideProductFactsResearchAction, executeProductFactsResearchAction, readEvidenceReviewAction, readProductFactsResearchAction, rejectCommercialRelationAction, requestSourceEvidenceAction, startProductFactsResearchAction } from "@/app/admin/[id]/fatos/research-actions";
 import type { EvidenceReviewWorkspace } from "@/lib/presell-quality/review-workspace";
 import { indicatorsFromResearch } from "@/lib/product-research/indicators";
 import type { AssetDecisionAction } from "@/lib/product-research/asset-display";
@@ -129,15 +129,45 @@ export function ProductReviewWorkspace({
     });
   }
 
-  function confirmIdentity(host: string) {
-    const documentation = window.prompt("Documente a identidade da fonte. Não afirme fabricante sem prova.");
+  function confirmIdentity(host: string, scope: "SELLER" | "AFFILIATE") {
+    const documentation = window.prompt(
+      scope === "SELLER"
+        ? "Documente a relação de vendedor. Isso não confirma o fabricante."
+        : "Documente a relação com o programa de afiliados. Isso não confirma o fabricante.",
+    );
     if (!documentation?.trim()) return;
     startTransition(async () => {
       try {
-        setEvidence(await confirmSourceIdentityAction({ campaignId, host, state: "PARTIALLY_SUPPORTED", documentation }));
+        setEvidence(await confirmSourceIdentityAction({ campaignId, host, scope, documentation }));
         router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Não foi possível confirmar a identidade.");
+      }
+    });
+  }
+
+  function rejectRelation(relationId: string) {
+    const documentation = window.prompt("Documente por que esta relação comercial deve ser rejeitada.");
+    if (!documentation?.trim()) return;
+    startTransition(async () => {
+      try {
+        setEvidence(await rejectCommercialRelationAction({ campaignId, relationId, documentation }));
+        router.refresh();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Não foi possível rejeitar a relação.");
+      }
+    });
+  }
+
+  function requestEvidence(host: string) {
+    const documentation = window.prompt("Descreva a evidência adicional necessária para este domínio.");
+    if (!documentation?.trim()) return;
+    startTransition(async () => {
+      try {
+        setEvidence(await requestSourceEvidenceAction({ campaignId, host, documentation }));
+        router.refresh();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Não foi possível registrar o pedido de evidência.");
       }
     });
   }
@@ -175,14 +205,21 @@ export function ProductReviewWorkspace({
         </TabsContent>
         <TabsContent value="evidencias">
           <EvidenceReviewStep
-            summary={evidence?.summary ?? { total: 0, readyForReview: 0, identityUnresolved: 0, highRisk: 0 }}
+            summary={evidence?.summary ?? { total: 0, readyForReview: 0, identityUnresolved: 0, insufficientEvidence: 0, highRisk: 0 }}
             acceptedCount={evidence?.acceptedCount ?? 0}
             gapsReady={evidence?.gaps.filter((item) => item.resolutionClass === "REQUIRES_HUMAN").length ?? 0}
             lastReviewAt={evidence?.lastReview?.at ?? null}
             queue={evidence?.queue ?? []}
+            identityPanel={evidence?.identityPanel ?? []}
+            verifiedSellerRelationships={evidence?.verifiedSellerRelationships ?? 0}
+            verifiedManufacturerRelationships={evidence?.verifiedManufacturerRelationships ?? 0}
+            partiallySupportedRelationships={evidence?.partiallySupportedRelationships ?? 0}
+            unresolvedRelationships={evidence?.unresolvedRelationships ?? 0}
             busy={busy}
             onDecide={decideCandidate}
             onConfirmIdentity={confirmIdentity}
+            onRejectRelation={rejectRelation}
+            onRequestEvidence={requestEvidence}
           />
         </TabsContent>
         <TabsContent value="imagens">
