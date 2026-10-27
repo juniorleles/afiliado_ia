@@ -2,7 +2,7 @@ export const PRESELL_QUALITY_VERSION = 1 as const;
 export const QUALITY_TARGET = 85 as const;
 export const RENDERER_V4_ID = "v4" as const;
 export const QUALITY_RUBRIC_VERSION = "1" as const;
-export const QUALITY_PROMPT_VERSION = "3" as const;
+export const QUALITY_PROMPT_VERSION = "4" as const;
 
 export const QUALITY_DIMENSIONS = [
   "DESIGN_HIERARCHY",

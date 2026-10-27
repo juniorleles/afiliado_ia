@@ -295,7 +295,7 @@ async function main() {
     second: assessment(isolated.id, 14, { assessmentId: "pqa-2", generationId: "gen-1" }),
   });
   assert(calib.sandboxTreatedAsLiveHop && calib.scoreDelta === -1, "16. interrupcao / calibracao de loop improdutivo");
-  assert(QUALITY_PROMPT_VERSION === "3", "16. prompt calibrado para v3");
+  assert(QUALITY_PROMPT_VERSION === "4", "16. prompt calibrado para v4");
 
   const weightSum = Object.values(QUALITY_DIMENSION_WEIGHTS).reduce((sum, item) => sum + item, 0);
   assert(QUALITY_TARGET === 85 && Math.abs(weightSum - 1) < 0.001, "17. regressao 54Z");

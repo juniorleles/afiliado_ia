@@ -217,7 +217,7 @@ async function main() {
   const restored = await runWithTemporaryPaidAi({ scope: "54AF", provider: "openai", maxUsd: 2 }, async () => paidAiAuthorization().allowed);
   assert(restored === true && paidAiAuthorization().allowed === false, "autorizacao temporaria nao grava env");
   assert(createOpenAiVisionClient({ OPENAI_API_KEY: "sk-test", AIA_ALLOW_PAID_AI: "1", AIA_PAID_AI_PROVIDER: "openai" }).model === OPENAI_VISION_MODEL || true, "openai client gpt-4o-mini");
-  assert(QUALITY_PROMPT_VERSION === "3", "prompt v3");
+  assert(QUALITY_PROMPT_VERSION === "4", "prompt v4");
   assert(QUALITY_TARGET === 85, "regressao 54Z");
   assert(snapshotProductResearch(237).latest?.campaignId === 237, "regressao 54AC");
   assert(emptyPatch().applied.length === 0, "patch vazio");

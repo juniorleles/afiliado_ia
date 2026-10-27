@@ -8,7 +8,7 @@ export const QUALITY_DIMENSION_CRITERIA: Record<QualityDimension, { label: strin
     weight: QUALITY_DIMENSION_WEIGHTS.DESIGN_HIERARCHY,
     looksFor: [
       "A clear above-the-fold hierarchy with product identity first",
-      "A hero that is not an empty band of type alone when a packshot exists",
+      "A hero that is not an empty band of type alone when a packshot exists, or a complete editorial composition when EDITORIAL_NO_IMAGE is required",
       "Consistent spacing, typography, and section rhythm",
     ],
   },
@@ -34,7 +34,7 @@ export const QUALITY_DIMENSION_CRITERIA: Record<QualityDimension, { label: strin
     label: "Imagens e composição",
     weight: QUALITY_DIMENSION_WEIGHTS.IMAGES_COMPOSITION,
     looksFor: [
-      "An approved packshot used as the hero when one exists",
+      "An approved packshot used as the hero when one exists; otherwise an editorial no-image composition that does not invent a product photo",
       "Gallery hierarchy that does not treat every asset as equal",
       "No unapproved or promotional-only images in commercial slots",
     ],

@@ -51,6 +51,7 @@ export async function captureEvaluationScreenshots(input: {
   previewPath: string;
   baseUrl?: string;
   iteration?: number;
+  readySelector?: string;
 }): Promise<CaptureManifest> {
   const notes: string[] = [];
   const extras: PresellScreenshotRef[] = [];
@@ -74,7 +75,7 @@ export async function captureEvaluationScreenshots(input: {
       const errors: string[] = [];
       page.on("pageerror", (err) => errors.push(err.message));
       await page.goto(url, { waitUntil: "domcontentloaded", timeout: 25_000 });
-      await page.locator("[data-v4='page']").waitFor({ timeout: 25_000 });
+      await page.locator(input.readySelector ?? "[data-v4='page']").waitFor({ timeout: 25_000 });
       await page.waitForTimeout(400);
       const folder = path.join(dir, name);
       const viewportFile = path.join(folder, `${name}-viewport.png`);

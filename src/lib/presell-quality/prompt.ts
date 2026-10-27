@@ -29,9 +29,13 @@ Rules:
 11. Findings must name a concrete element (hero, gallery, section title, SANDBOX CTA, ingredients, guarantee). Do not write generic advice such as "improve the design".
 12. Mark recommendedActions.allowed=false for inventing facts, testimonials, clinical claims, scarcity, fake packshots, promoting ineligible gallery images to hero, approving assets, changing ingredients or guarantees, publishing, or ads.
 13. A visible SANDBOX badge on a lab CTA is correct transparency. Do not score it as a live commercial hop or a misleading purchase CTA.
-14. If APPROVED_ASSETS lists no hero-eligible packshot, do not treat an information-first editorial hero as BROKEN_ESSENTIAL_LAYOUT. Score the typography and spacing that are actually rendered.
+14. If APPROVED_ASSETS lists no hero-eligible packshot, or EDITORIAL_CONSTRAINTS include EDITORIAL_NO_IMAGE, do not treat an information-first editorial hero as BROKEN_ESSENTIAL_LAYOUT. Score the typography, spacing, and abstract composition that are actually rendered.
 15. Do not penalize missing clinical claims, testimonials, or independent proof that APPROVED_FACTS and EVIDENCE_REFS do not contain.
 16. Score each dimension independently. A missing ineligible packshot must not collapse copy, mobile, and transparency scores by itself.
+17. Double-count rule: if no hero-eligible packshot exists, record the image gap only under IMAGES_COMPOSITION. Do not also lower DESIGN_HIERARCHY, COPY_CLARITY, DEPTH_ORGANIZATION, MOBILE_EXPERIENCE, or TRANSPARENCY_LEGIBILITY for that same missing packshot.
+18. For EDITORIAL_NO_IMAGE, IMAGES_COMPOSITION scores gallery ranking and whether unapproved images stayed out of the hero. Absence of a packshot is not an automatic score at or below 40.
+19. DEPTH_ORGANIZATION must reflect the approved-fact set. A short page that uses every approved fact without padding is complete for that evidence, not unfinished.
+20. Do not recommend adding a packshot when none is eligible. That action is not allowed.
 
 Dimensions:
 ${dimensions}
