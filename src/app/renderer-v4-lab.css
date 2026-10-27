@@ -212,6 +212,13 @@
   .ds-root[data-v4-status="PARTIAL"][data-ds-composition="information-first"] .ds-hero-band {
     padding-block: clamp(1.75rem, 1.3rem + 2vw, 3rem);
   }
+
+  .ds-root[data-lab="renderer-v4"][data-hero-mode="PRODUCT_IMAGE"] .ds-hero--split,
+  .ds-hero--product-image.ds-hero--split {
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: var(--ds-space-8);
+  }
 }
 
 .v4-sandbox-badge {
@@ -238,6 +245,20 @@
 
 .ds-hero-band--quality-tight {
   padding-block: clamp(1.35rem, 1rem + 1.6vw, 2.4rem);
+}
+
+.ds-hero-band--product-image {
+  padding-block: clamp(2rem, 1.4rem + 2.8vw, 4.25rem);
+}
+
+.ds-hero--product-image .ds-hero__frame {
+  aspect-ratio: 4 / 5;
+  background: color-mix(in srgb, var(--ds-surface-alt) 65%, white);
+}
+
+.ds-hero--product-image .ds-hero__frame img {
+  object-fit: contain;
+  object-position: center;
 }
 
 .ds-hero-band--editorial-full {
@@ -350,6 +371,16 @@
 }
 
 @media (max-width: 639px) {
+  .ds-hero-band--product-image {
+    padding-block: clamp(1.5rem, 1.1rem + 2.4vw, 2.5rem);
+  }
+
+  .ds-hero--product-image.ds-hero--split .ds-hero__media {
+    order: -1;
+    max-width: 18rem;
+    margin-inline: auto;
+  }
+
   .ds-hero-band--editorial-full {
     padding-block: clamp(1.75rem, 1.3rem + 3vw, 2.75rem);
   }

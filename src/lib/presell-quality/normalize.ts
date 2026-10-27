@@ -66,7 +66,7 @@ export function normalizeModelPayload(raw: string): ModelQualityPayload {
     if (typeof dimension !== "string" || !DIMENSIONS.has(dimension)) {
       throw new ModelPayloadError("MISSING_DIMENSION", `Unknown or missing dimension: ${String(dimension)}`);
     }
-    if (seen.has(dimension)) throw new ModelPayloadError("MISSING_DIMENSION", `Duplicate dimension ${dimension}.`);
+    if (seen.has(dimension)) continue;
     seen.add(dimension);
     const score = coerceScore(item.score);
     if (score === null || score < 0 || score > 100) {

@@ -14,7 +14,19 @@ export type { MultimodalPresellEvaluator } from "@/lib/presell-quality/multimoda
 export type { PresellEvaluationInput } from "@/lib/presell-quality/input";
 export { QUALITY_VIEWPORTS } from "@/lib/presell-quality/capture";
 export { OPENAI_VISION_PROVIDER_ID, OPENAI_VISION_MODEL, openaiVisionProviderStatus, createOpenAiVisionClient } from "@/lib/presell-quality/openai-provider";
-export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, EXECUTION_54AI_BUDGET, budgetAllowsCall } from "@/lib/presell-quality/budget";
+export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, EXECUTION_54AI_BUDGET, EXECUTION_54AJ_BUDGET, budgetAllowsCall } from "@/lib/presell-quality/budget";
+export {
+  recordUserAssetDeclaration,
+  readUserAssetDeclaration,
+  productImageIdsForDeclaration,
+  declarationCoversAsset,
+  declarationAuthorizesAds,
+  declarationAuthorizesScope,
+  separateMediaStates,
+} from "@/lib/presell-quality/user-asset-declaration";
+export { classifyAssetSuitabilityFromMetadata, mergeVisionSuitability, looksBotanicalOrIngredient } from "@/lib/presell-quality/asset-suitability";
+export { selectEditorialPlacement } from "@/lib/presell-quality/editorial-placement";
+export { applyDeclaredPresellMedia, galleryHasDuplicateSrc } from "@/lib/presell-quality/apply-declared-media";
 export { gallerySuppressionImpact, GALLERY_IMPACT_NOISE_BAND } from "@/lib/presell-quality/gallery-impact";
 export { contentFingerprintOf, presentationFingerprintOf } from "@/lib/presell-quality/context";
 export { screenshotAssociationError, bindScreenshotsToGeneration, rubricVersionsComparable } from "@/lib/presell-quality/normalize";

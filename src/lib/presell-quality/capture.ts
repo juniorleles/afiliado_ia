@@ -76,7 +76,21 @@ export async function captureEvaluationScreenshots(input: {
       page.on("pageerror", (err) => errors.push(err.message));
       await page.goto(url, { waitUntil: "domcontentloaded", timeout: 25_000 });
       await page.locator(input.readySelector ?? "[data-v4='page']").waitFor({ timeout: 25_000 });
-      await page.waitForTimeout(400);
+      const heroCount = await page.locator("[data-v4-image='commercial']").count();
+      if (heroCount > 0) {
+        const loaded = await page
+          .waitForFunction(
+            () => {
+              const img = document.querySelector("[data-v4-image='commercial']") as HTMLImageElement | null;
+              return Boolean(img && img.complete && img.naturalWidth > 0);
+            },
+            { timeout: 15_000 },
+          )
+          .then(() => true)
+          .catch(() => false);
+        if (!loaded) notes.push(`${name}: hero image did not finish loading before capture.`);
+      }
+      await page.waitForTimeout(300);
       const folder = path.join(dir, name);
       const viewportFile = path.join(folder, `${name}-viewport.png`);
       const fullFile = path.join(folder, `${name}-full.png`);

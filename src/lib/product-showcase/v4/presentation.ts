@@ -21,7 +21,8 @@ const EDITORIAL_TITLE: Partial<Record<SectionType, string>> = {
   legal: "Affiliate Transparency",
 };
 
-export type CommercialImage = { src: string; alt: string };
+export type CommercialImage = { src: string; alt: string; presentation?: "PRODUCT_IMAGE" };
+export type V4HeroMode = "EDITORIAL_NO_IMAGE" | "PACKSHOT_SPLIT" | "PRODUCT_IMAGE";
 
 export function isTechnicalPlaceholderImage(src: string, alt?: string): boolean {
   const blob = `${src} ${alt ?? ""}`.toLowerCase();
@@ -94,8 +95,13 @@ export function editorialHeroMode(hasCommercialImage: boolean): "EDITORIAL_NO_IM
   return hasCommercialImage ? "PACKSHOT_SPLIT" : "EDITORIAL_NO_IMAGE";
 }
 
+export function v4HeroMode(image?: CommercialImage | null): V4HeroMode {
+  if (!image?.src) return "EDITORIAL_NO_IMAGE";
+  return image.presentation === "PRODUCT_IMAGE" ? "PRODUCT_IMAGE" : "PACKSHOT_SPLIT";
+}
+
 export type GalleryPresentation = {
-  heroMode: "EDITORIAL_NO_IMAGE" | "PACKSHOT_SPLIT";
+  heroMode: V4HeroMode;
   galleryAssetCount: number;
   eligibleForEditorialPresentation: boolean;
   render: boolean;
@@ -103,7 +109,7 @@ export type GalleryPresentation = {
 };
 
 export function galleryPresentationOf(input: {
-  heroMode: "EDITORIAL_NO_IMAGE" | "PACKSHOT_SPLIT";
+  heroMode: V4HeroMode;
   galleryImages?: Array<{ src: string }> | null;
   approvedEligibleCount?: number;
 }): GalleryPresentation {

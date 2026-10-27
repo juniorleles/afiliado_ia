@@ -10,6 +10,7 @@ import {
   publicItemText,
   publicLegalLines,
   publicSectionTitle,
+  v4HeroMode,
 } from "@/lib/product-showcase/v4/presentation";
 import { DsAutoGrid, DsContainer, DsKicker, DsSection } from "@/components/design-system/primitives";
 
@@ -57,7 +58,7 @@ function toneFor(type: BlueprintSection["sectionType"]): "plain" | "alt" | "soft
 
 function Hero({ model }: { model: V4Model }) {
   const image = model.commercialImage;
-  const heroMode = editorialHeroMode(Boolean(image));
+  const heroMode = v4HeroMode(image);
   const editorial = heroMode === "EDITORIAL_NO_IMAGE";
   const split = Boolean(image);
   const name = model.contract.identity.productName;
@@ -79,6 +80,7 @@ function Hero({ model }: { model: V4Model }) {
       className={cx(
         "ds-hero-band",
         editorial && "ds-hero-band--editorial-full",
+        heroMode === "PRODUCT_IMAGE" && "ds-hero-band--product-image",
         model.qualityPatch?.tightenHero && editorial && "ds-hero-band--quality-tight",
       )}
       id="hero"
@@ -91,6 +93,7 @@ function Hero({ model }: { model: V4Model }) {
           className={cx(
             "ds-hero",
             split ? "ds-hero--split" : editorial ? "ds-hero--editorial-full" : "ds-hero--editorial",
+            heroMode === "PRODUCT_IMAGE" && "ds-hero--product-image",
           )}
         >
           <div className="v4-hero__copy">
@@ -113,7 +116,7 @@ function Hero({ model }: { model: V4Model }) {
             <div className="ds-hero__media">
               <div className="ds-hero__stage">
                 <div className="ds-hero__frame">
-                  <img src={image.src} alt={image.alt} width={1200} height={1200} data-v4-image="commercial" />
+                  <img src={image.src} alt={image.alt} width={1200} height={1200} data-v4-image="commercial" decoding="async" />
                 </div>
               </div>
             </div>
@@ -353,7 +356,7 @@ function LegalSection({ model, section }: { model: V4Model; section: BlueprintSe
 export function V4Page({ model }: { model: V4Model }) {
   const order = model.blueprint.sections.filter((section) => visible(model, section.sectionType));
   const patch = model.qualityPatch;
-  const heroMode = editorialHeroMode(Boolean(model.commercialImage));
+  const heroMode = v4HeroMode(model.commercialImage);
   const gallery = galleryPresentationOf({
     heroMode,
     galleryImages: model.galleryImages,

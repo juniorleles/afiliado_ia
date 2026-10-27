@@ -2,7 +2,7 @@ import type { V4Model } from "@/lib/product-showcase/v4/model";
 import { defaultEvaluationMeta, type ApprovedAssetRef, type PresellEvaluationInput, type PresellScreenshotRef } from "@/lib/presell-quality/input";
 import type { QualityPresentationPatch } from "@/lib/presell-quality/patch";
 import { sha256Text } from "@/lib/presell-quality/fingerprint";
-import { editorialHeroMode, galleryPresentationOf } from "@/lib/product-showcase/v4/presentation";
+import { galleryPresentationOf, v4HeroMode } from "@/lib/product-showcase/v4/presentation";
 
 export function renderedCopyFromModel(model: V4Model): string {
   const sections = model.blueprint.sections.flatMap((section) => [
@@ -23,7 +23,7 @@ export function renderedCopyFromModel(model: V4Model): string {
 
 export function pageStructureFromModel(model: V4Model): unknown {
   const gallery = galleryPresentationOf({
-    heroMode: editorialHeroMode(Boolean(model.commercialImage)),
+    heroMode: v4HeroMode(model.commercialImage),
     galleryImages: model.galleryImages,
   });
   return {
@@ -52,7 +52,7 @@ export function contentFingerprintOf(model: V4Model): string {
 
 export function presentationFingerprintOf(model: V4Model): string {
   const gallery = galleryPresentationOf({
-    heroMode: editorialHeroMode(Boolean(model.commercialImage)),
+    heroMode: v4HeroMode(model.commercialImage),
     galleryImages: model.galleryImages,
   });
   return sha256Text(
