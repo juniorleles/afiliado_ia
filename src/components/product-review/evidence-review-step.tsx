@@ -82,14 +82,15 @@ export function EvidenceReviewStep({
       />
       <section className="flex flex-col gap-ds-16">
         {queue.length === 0 ? <p className="text-body text-muted-foreground">Nenhum candidato armazenado para esta campanha.</p> : null}
-        {queue.map((item) => (
-          <article key={item.candidateId} className="rounded-ds-md border border-border p-ds-16" data-candidate-id={item.candidateId} data-review-state={item.state}>
+        {summary.readyForReview > 0 ? <p className="text-label" data-ready-highlight>Candidatos prontos para revisão: {summary.readyForReview}</p> : null}
+        {[...queue].sort((left, right) => Number(right.eligible) - Number(left.eligible)).map((item) => (
+          <article key={item.candidateId} className={`rounded-ds-md border p-ds-16 ${item.eligible ? "border-primary" : "border-border"}`} data-candidate-id={item.candidateId} data-review-state={item.state} data-ready={item.eligible ? "true" : "false"}>
             <div className="flex flex-wrap items-center justify-between gap-ds-8">
               <h3 className="text-label">{item.field} · {item.candidateId}</h3>
               <Badge tone={toneFor(item.state)}>{STATE_LABEL[item.state] ?? item.state}</Badge>
             </div>
             <p className="mt-ds-12 whitespace-pre-wrap text-body">{item.extractedValue}</p>
-            <p className="mt-ds-8 text-caption text-muted-foreground">Fonte: {item.sourceHost || "desconhecida"} · {item.sourceClass} · identidade {item.sourceIdentity} ({item.sourceRole})</p>
+            <p className="mt-ds-8 text-caption text-muted-foreground">Fonte: {item.sourceHost || "desconhecida"} · {item.sourceClass} · declaração {item.sourceClass === "SELLER" || item.sourceClass === "AFFILIATE_RESOURCE" ? "SELLER_STATED" : item.sourceClass} · identidade {item.sourceIdentity} ({item.sourceRole})</p>
             <p className="mt-ds-4 break-all text-caption text-muted-foreground">URL: {item.sourceUrl || "—"}</p>
             <p className="mt-ds-8 text-body">Trecho original: {item.originalExcerpt}</p>
             <p className="mt-ds-8 text-caption">Risco: {item.riskClass}</p>

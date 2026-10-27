@@ -3,6 +3,7 @@ import path from "node:path";
 import { sanitizeSharedUrl } from "@/lib/campaign-sources/classify";
 import { qualityAssessmentRoot } from "@/lib/presell-quality/persist";
 import type { FactCandidate } from "@/lib/presell-quality/recovery";
+import { readOperationalCandidates } from "@/lib/presell-quality/operational-extract";
 
 export const CANDIDATE_LEDGER_VERSION = 1 as const;
 
@@ -24,7 +25,7 @@ export function expansionFileOf(campaignId: number): string {
   return path.join(qualityAssessmentRoot(), String(campaignId), "expansion-54ae.json");
 }
 
-export function loadStoredFactCandidates(campaignId: number): FactCandidate[] {
+export function loadStoredFactCandidates(campaignId: number): StoredFactCandidate[] {
   const file = expansionFileOf(campaignId);
   if (!existsSync(file)) return [];
   try {
@@ -41,6 +42,7 @@ export function loadStoredFactCandidates(campaignId: number): FactCandidate[] {
       approvedForUse: false,
       blockReason: item.blockReason,
       duplicateOf: item.duplicateOf ?? null,
+      candidateId: item.candidateId,
     }));
   } catch {
     return [];
@@ -82,10 +84,12 @@ export function reconcileStoredCandidates(input: {
   idPrefix?: string;
 }): CandidateLedger {
   const sourceFile = expansionFileOf(input.campaignId);
-  const loaded = input.candidates ?? loadStoredFactCandidates(input.campaignId);
+  const loaded: StoredFactCandidate[] = input.candidates ?? loadStoredFactCandidates(input.campaignId);
   const seen = new Map<string, string>();
   const candidates = loaded.map((item, index) => {
-    const candidateId = `${input.idPrefix ?? "54AE"}-${String(index + 1).padStart(2, "0")}`;
+    const candidateId = item.candidateId && /^54A[EO]-\d+/.test(item.candidateId)
+      ? item.candidateId
+      : `${input.idPrefix ?? "54AE"}-${String(index + 1).padStart(2, "0")}`;
     const key = `${item.field}|${keyOf(item.text)}`;
     const duplicateOf = seen.get(key) ?? item.duplicateOf;
     if (!seen.has(key)) seen.set(key, candidateId);
@@ -139,6 +143,56 @@ export function writeCandidateLedger(ledger: CandidateLedger): CandidateLedger {
   return ledger;
 }
 
+function keyOfCandidate(field: string, text: string): string {
+  return `${field}|${keyOf(text)}`;
+}
+
 export function loadOrReconcileLedger(campaignId: number, idPrefix?: string): CandidateLedger {
-  return readCandidateLedger(campaignId) ?? writeCandidateLedger(reconcileStoredCandidates({ campaignId, idPrefix }));
+  const stored = [
+    ...loadStoredFactCandidates(campaignId),
+    ...readOperationalCandidates(campaignId).map((item) => ({
+      field: item.field,
+      text: item.text,
+      sourceUrl: item.sourceUrl,
+      sourceClass: item.sourceClass,
+      excerpt: item.excerpt,
+      collectedAt: item.collectedAt,
+      verification: item.verification,
+      usable: Boolean(item.usable),
+      approvedForUse: false as const,
+      blockReason: item.blockReason,
+      duplicateOf: item.duplicateOf,
+      candidateId: item.candidateId,
+    })),
+  ];
+  const existing = readCandidateLedger(campaignId);
+  if (!existing) return writeCandidateLedger(reconcileStoredCandidates({ campaignId, candidates: stored, idPrefix }));
+  const seen = new Set(existing.candidates.map((item) => keyOfCandidate(item.field, item.extractedValue)));
+  const extras = stored.filter((item) => !seen.has(keyOfCandidate(item.field, item.text)));
+  const staleOperational = existing.candidates.filter((item) => item.candidateId.startsWith("54AO-") && !stored.some((row) => keyOfCandidate(row.field, row.text) === keyOfCandidate(item.field, item.extractedValue)));
+  if (!extras.length && !staleOperational.length) return existing;
+  const merged = reconcileStoredCandidates({
+    campaignId,
+    candidates: [
+      ...existing.candidates
+        .filter((item) => !item.candidateId.startsWith("54AO-") || stored.some((row) => row.candidateId === item.candidateId))
+        .map((item) => ({
+        field: item.field,
+        text: item.extractedValue,
+        sourceUrl: item.sourceUrl,
+        sourceClass: item.sourceClass,
+        excerpt: item.originalExcerpt,
+        collectedAt: item.collectedAt,
+        verification: item.verification,
+        usable: item.usable,
+        approvedForUse: false as const,
+        blockReason: item.blockReason,
+        duplicateOf: item.duplicateOf,
+        candidateId: item.candidateId,
+      })),
+      ...extras,
+    ],
+    idPrefix,
+  });
+  return writeCandidateLedger({ ...merged, regenerationRequired: existing.regenerationRequired });
 }

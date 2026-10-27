@@ -35,6 +35,7 @@ export {
 export { buildContentGapReport } from "@/lib/presell-quality/content-gap-report";
 export { reconcileStoredCandidates, loadStoredFactCandidates, loadOrReconcileLedger } from "@/lib/presell-quality/candidate-ledger";
 export { classifySourceIdentity, investigateCampaignSourceIdentity, confirmSourceIdentity, isGenericHostConfirmation } from "@/lib/presell-quality/source-identity";
+export { extractOperationalFactsFromDocuments, extractAndPersistOperationalFacts, inventoryStoredDocuments } from "@/lib/presell-quality/operational-extract";
 export {
   buildCommercialGraph,
   sellerReviewAllowed,
