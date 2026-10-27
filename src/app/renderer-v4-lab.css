@@ -313,6 +313,19 @@
   background: var(--ds-surface);
 }
 
+.v4-disclosure-band {
+  padding-block: var(--ds-space-5);
+  border-top: 1px solid var(--ds-line);
+  background: var(--ds-surface-alt);
+}
+
+.v4-disclosure-band .ds-body {
+  margin: 0;
+  max-width: 42rem;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
 .v4-hero-aside__art {
   position: relative;
   min-height: 7.5rem;

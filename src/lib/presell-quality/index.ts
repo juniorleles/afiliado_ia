@@ -14,7 +14,11 @@ export type { MultimodalPresellEvaluator } from "@/lib/presell-quality/multimoda
 export type { PresellEvaluationInput } from "@/lib/presell-quality/input";
 export { QUALITY_VIEWPORTS } from "@/lib/presell-quality/capture";
 export { OPENAI_VISION_PROVIDER_ID, OPENAI_VISION_MODEL, openaiVisionProviderStatus, createOpenAiVisionClient } from "@/lib/presell-quality/openai-provider";
-export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, EXECUTION_54AI_BUDGET, EXECUTION_54AJ_BUDGET, budgetAllowsCall } from "@/lib/presell-quality/budget";
+export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, EXECUTION_54AI_BUDGET, EXECUTION_54AJ_BUDGET, EXECUTION_54AK_BUDGET, budgetAllowsCall } from "@/lib/presell-quality/budget";
+export { auditApprovedCopy } from "@/lib/presell-quality/copy-audit";
+export { validateCopyRewrite, onlySafeRewrites, extractComparableNumbers } from "@/lib/presell-quality/copy-validate";
+export { proposeDeterministicRewrites, splitUsageSteps } from "@/lib/presell-quality/copy-rewrite";
+export { applySafeCopyOptimization, restoreCopyOptimization } from "@/lib/presell-quality/apply-copy-optimization";
 export {
   recordUserAssetDeclaration,
   readUserAssetDeclaration,

@@ -298,9 +298,14 @@ function TrustSection({ section }: { section: BlueprintSection }) {
   );
 }
 
-function GuaranteeSection({ section }: { section: BlueprintSection }) {
+function GuaranteeSection({ section, attributed }: { section: BlueprintSection; attributed?: boolean }) {
   return (
     <div className="ds-guarantee">
+      {attributed ? (
+        <p className="ds-caption" data-v4-attribution="seller">
+          Seller-stated. Not independently verified.
+        </p>
+      ) : null}
       {section.body.map((item, index) => (
         <p className="ds-body" key={`${section.sectionId}-${index}`}>
           {publicItemText(item.text)}
@@ -393,7 +398,23 @@ export function V4Page({ model }: { model: V4Model }) {
             </div>
           );
         }
-        if (section.sectionType === "legal") return <LegalSection model={model} section={section} key={section.sectionId} />;
+        if (section.sectionType === "legal") {
+          return (
+            <div key={section.sectionId}>
+              {patch?.disclosureBand ? (
+                <aside className="v4-disclosure-band" data-v4-disclosure="band">
+                  <DsContainer width="content">
+                    <p className="ds-body">
+                      This page is an informational presentation. I may earn a commission if you purchase through links on
+                      this page.
+                    </p>
+                  </DsContainer>
+                </aside>
+              ) : null}
+              <LegalSection model={model} section={section} />
+            </div>
+          );
+        }
         const inner =
           section.sectionType === "differentiators" ? (
             <FeatureSection section={section} />
@@ -410,7 +431,7 @@ export function V4Page({ model }: { model: V4Model }) {
           ) : section.sectionType === "trust" ? (
             <TrustSection section={section} />
           ) : section.sectionType === "guarantee" ? (
-            <GuaranteeSection section={section} />
+            <GuaranteeSection section={section} attributed={Boolean(patch?.sellerAttribution)} />
           ) : section.sectionType === "demonstration" ? (
             <DemoSection model={model} section={section} />
           ) : (

@@ -10,6 +10,8 @@ export const ALLOWED_FIX_CODES = [
   "TIGHTEN_HERO_LAYOUT",
   "QUIET_SANDBOX_CTA",
   "IMPROVE_SECTION_TITLES",
+  "IMPROVE_DISCLOSURE_PLACEMENT",
+  "SPLIT_USAGE_STEPS",
 ] as const;
 export type AllowedFixCode = (typeof ALLOWED_FIX_CODES)[number];
 
@@ -32,6 +34,8 @@ export type QualityPresentationPatch = {
   galleryLead?: boolean;
   tightenHero?: boolean;
   sandboxQuiet?: boolean;
+  disclosureBand?: boolean;
+  sellerAttribution?: boolean;
   applied: AllowedFixCode[];
   rejected: Array<{ code: ForbiddenFixCode | string; reason: string }>;
 };
