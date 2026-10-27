@@ -6,4 +6,7 @@ export {
   publicLegalLines,
   publicSectionTitle,
   themeForV4,
+  editorialHeroMode,
+  galleryPresentationOf,
+  shouldRenderV4Gallery,
 } from "@/lib/product-showcase/v4/presentation";

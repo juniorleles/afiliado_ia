@@ -94,6 +94,60 @@ export function editorialHeroMode(hasCommercialImage: boolean): "EDITORIAL_NO_IM
   return hasCommercialImage ? "PACKSHOT_SPLIT" : "EDITORIAL_NO_IMAGE";
 }
 
+export type GalleryPresentation = {
+  heroMode: "EDITORIAL_NO_IMAGE" | "PACKSHOT_SPLIT";
+  galleryAssetCount: number;
+  eligibleForEditorialPresentation: boolean;
+  render: boolean;
+  reason: string;
+};
+
+export function galleryPresentationOf(input: {
+  heroMode: "EDITORIAL_NO_IMAGE" | "PACKSHOT_SPLIT";
+  galleryImages?: Array<{ src: string }> | null;
+  approvedEligibleCount?: number;
+}): GalleryPresentation {
+  const galleryAssetCount = input.galleryImages?.filter((item) => Boolean(item.src)).length ?? 0;
+  if (input.heroMode === "EDITORIAL_NO_IMAGE") {
+    return {
+      heroMode: input.heroMode,
+      galleryAssetCount,
+      eligibleForEditorialPresentation: false,
+      render: false,
+      reason: "EDITORIAL_NO_IMAGE forbids a gallery that would imply product proof.",
+    };
+  }
+  if (galleryAssetCount === 0) {
+    return {
+      heroMode: input.heroMode,
+      galleryAssetCount: 0,
+      eligibleForEditorialPresentation: false,
+      render: false,
+      reason: "No gallery assets are attached.",
+    };
+  }
+  if (input.approvedEligibleCount === 0) {
+    return {
+      heroMode: input.heroMode,
+      galleryAssetCount,
+      eligibleForEditorialPresentation: false,
+      render: false,
+      reason: "Attached gallery assets are not eligible for editorial presentation.",
+    };
+  }
+  return {
+    heroMode: input.heroMode,
+    galleryAssetCount,
+    eligibleForEditorialPresentation: true,
+    render: true,
+    reason: "Hero has an eligible packshot, so additional approved images may render in the gallery.",
+  };
+}
+
+export function shouldRenderV4Gallery(input: Parameters<typeof galleryPresentationOf>[0]): boolean {
+  return galleryPresentationOf(input).render;
+}
+
 export function editorialIndexCards(input: {
   visible: Array<{ type: SectionType; id: string }>;
   titles?: Partial<Record<SectionType, string>>;

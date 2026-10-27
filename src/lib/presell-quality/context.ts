@@ -2,6 +2,7 @@ import type { V4Model } from "@/lib/product-showcase/v4/model";
 import { defaultEvaluationMeta, type ApprovedAssetRef, type PresellEvaluationInput, type PresellScreenshotRef } from "@/lib/presell-quality/input";
 import type { QualityPresentationPatch } from "@/lib/presell-quality/patch";
 import { sha256Text } from "@/lib/presell-quality/fingerprint";
+import { editorialHeroMode, galleryPresentationOf } from "@/lib/product-showcase/v4/presentation";
 
 export function renderedCopyFromModel(model: V4Model): string {
   const sections = model.blueprint.sections.flatMap((section) => [
@@ -21,13 +22,20 @@ export function renderedCopyFromModel(model: V4Model): string {
 }
 
 export function pageStructureFromModel(model: V4Model): unknown {
+  const gallery = galleryPresentationOf({
+    heroMode: editorialHeroMode(Boolean(model.commercialImage)),
+    galleryImages: model.galleryImages,
+  });
   return {
     composition: model.composition,
     density: model.density,
     hopSlot: model.hopSlot,
     sandbox: Boolean(model.sandbox?.mode),
     hasHeroImage: Boolean(model.commercialImage),
-    galleryCount: model.galleryImages?.length ?? 0,
+    galleryCount: gallery.render ? (model.galleryImages?.length ?? 0) : 0,
+    storedGalleryCount: model.galleryImages?.length ?? 0,
+    galleryRender: gallery.render,
+    galleryEligibility: gallery.eligibleForEditorialPresentation,
     sections: model.blueprint.sections.map((section) => ({
       type: section.sectionType,
       headline: section.headline.text,
@@ -36,6 +44,27 @@ export function pageStructureFromModel(model: V4Model): unknown {
     })),
     qualityPatch: model.qualityPatch?.applied ?? [],
   };
+}
+
+export function contentFingerprintOf(model: V4Model): string {
+  return sha256Text(renderedCopyFromModel(model));
+}
+
+export function presentationFingerprintOf(model: V4Model): string {
+  const gallery = galleryPresentationOf({
+    heroMode: editorialHeroMode(Boolean(model.commercialImage)),
+    galleryImages: model.galleryImages,
+  });
+  return sha256Text(
+    JSON.stringify({
+      heroMode: gallery.heroMode,
+      galleryRender: gallery.render,
+      composition: model.composition,
+      hopSlot: model.hopSlot,
+      titles: model.qualityPatch?.titles ?? null,
+      sections: model.blueprint.sections.map((section) => section.sectionType),
+    }),
+  );
 }
 
 export function pageVersionTokenOf(input: { iteration: number; patch: QualityPresentationPatch | null }): string {

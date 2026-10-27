@@ -170,7 +170,7 @@ async function main() {
   });
   const reconstructed = applyEditorialReconstruction(noImage!, plan);
   const markup = renderToStaticMarkup(createElement(V4Page, { model: reconstructed }));
-  assert(markup.includes("v4-hero-panel") && markup.includes("v4-hero-aside") && !markup.includes('data-v4-image="commercial"') && !markup.includes("data-v4-gallery"), "hero editorial em painel sem packshot nem galeria inelegivel");
+  assert(markup.includes("v4-hero-panel") && markup.includes("v4-hero-aside") && !markup.includes('data-v4-image="commercial"') && !markup.includes('data-v4-section="gallery"'), "hero editorial em painel sem packshot nem galeria inelegivel");
   assert(markup.includes("v4-ingredient-stack") || markup.includes("Directions for Use") || markup.includes("ds-feature"), "secoes de ingredientes/uso presentes");
   assert(!/clinically proven|verified buyer|limited time|erases wrinkles/i.test(markup), "fatos nao inventados");
   const css = readFileSync(path.join(process.cwd(), "src/app/renderer-v4-lab.css"), "utf8");

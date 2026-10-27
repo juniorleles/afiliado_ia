@@ -14,7 +14,9 @@ export type { MultimodalPresellEvaluator } from "@/lib/presell-quality/multimoda
 export type { PresellEvaluationInput } from "@/lib/presell-quality/input";
 export { QUALITY_VIEWPORTS } from "@/lib/presell-quality/capture";
 export { OPENAI_VISION_PROVIDER_ID, OPENAI_VISION_MODEL, openaiVisionProviderStatus, createOpenAiVisionClient } from "@/lib/presell-quality/openai-provider";
-export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, budgetAllowsCall } from "@/lib/presell-quality/budget";
+export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, EXECUTION_54AI_BUDGET, budgetAllowsCall } from "@/lib/presell-quality/budget";
+export { gallerySuppressionImpact, GALLERY_IMPACT_NOISE_BAND } from "@/lib/presell-quality/gallery-impact";
+export { contentFingerprintOf, presentationFingerprintOf } from "@/lib/presell-quality/context";
 export { screenshotAssociationError, bindScreenshotsToGeneration, rubricVersionsComparable } from "@/lib/presell-quality/normalize";
 export { validateScreenshotBinding, boundScreenshotsForImmutableFixture } from "@/lib/presell-quality/binding";
 export { measureEvaluatorConsistency, EVALUATOR_VARIATION_LIMIT } from "@/lib/presell-quality/consistency";

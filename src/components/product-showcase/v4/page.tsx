@@ -6,6 +6,7 @@ import {
   distinctText,
   editorialHeroMode,
   editorialIndexCards,
+  galleryPresentationOf,
   publicItemText,
   publicLegalLines,
   publicSectionTitle,
@@ -352,13 +353,19 @@ function LegalSection({ model, section }: { model: V4Model; section: BlueprintSe
 export function V4Page({ model }: { model: V4Model }) {
   const order = model.blueprint.sections.filter((section) => visible(model, section.sectionType));
   const patch = model.qualityPatch;
+  const heroMode = editorialHeroMode(Boolean(model.commercialImage));
+  const gallery = galleryPresentationOf({
+    heroMode,
+    galleryImages: model.galleryImages,
+  });
   return (
     <main
       data-v4="page"
       data-v4-composition={model.composition}
       data-v4-goal={model.blueprint.conversionGoal}
       data-v4-photo={model.commercialImage ? "commercial" : "none"}
-      data-hero-mode={editorialHeroMode(Boolean(model.commercialImage))}
+      data-hero-mode={heroMode}
+      data-v4-gallery-state={gallery.render ? "visible" : "suppressed"}
       data-quality-fixes={patch?.applied.join(" ") || undefined}
     >
       {order.map((section) => {
@@ -366,11 +373,11 @@ export function V4Page({ model }: { model: V4Model }) {
           return (
             <div key={section.sectionId}>
               <Hero model={model} />
-              {model.galleryImages && model.galleryImages.length > 0 && editorialHeroMode(Boolean(model.commercialImage)) !== "EDITORIAL_NO_IMAGE" ? (
+              {gallery.render && model.galleryImages?.length ? (
                 <DsSection tone="alt" className="v4-band" id="gallery">
                   <DsContainer width="wide">
                     <div data-v4-section="gallery">
-                        <h2 className="ds-h2">{patch?.galleryLead ? "Additional images" : "More images"}</h2>
+                      <h2 className="ds-h2">{patch?.galleryLead ? "Additional images" : "More images"}</h2>
                       <div className={cx("v4-gallery", patch?.galleryLead && "v4-gallery--lead")} data-v4-gallery="">
                         {model.galleryImages.map((image) => (
                           <img key={image.src} src={image.src} alt={image.alt} data-v4-image="commercial" />
