@@ -18,5 +18,10 @@ export { OPENAI_LOOP_BUDGET, budgetAllowsCall } from "@/lib/presell-quality/budg
 export { classifyQualityFixes } from "@/lib/presell-quality/classify";
 export { applyQualityPatch, readQualityPatch, writeQualityPatch } from "@/lib/presell-quality/patch";
 export { runQualityImprovementLoop } from "@/lib/presell-quality/loop";
+export { classifyQualityGaps, QUALITY_GAP_KINDS } from "@/lib/presell-quality/gaps";
+export { stageImageCandidates } from "@/lib/presell-quality/asset-recovery";
+export { calibrateQualityEvaluator } from "@/lib/presell-quality/calibration";
+export { proposeEditorialPlan } from "@/lib/presell-quality/editorial-plan";
+export { runAutonomousRecovery, validateFactCandidate, nextQualityAction } from "@/lib/presell-quality/recovery";
 export { runWithTemporaryPaidAi, paidProviderAllowed } from "@/lib/ai/paid-gate";
 export { MULTIMODAL_PROVIDER_ID, MULTIMODAL_MODEL_ID, multimodalProviderStatus } from "@/lib/presell-quality/provider";

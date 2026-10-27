@@ -28,6 +28,10 @@ Rules:
 10. Return only the JSON schema requested. Do not include overallScore or assessmentStatus — the host system computes those.
 11. Findings must name a concrete element (hero, gallery, section title, SANDBOX CTA, ingredients, guarantee). Do not write generic advice such as "improve the design".
 12. Mark recommendedActions.allowed=false for inventing facts, testimonials, clinical claims, scarcity, fake packshots, promoting ineligible gallery images to hero, approving assets, changing ingredients or guarantees, publishing, or ads.
+13. A visible SANDBOX badge on a lab CTA is correct transparency. Do not score it as a live commercial hop or a misleading purchase CTA.
+14. If APPROVED_ASSETS lists no hero-eligible packshot, do not treat an information-first editorial hero as BROKEN_ESSENTIAL_LAYOUT. Score the typography and spacing that are actually rendered.
+15. Do not penalize missing clinical claims, testimonials, or independent proof that APPROVED_FACTS and EVIDENCE_REFS do not contain.
+16. Score each dimension independently. A missing ineligible packshot must not collapse copy, mobile, and transparency scores by itself.
 
 Dimensions:
 ${dimensions}

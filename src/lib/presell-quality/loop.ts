@@ -88,6 +88,7 @@ export type QualityLoopDeps = {
   capture?: (input: { campaignId: number; generationId: string; previewPath: string; baseUrl?: string; iteration?: number }) => Promise<CaptureManifest>;
   apply?: (generationId: string, patch: QualityPresentationPatch, model: V4Model) => V4Model;
   ledger?: QualityBudgetLedger;
+  onUnproductive?: (input: { campaignId: number; generationId: string; stopReason: QualityLoopStopReason; lastStatus: AssessmentStatus | null }) => Promise<void>;
 };
 
 function viewportFrom(capture: CaptureManifest): { desktop: CaptureManifest["desktop"]; mobile: CaptureManifest["mobile"] } {
@@ -248,6 +249,18 @@ export async function runQualityImprovementLoop(input: QualityLoopInput, deps: Q
 
   if (iterations.length >= OPENAI_LOOP_BUDGET.maxEvaluations && stopReason === "EVALUATION_LIMIT") {
     stopReason = "EVALUATION_LIMIT";
+  }
+
+  if (
+    deps.onUnproductive &&
+    (stopReason === "NO_ALLOWED_FIXES" || stopReason === "NO_SCORE_IMPROVEMENT" || stopReason === "QUALITY_BLOCKED")
+  ) {
+    await deps.onUnproductive({
+      campaignId: input.campaignId,
+      generationId: input.generationId,
+      stopReason,
+      lastStatus,
+    });
   }
 
   const first = iterations[0];

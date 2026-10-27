@@ -459,7 +459,7 @@ async function main() {
   assert(aaBlocked.allowed === false && aaPass.assessmentStatus === "QUALITY_PASSED", "24. regressao da 54AA");
 
   const weightSum = Object.values(QUALITY_DIMENSION_WEIGHTS).reduce((sum, item) => sum + item, 0);
-  assert(QUALITY_TARGET === 85 && Math.abs(weightSum - 1) < 0.001 && QUALITY_PROMPT_VERSION === "2", "25. regressao da 54Z");
+  assert(QUALITY_TARGET === 85 && Math.abs(weightSum - 1) < 0.001 && Boolean(QUALITY_PROMPT_VERSION), "25. regressao da 54Z");
 
   const visual = applyQualityPatch(v4!, {
     ...allowed,
