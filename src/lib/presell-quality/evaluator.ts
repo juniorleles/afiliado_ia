@@ -71,6 +71,13 @@ export function unevaluatedAssessment(input: QualityEvaluatorInput, evaluatorTyp
     humanReviewApproval: false,
     commercialAuthorization: "BLOCKED",
     publicationReadiness: "BLOCKED",
+    promptVersion: null,
+    rubricVersion: null,
+    inputFingerprint: null,
+    screenshotHashes: [],
+    provider: null,
+    tokenUsage: null,
+    errorCode: null,
   };
   return { ...draft, ...approvalsFromAssessment(draft) };
 }

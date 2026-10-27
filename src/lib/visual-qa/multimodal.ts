@@ -1,3 +1,4 @@
+import { paidAiAuthorization } from "@/lib/ai/paid-gate";
 import { extractJsonText, JsonExtractError } from "@/lib/ai/parse-ai-json";
 import { providerFetch } from "@/lib/ai/resilience";
 import {
@@ -194,6 +195,10 @@ export async function runMultimodalVisualReview(input: {
   snapshots: LayoutSnapshot[];
   screenshots: ScreenshotPayload[];
 }): Promise<MultimodalReviewResult> {
+  const paid = paidAiAuthorization();
+  if (!paid.allowed) {
+    return { state: "UNAVAILABLE", findings: [], rawError: paid.reason };
+  }
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
   if (!apiKey) {
     return { state: "UNAVAILABLE", findings: [], rawError: "ANTHROPIC_API_KEY missing" };
@@ -248,6 +253,8 @@ async function callAnthropicVision(
   content: Array<Record<string, unknown>>,
   structured: boolean,
 ): Promise<string> {
+  const paid = paidAiAuthorization();
+  if (!paid.allowed) throw new Error(paid.reason);
   const body: Record<string, unknown> = {
     model: VISUAL_QA_MODEL,
     max_tokens: 8192,

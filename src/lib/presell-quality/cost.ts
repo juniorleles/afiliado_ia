@@ -1,4 +1,4 @@
-import { envFlagEnabled } from "@/lib/lp-generator/ai-copy/config";
+import { paidAiAuthorization } from "@/lib/ai/paid-gate";
 import type { CostMetadata } from "@/lib/presell-quality/types";
 
 export const QUALITY_COST_POLICY = {
@@ -10,10 +10,11 @@ export const QUALITY_COST_POLICY = {
 } as const;
 
 export function qualityCostGate(env: NodeJS.ProcessEnv = process.env): { allowed: boolean; reason: string } {
-  if (!envFlagEnabled("AIA_ALLOW_PAID_AI", env)) {
+  const gate = paidAiAuthorization(env);
+  if (!gate.allowed) {
     return { allowed: false, reason: "AIA_ALLOW_PAID_AI=0. Multimodal evaluation is not authorized." };
   }
-  return { allowed: true, reason: "Paid evaluation is authorized for this process only." };
+  return { allowed: true, reason: gate.reason };
 }
 
 export function emptyCostMetadata(notes: string[] = []): CostMetadata {

@@ -1,11 +1,16 @@
-export { PRESELL_QUALITY_VERSION, QUALITY_TARGET, QUALITY_DIMENSIONS, QUALITY_DIMENSION_WEIGHTS, ASSESSMENT_STATUSES, CRITICAL_FAILURE_CODES } from "@/lib/presell-quality/types";
+export { PRESELL_QUALITY_VERSION, QUALITY_TARGET, QUALITY_DIMENSIONS, QUALITY_DIMENSION_WEIGHTS, ASSESSMENT_STATUSES, CRITICAL_FAILURE_CODES, QUALITY_RUBRIC_VERSION, QUALITY_PROMPT_VERSION } from "@/lib/presell-quality/types";
 export type { PresellQualityAssessment, AssessmentStatus, QualityDimension, EvaluatorType } from "@/lib/presell-quality/types";
 export { weightedQualityScore, resolveAssessmentStatus } from "@/lib/presell-quality/score";
 export { QUALITY_DIMENSION_CRITERIA, qualityTarget } from "@/lib/presell-quality/criteria";
 export { humanReviewEligibilityOf, approvalsFromAssessment, qualityPassedWithoutAi } from "@/lib/presell-quality/policy";
 export { QUALITY_COST_POLICY, qualityCostGate, emptyCostMetadata } from "@/lib/presell-quality/cost";
 export { unevaluatedAssessment, assessmentFromScores, createBlockedMultimodalEvaluator } from "@/lib/presell-quality/evaluator";
-export { writeQualityAssessment, readQualityAssessment } from "@/lib/presell-quality/persist";
+export { writeQualityAssessment, readQualityAssessment, findCachedQualityAssessment, assessmentIsCurrent } from "@/lib/presell-quality/persist";
 export { QUALITY_CALIBRATION_FIXTURES } from "@/lib/presell-quality/fixtures";
 export { tenProductProtocol, emptyPilotSlot } from "@/lib/presell-quality/protocol";
 export { deterministicBaselineAssessment } from "@/lib/presell-quality/baseline";
+export { createMultimodalPresellEvaluator } from "@/lib/presell-quality/multimodal";
+export type { MultimodalPresellEvaluator } from "@/lib/presell-quality/multimodal";
+export type { PresellEvaluationInput } from "@/lib/presell-quality/input";
+export { QUALITY_VIEWPORTS } from "@/lib/presell-quality/capture";
+export { MULTIMODAL_PROVIDER_ID, MULTIMODAL_MODEL_ID, multimodalProviderStatus } from "@/lib/presell-quality/provider";

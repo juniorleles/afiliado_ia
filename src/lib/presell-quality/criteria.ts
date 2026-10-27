@@ -1,4 +1,6 @@
-import { QUALITY_DIMENSION_WEIGHTS, QUALITY_TARGET, type QualityDimension } from "@/lib/presell-quality/types";
+import { QUALITY_DIMENSION_WEIGHTS, QUALITY_RUBRIC_VERSION, QUALITY_TARGET, type QualityDimension } from "@/lib/presell-quality/types";
+
+export { QUALITY_RUBRIC_VERSION };
 
 export const QUALITY_DIMENSION_CRITERIA: Record<QualityDimension, { label: string; weight: number; looksFor: string[] }> = {
   DESIGN_HIERARCHY: {

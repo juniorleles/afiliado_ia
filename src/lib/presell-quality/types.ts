@@ -1,6 +1,8 @@
 export const PRESELL_QUALITY_VERSION = 1 as const;
 export const QUALITY_TARGET = 85 as const;
 export const RENDERER_V4_ID = "v4" as const;
+export const QUALITY_RUBRIC_VERSION = "1" as const;
+export const QUALITY_PROMPT_VERSION = "1" as const;
 
 export const QUALITY_DIMENSIONS = [
   "DESIGN_HIERARCHY",
@@ -105,6 +107,13 @@ export type PresellQualityAssessment = {
   humanReviewApproval: false;
   commercialAuthorization: "BLOCKED";
   publicationReadiness: "BLOCKED";
+  promptVersion?: string | null;
+  rubricVersion?: string | null;
+  inputFingerprint?: string | null;
+  screenshotHashes?: string[];
+  provider?: string | null;
+  tokenUsage?: { inputTokens: number; outputTokens: number } | null;
+  errorCode?: string | null;
 };
 
 export type QualityScoreInput = {
