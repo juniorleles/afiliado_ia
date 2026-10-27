@@ -257,7 +257,7 @@ function GuaranteeSection({ section }: { section: BlueprintSection }) {
     <div className="ds-guarantee">
       {section.body.map((item, index) => (
         <p className="ds-body" key={`${section.sectionId}-${index}`}>
-          {item.text}
+          {publicItemText(item.text)}
         </p>
       ))}
     </div>

@@ -4,7 +4,7 @@ import type { ProductResearchRun } from "@/lib/product-research/types";
 
 export type PresellCompleteness = "COMPLETE" | "PARTIAL" | "INSUFFICIENT" | "BLOCKED";
 
-export type PresellQualityAssessment = {
+export type PresellResearchQuality = {
   researchCoverage: { total: number; max: number };
   approvedFactCoverage: { accepted: number; reviewable: number };
   editorialDepth: "THIN" | "ADEQUATE";
@@ -19,7 +19,7 @@ export type PresellQualityAssessment = {
 export function assessPresellQuality(input: {
   run: ProductResearchRun | null;
   sandboxStatus?: string;
-}): PresellQualityAssessment {
+}): PresellResearchQuality {
   const accepted = acceptedProposals(input.run);
   const fields = new Set(accepted.map((item) => item.field));
   const media = selectReviewMedia({
