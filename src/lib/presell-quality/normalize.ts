@@ -164,3 +164,17 @@ export function screenshotAssociationError(input: {
   }
   return null;
 }
+
+export function bindScreenshotsToGeneration<T extends { generationId: string }>(
+  shots: { desktop: T | null; mobile: T | null },
+  generationId: string,
+): { desktop: T | null; mobile: T | null } {
+  return {
+    desktop: shots.desktop ? { ...shots.desktop, generationId } : null,
+    mobile: shots.mobile ? { ...shots.mobile, generationId } : null,
+  };
+}
+
+export function rubricVersionsComparable(first?: string | null, second?: string | null): boolean {
+  return Boolean(first && second && first === second);
+}

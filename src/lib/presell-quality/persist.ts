@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type { PresellQualityAssessment } from "@/lib/presell-quality/types";
 
@@ -60,6 +60,15 @@ export function readLatestQualityAssessment(campaignId: number): PresellQualityA
   } catch {
     return null;
   }
+}
+
+export function listQualityAssessments(campaignId: number): PresellQualityAssessment[] {
+  const dir = path.join(qualityAssessmentRoot(), String(campaignId));
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((name) => name.startsWith("pqa-") && name.endsWith(".json"))
+    .map((name) => readQualityAssessment(campaignId, name.replace(/\.json$/, "")))
+    .filter((item): item is PresellQualityAssessment => Boolean(item));
 }
 
 export function findCachedQualityAssessment(campaignId: number, inputFingerprint: string): PresellQualityAssessment | null {

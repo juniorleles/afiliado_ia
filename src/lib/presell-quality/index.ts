@@ -5,7 +5,7 @@ export { QUALITY_DIMENSION_CRITERIA, qualityTarget } from "@/lib/presell-quality
 export { humanReviewEligibilityOf, approvalsFromAssessment, qualityPassedWithoutAi } from "@/lib/presell-quality/policy";
 export { QUALITY_COST_POLICY, qualityCostGate, emptyCostMetadata } from "@/lib/presell-quality/cost";
 export { unevaluatedAssessment, assessmentFromScores, createBlockedMultimodalEvaluator } from "@/lib/presell-quality/evaluator";
-export { writeQualityAssessment, readQualityAssessment, findCachedQualityAssessment, assessmentIsCurrent } from "@/lib/presell-quality/persist";
+export { writeQualityAssessment, readQualityAssessment, findCachedQualityAssessment, listQualityAssessments, assessmentIsCurrent } from "@/lib/presell-quality/persist";
 export { QUALITY_CALIBRATION_FIXTURES } from "@/lib/presell-quality/fixtures";
 export { tenProductProtocol, emptyPilotSlot } from "@/lib/presell-quality/protocol";
 export { deterministicBaselineAssessment } from "@/lib/presell-quality/baseline";
@@ -14,7 +14,11 @@ export type { MultimodalPresellEvaluator } from "@/lib/presell-quality/multimoda
 export type { PresellEvaluationInput } from "@/lib/presell-quality/input";
 export { QUALITY_VIEWPORTS } from "@/lib/presell-quality/capture";
 export { OPENAI_VISION_PROVIDER_ID, OPENAI_VISION_MODEL, openaiVisionProviderStatus, createOpenAiVisionClient } from "@/lib/presell-quality/openai-provider";
-export { OPENAI_LOOP_BUDGET, budgetAllowsCall } from "@/lib/presell-quality/budget";
+export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, budgetAllowsCall } from "@/lib/presell-quality/budget";
+export { screenshotAssociationError, bindScreenshotsToGeneration, rubricVersionsComparable } from "@/lib/presell-quality/normalize";
+export { validateScreenshotBinding, boundScreenshotsForImmutableFixture } from "@/lib/presell-quality/binding";
+export { measureEvaluatorConsistency, EVALUATOR_VARIATION_LIMIT } from "@/lib/presell-quality/consistency";
+export { compareEditorialPages, normalizeVisualComparisonPayload, VISUAL_COMPARISON_JSON_SCHEMA } from "@/lib/presell-quality/visual-compare";
 export { classifyQualityFixes } from "@/lib/presell-quality/classify";
 export { applyQualityPatch, readQualityPatch, writeQualityPatch } from "@/lib/presell-quality/patch";
 export { runQualityImprovementLoop } from "@/lib/presell-quality/loop";

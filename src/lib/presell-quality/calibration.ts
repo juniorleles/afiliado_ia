@@ -1,3 +1,4 @@
+import { measureEvaluatorConsistency } from "@/lib/presell-quality/consistency";
 import { QUALITY_DIMENSIONS, QUALITY_PROMPT_VERSION, type PresellQualityAssessment, type QualityDimension } from "@/lib/presell-quality/types";
 
 export type CalibrationFinding = {
@@ -92,6 +93,13 @@ export function calibrateQualityEvaluator(input: {
       code: "TRANSPARENCY_SANDBOX",
       dimension: "TRANSPARENCY_LEGIBILITY",
       message: "Transparency was penalized for a correctly labeled sandbox CTA.",
+    });
+  }
+  const consistency = measureEvaluatorConsistency({ first, second });
+  if (consistency.status === "EVALUATOR_UNSTABLE") {
+    findings.push({
+      code: "EVALUATOR_UNSTABLE",
+      message: `Same-fixture scores varied by ${consistency.variation}. Do not use this as automatic campaign approval.`,
     });
   }
   if (scoreDelta != null && scoreDelta <= 0 && Math.abs(scoreDelta) <= 2) {

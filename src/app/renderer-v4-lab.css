@@ -33,7 +33,8 @@
 }
 
 .v4-hero__copy .ds-display {
-  max-width: 18ch;
+  max-width: 16ch;
+  letter-spacing: -0.035em;
 }
 
 .v4-hero__copy .ds-lead + .ds-body,
@@ -240,18 +241,60 @@
 }
 
 .ds-hero-band--editorial-full {
-  padding-block: clamp(2.75rem, 2rem + 4vw, 5.5rem);
+  padding-block: clamp(2rem, 1.4rem + 2.6vw, 3.75rem);
 }
 
 .v4-hero-aside {
   display: grid;
-  gap: var(--ds-space-4);
   min-height: 100%;
+}
+
+.v4-hero-panel {
+  display: grid;
+  gap: var(--ds-space-4);
+  height: 100%;
+  padding: var(--ds-space-4);
+  border: 1px solid var(--ds-line);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-surface);
+}
+
+.v4-ingredient-stack {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--ds-line);
+  border-radius: var(--ds-radius-lg);
+  overflow: hidden;
+}
+
+.v4-ingredient-stack li {
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid var(--ds-line);
+  background: var(--ds-surface);
+  font-weight: 600;
+}
+
+.v4-ingredient-stack li:last-child {
+  border-bottom: 0;
+}
+
+.v4-ingredient-stack li:nth-child(even) {
+  background: var(--ds-surface-alt);
+}
+
+.ds-guarantee {
+  padding: var(--ds-space-6);
+  border: 1px solid var(--ds-line);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-surface);
 }
 
 .v4-hero-aside__art {
   position: relative;
-  min-height: 11rem;
+  min-height: 7.5rem;
   overflow: hidden;
   border-radius: var(--ds-radius-lg);
   background:
@@ -292,10 +335,10 @@
 
 .v4-hero-index__card {
   display: block;
-  padding: 0.85rem 1rem;
+  padding: 0.75rem 0.9rem;
   border: 1px solid var(--ds-line);
-  border-radius: var(--ds-radius-lg);
-  background: var(--ds-surface);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-alt);
   color: var(--ds-ink);
   text-decoration: none;
 }
@@ -326,11 +369,19 @@
   }
 
   .v4-hero-aside__art {
-    min-height: 7.5rem;
+    min-height: 4.75rem;
+  }
+
+  .v4-hero-panel {
+    padding: var(--ds-space-3);
   }
 
   .v4-hero-index {
     grid-template-columns: 1fr;
+  }
+
+  .v4-ingredient-stack li {
+    padding: 0.95rem 1rem;
   }
 
   .v4-hero-index__card {

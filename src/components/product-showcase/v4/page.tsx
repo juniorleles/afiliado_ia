@@ -50,8 +50,7 @@ function visible(model: V4Model, type: BlueprintSection["sectionType"]): boolean
 
 function toneFor(type: BlueprintSection["sectionType"]): "plain" | "alt" | "soft" | "accent" {
   if (type === "offers") return "soft";
-  if (type === "guarantee") return "alt";
-  if (type === "differentiators" || type === "trust") return "alt";
+  if (type === "specifications" || type === "differentiators" || type === "trust") return "alt";
   return "plain";
 }
 
@@ -120,19 +119,21 @@ function Hero({ model }: { model: V4Model }) {
           ) : null}
           {editorial ? (
             <aside className="v4-hero-aside" aria-label="Approved sections">
-              <div className="v4-hero-aside__art" aria-hidden="true">
-                <span className="v4-hero-aside__orb" />
-                <span className="v4-hero-aside__band" />
+              <div className="v4-hero-panel">
+                <div className="v4-hero-aside__art" aria-hidden="true">
+                  <span className="v4-hero-aside__orb" />
+                  <span className="v4-hero-aside__band" />
+                </div>
+                {index.length ? (
+                  <nav className="v4-hero-index">
+                    {index.map((card) => (
+                      <a className="v4-hero-index__card" href={`#${card.id}`} key={card.id}>
+                        <span className="v4-hero-index__label">{card.label}</span>
+                      </a>
+                    ))}
+                  </nav>
+                ) : null}
               </div>
-              {index.length ? (
-                <nav className="v4-hero-index">
-                  {index.map((card) => (
-                    <a className="v4-hero-index__card" href={`#${card.id}`} key={card.id}>
-                      <span className="v4-hero-index__label">{card.label}</span>
-                    </a>
-                  ))}
-                </nav>
-              ) : null}
             </aside>
           ) : null}
         </div>
@@ -146,9 +147,9 @@ function shortAttribute(text: string): boolean {
   return words.length > 0 && words.length <= 4 && text.trim().length <= 32;
 }
 
-function FeatureSection({ section }: { section: BlueprintSection }) {
+function FeatureSection({ section, numbered = false }: { section: BlueprintSection; numbered?: boolean }) {
   const items = section.items.length ? section.items : section.body.map((item) => ({ text: item }));
-  const compact = items.length >= 3 && items.every((item) => shortAttribute(publicItemText(item.text.text)));
+  const compact = !numbered && items.length >= 3 && items.every((item) => shortAttribute(publicItemText(item.text.text)));
   if (compact) {
     return (
       <ul className="v4-feature-chips" data-v4-features="compact">
@@ -217,11 +218,9 @@ function SpecSection({ section }: { section: BlueprintSection }) {
         ))
       )}
       {notes.length ? (
-        <ul className={notes.length >= 3 ? "v4-notes" : "ds-list"}>
+        <ul className="v4-ingredient-stack">
           {notes.map((note) => (
-            <li className={notes.length >= 3 ? "v4-note" : undefined} key={`${section.sectionId}-${note}`}>
-              {note}
-            </li>
+            <li key={`${section.sectionId}-${note}`}>{note}</li>
           ))}
         </ul>
       ) : null}
@@ -367,11 +366,11 @@ export function V4Page({ model }: { model: V4Model }) {
           return (
             <div key={section.sectionId}>
               <Hero model={model} />
-              {model.galleryImages && model.galleryImages.length > 0 ? (
+              {model.galleryImages && model.galleryImages.length > 0 && editorialHeroMode(Boolean(model.commercialImage)) !== "EDITORIAL_NO_IMAGE" ? (
                 <DsSection tone="alt" className="v4-band" id="gallery">
                   <DsContainer width="wide">
                     <div data-v4-section="gallery">
-                      <h2 className="ds-h2">{patch?.galleryLead ? "Product images" : "More images"}</h2>
+                        <h2 className="ds-h2">{patch?.galleryLead ? "Additional images" : "More images"}</h2>
                       <div className={cx("v4-gallery", patch?.galleryLead && "v4-gallery--lead")} data-v4-gallery="">
                         {model.galleryImages.map((image) => (
                           <img key={image.src} src={image.src} alt={image.alt} data-v4-image="commercial" />
@@ -396,7 +395,9 @@ export function V4Page({ model }: { model: V4Model }) {
             <OfferSection model={model} section={section} />
           ) : section.sectionType === "faq" ? (
             <FaqSection model={model} section={section} />
-          ) : section.sectionType === "trust" || section.sectionType === "how_it_works" ? (
+          ) : section.sectionType === "how_it_works" ? (
+            <FeatureSection section={section} numbered />
+          ) : section.sectionType === "trust" ? (
             <TrustSection section={section} />
           ) : section.sectionType === "guarantee" ? (
             <GuaranteeSection section={section} />
@@ -422,7 +423,7 @@ export function V4Page({ model }: { model: V4Model }) {
             id={section.sectionType === "offers" ? "offers" : section.sectionId}
             tone={toneFor(section.sectionType)}
             className="v4-band"
-            tight={model.density === "thin"}
+            tight={model.density === "thin" || editorialHeroMode(Boolean(model.commercialImage)) === "EDITORIAL_NO_IMAGE"}
           >
             <DsContainer width={section.sectionType === "offers" || section.sectionType === "differentiators" ? "wide" : "content"}>
               <div data-v4-section={section.sectionType} data-v4-purpose={section.commercialPurpose}>
