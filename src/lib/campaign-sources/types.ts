@@ -33,7 +33,7 @@ export type CampaignSource = {
   sourceStatus: SourceStatus;
   sourceClassification: string | null;
   discoveryMethod: "OPERATOR" | "DISCOVERED";
-  submittedBy: "OPERATOR";
+  submittedBy: "OPERATOR" | "USER";
   fetchedAt: string | null;
   verificationStatus: SourceVerification;
   evidenceIds: string[];
@@ -41,6 +41,9 @@ export type CampaignSource = {
   redirectChain?: Array<{ status: number | null; host: string; path: string; via: string }>;
   destinationClassification?: string | null;
   blockReason?: string | null;
+  origin?: "OPERATOR" | "USER_PROVIDED" | "HISTORICAL_FIXTURE";
+  roles?: string[];
+  attributionStoredPrivately?: boolean;
 };
 
 export type CampaignSourceInput = {

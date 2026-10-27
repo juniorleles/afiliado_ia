@@ -60,6 +60,7 @@ export function collectInformationalCandidates(input: {
   pageUrl: string;
   known?: string[];
   inspectLimit?: number;
+  relatedHosts?: string[];
 }): { candidates: DiscoveredCandidate[]; skipped: Array<{ href: string; reason: string }> } {
   const inspectLimit = input.inspectLimit ?? RESEARCH_LIMITS.maxInspectedCandidates;
   const known = new Set((input.known ?? []).map((item) => canonicalizeResearchUrl(item) ?? item.replace(/\/$/, "")));
@@ -77,8 +78,18 @@ export function collectInformationalCandidates(input: {
       continue;
     }
     if (!sameHost(normalized, input.pageUrl)) {
-      skipped.push({ href: normalized, reason: "cross-host links are not followed in controlled research" });
-      continue;
+      const host = (() => {
+        try {
+          return new URL(normalized).hostname.toLowerCase();
+        } catch {
+          return "";
+        }
+      })();
+      const related = (input.relatedHosts ?? []).some((item) => item.toLowerCase() === host);
+      if (!related) {
+        skipped.push({ href: normalized, reason: "cross-host links are not followed in controlled research" });
+        continue;
+      }
     }
     const key = canonicalizeResearchUrl(normalized) ?? normalized;
     if (known.has(key) || seen.has(key)) {

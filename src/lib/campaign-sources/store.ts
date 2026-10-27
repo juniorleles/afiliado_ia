@@ -9,10 +9,14 @@ import type {
   SourceType,
 } from "@/lib/campaign-sources/types";
 
-const ROOT = join(process.cwd(), "data", "campaign-sources");
+function rootDir(): string {
+  const override = process.env.AIA_CAMPAIGN_SOURCES_ROOT;
+  if (override) return override;
+  return join(process.cwd(), "data", "campaign-sources");
+}
 
 function dirFor(campaignId: number): string {
-  return join(ROOT, String(campaignId));
+  return join(rootDir(), String(campaignId));
 }
 
 function fileFor(campaignId: number): string {
