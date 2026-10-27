@@ -42,6 +42,7 @@ export type PresellEvaluationInput = {
   rubricVersion: string;
   promptVersion: string;
   previewPath?: string | null;
+  pageVersionToken?: string | null;
 };
 
 export type ModelDimensionPayload = {

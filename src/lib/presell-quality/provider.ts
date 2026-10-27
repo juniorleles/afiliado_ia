@@ -1,5 +1,5 @@
 import { envLookup, envValuePresent } from "@/lib/lp-generator/ai-copy/config";
-import { paidAiAuthorization } from "@/lib/ai/paid-gate";
+import { paidAiAuthorization, paidProviderAllowed } from "@/lib/ai/paid-gate";
 import { providerFetch } from "@/lib/ai/resilience";
 import { MULTIMODAL_QUALITY_JSON_SCHEMA } from "@/lib/presell-quality/schema";
 
@@ -24,7 +24,7 @@ export type VisionCompletion = {
 };
 
 export type MultimodalVisionClient = {
-  provider: typeof MULTIMODAL_PROVIDER_ID;
+  provider: "openai" | "anthropic";
   model: string;
   complete(input: { system: string; userText: string; images: VisionImage[] }): Promise<VisionCompletion>;
 };
@@ -83,7 +83,7 @@ export function createAnthropicVisionClient(options?: {
     model: MULTIMODAL_MODEL_ID,
     async complete(input) {
       const env = options?.env ?? process.env;
-      const paid = paidAiAuthorization(env);
+      const paid = paidProviderAllowed(MULTIMODAL_PROVIDER_ID, env);
       if (!paid.allowed) throw new Error(paid.reason);
       const apiKey = envLookup("ANTHROPIC_API_KEY", env);
       if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not configured.");

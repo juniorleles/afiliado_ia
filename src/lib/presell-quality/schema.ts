@@ -7,15 +7,13 @@ export const MULTIMODAL_QUALITY_JSON_SCHEMA = {
   properties: {
     dimensionScores: {
       type: "array",
-      minItems: 6,
-      maxItems: 6,
       items: {
         type: "object",
         additionalProperties: false,
         required: ["dimension", "score", "rationale", "evidence", "problems", "recommendedActions"],
         properties: {
           dimension: { type: "string", enum: [...QUALITY_DIMENSIONS] },
-          score: { type: "integer", minimum: 0, maximum: 100 },
+          score: { type: "number" },
           rationale: { type: "string" },
           evidence: { type: "array", items: { type: "string" } },
           problems: { type: "array", items: { type: "string" } },

@@ -11,6 +11,7 @@ import {
   writeQualityAssessment,
 } from "@/lib/presell-quality/persist";
 import { buildMultimodalEvaluatorPrompt } from "@/lib/presell-quality/prompt";
+import { envValuePresent, redactSecrets } from "@/lib/lp-generator/ai-copy/config";
 import {
   createAnthropicVisionClient,
   estimateAnthropicUsd,
@@ -19,6 +20,13 @@ import {
   multimodalProviderStatus,
   type MultimodalVisionClient,
 } from "@/lib/presell-quality/provider";
+import {
+  createOpenAiVisionClient,
+  estimateOpenAiVisionUsd,
+  openaiVisionProviderStatus,
+  OPENAI_VISION_MODEL,
+  OPENAI_VISION_PROVIDER_ID,
+} from "@/lib/presell-quality/openai-provider";
 import type { PresellQualityAssessment } from "@/lib/presell-quality/types";
 
 export type MultimodalPresellEvaluator = {
@@ -31,6 +39,7 @@ export type MultimodalEvaluatorDeps = {
   persist?: (assessment: PresellQualityAssessment) => PresellQualityAssessment;
   readFile?: (file: string) => Buffer;
   now?: () => string;
+  skipCache?: boolean;
 };
 
 function failed(input: PresellEvaluationInput, code: string, message: string, extra?: Partial<PresellQualityAssessment>): PresellQualityAssessment {
@@ -47,8 +56,8 @@ function failed(input: PresellEvaluationInput, code: string, message: string, ex
   );
   return {
     ...base,
-    evaluatorModel: MULTIMODAL_MODEL_ID,
-    provider: MULTIMODAL_PROVIDER_ID,
+    evaluatorModel: OPENAI_VISION_MODEL,
+    provider: OPENAI_VISION_PROVIDER_ID,
     promptVersion: input.promptVersion,
     rubricVersion: input.rubricVersion,
     inputFingerprint: fingerprint,
@@ -100,27 +109,41 @@ export function createMultimodalPresellEvaluator(deps: MultimodalEvaluatorDeps =
         return persist(failed(input, "SCREENSHOT_MISSING", "Mobile screenshot file is missing."));
       }
 
-      const cached = findCachedQualityAssessment(input.campaignId, fingerprint);
-      if (cached && assessmentIsCurrent(cached, { generationId: input.generationId, inputFingerprint: fingerprint })) {
-        return {
-          ...cached,
-          costMetadata: { ...cached.costMetadata, cached: true, notes: [...cached.costMetadata.notes, "Returned cached assessment for this page version."] },
-        };
+      if (!deps.skipCache) {
+        const cached = findCachedQualityAssessment(input.campaignId, fingerprint);
+        if (cached && assessmentIsCurrent(cached, { generationId: input.generationId, inputFingerprint: fingerprint })) {
+          return {
+            ...cached,
+            costMetadata: { ...cached.costMetadata, cached: true, notes: [...cached.costMetadata.notes, "Returned cached assessment for this page version."] },
+          };
+        }
       }
 
       const paid = paidAiAuthorization(env);
-      const status = multimodalProviderStatus(env);
+      const openaiStatus = openaiVisionProviderStatus(env);
+      const anthropicStatus = multimodalProviderStatus(env);
+      const scoped = env.AIA_PAID_AI_PROVIDER?.trim().toLowerCase();
+      const preferOpenAi =
+        scoped === "openai" ||
+        envValuePresent("OPENAI_API_KEY", env) ||
+        !envValuePresent("ANTHROPIC_API_KEY", env);
+      const status = preferOpenAi ? openaiStatus : anthropicStatus;
       if (!paid.allowed) {
-        return persist(failed(input, "PAID_AI_BLOCKED", qualityCostGate(env).reason, { evaluatorModel: status.model }));
+        return persist(failed(input, "PAID_AI_BLOCKED", qualityCostGate(env).reason, { evaluatorModel: status.model, provider: status.provider === "none" ? OPENAI_VISION_PROVIDER_ID : status.provider }));
       }
       if (!status.keyConfigured) {
         return persist(failed(input, "API_KEY_MISSING", status.reason));
+      }
+      if (!status.vision) {
+        return persist(failed(input, "MODEL_NOT_MULTIMODAL", status.reason));
       }
       if (!status.authorized) {
         return persist(failed(input, "PROVIDER_UNAVAILABLE", status.reason));
       }
 
-      const client = deps.client ?? createAnthropicVisionClient({ env });
+      const client =
+        deps.client ??
+        (preferOpenAi ? createOpenAiVisionClient({ env }) : createAnthropicVisionClient({ env }));
       const prompt = buildMultimodalEvaluatorPrompt(input);
       let completion: { text: string; inputTokens: number; outputTokens: number };
       try {
@@ -145,7 +168,28 @@ export function createMultimodalPresellEvaluator(deps: MultimodalEvaluatorDeps =
         payload = normalizeModelPayload(completion.text);
       } catch (err) {
         const code = err instanceof ModelPayloadError ? err.code : "INVALID_JSON";
-        return persist(failed(input, code, err instanceof Error ? err.message : "Invalid model payload."));
+        const estimated =
+          client.provider === "openai"
+            ? estimateOpenAiVisionUsd(completion.inputTokens, completion.outputTokens)
+            : estimateAnthropicUsd(completion.inputTokens, completion.outputTokens);
+        return persist(
+          failed(input, code, err instanceof Error ? err.message : "Invalid model payload.", {
+            evaluatorModel: client.model,
+            provider: client.provider,
+            tokenUsage: { inputTokens: completion.inputTokens, outputTokens: completion.outputTokens },
+            costMetadata: {
+              paidAiEnabled: true,
+              estimatedUsd: Number(estimated.toFixed(4)),
+              actualUsd: 0,
+              evaluationCount: 1,
+              cached: false,
+              notes: [
+                err instanceof Error ? err.message : "Invalid model payload.",
+                `Raw payload snippet: ${redactSecrets(completion.text).slice(0, 400)}`,
+              ],
+            },
+          }),
+        );
       }
 
       const assessment = assessmentFromScores(
@@ -169,7 +213,10 @@ export function createMultimodalPresellEvaluator(deps: MultimodalEvaluatorDeps =
           evaluationCompleted: true,
         },
       );
-      const estimated = estimateAnthropicUsd(completion.inputTokens, completion.outputTokens);
+      const estimated =
+        client.provider === "openai"
+          ? estimateOpenAiVisionUsd(completion.inputTokens, completion.outputTokens)
+          : estimateAnthropicUsd(completion.inputTokens, completion.outputTokens);
       const complete: PresellQualityAssessment = {
         ...assessment,
         findings: payload.findings.length ? payload.findings : assessment.findings,

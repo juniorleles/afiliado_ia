@@ -118,6 +118,15 @@
   grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
 }
 
+.v4-gallery--lead {
+  grid-template-columns: minmax(16rem, 1.4fr) repeat(auto-fit, minmax(11rem, 1fr));
+  align-items: start;
+}
+
+.v4-gallery--lead img:first-child {
+  grid-column: 1;
+}
+
 .v4-gallery img {
   width: 100%;
   height: auto;
@@ -212,4 +221,20 @@
   font-size: 0.68em;
   font-weight: 750;
   letter-spacing: 0.08em;
+}
+
+.v4-sandbox-badge--quiet {
+  margin-right: 0.4em;
+  padding: 0.08em 0.35em;
+  font-size: 0.58em;
+  font-weight: 650;
+  opacity: 0.78;
+}
+
+.ds-btn--sandbox-quiet {
+  gap: 0.35rem;
+}
+
+.ds-hero-band--quality-tight {
+  padding-block: clamp(1.35rem, 1rem + 1.6vw, 2.4rem);
 }

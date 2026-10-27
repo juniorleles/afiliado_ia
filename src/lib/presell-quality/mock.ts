@@ -73,6 +73,24 @@ export function mockPayloadForFixture(kind: (typeof QUALITY_CALIBRATION_FIXTURES
   };
 }
 
+export function mockOpenAiVisionClient(
+  payload: ModelQualityPayload | ModelQualityPayload[],
+  counter?: { count: number },
+  fail?: Error,
+): MultimodalVisionClient {
+  const payloads = Array.isArray(payload) ? payload : [payload];
+  return {
+    provider: "openai",
+    model: "gpt-4o-mini",
+    async complete() {
+      if (counter) counter.count += 1;
+      if (fail) throw fail;
+      const next = payloads[Math.min(counter ? counter.count - 1 : 0, payloads.length - 1)] ?? payloads[0];
+      return { text: JSON.stringify(next), inputTokens: 800, outputTokens: 400 };
+    },
+  };
+}
+
 export function mockVisionClient(
   payload: ModelQualityPayload,
   counter?: { count: number },

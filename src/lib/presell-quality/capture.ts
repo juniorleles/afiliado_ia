@@ -21,8 +21,9 @@ export type CaptureManifest = {
   notes: string[];
 };
 
-function shotRoot(campaignId: number, generationId: string): string {
-  return path.join(qualityAssessmentRoot(), String(campaignId), "shots", generationId);
+function shotRoot(campaignId: number, generationId: string, iteration?: number): string {
+  const base = path.join(qualityAssessmentRoot(), String(campaignId), "shots", generationId);
+  return typeof iteration === "number" ? path.join(base, `i${iteration}`) : base;
 }
 
 function toRef(input: {
@@ -49,10 +50,11 @@ export async function captureEvaluationScreenshots(input: {
   generationId: string;
   previewPath: string;
   baseUrl?: string;
+  iteration?: number;
 }): Promise<CaptureManifest> {
   const notes: string[] = [];
   const extras: PresellScreenshotRef[] = [];
-  const dir = shotRoot(input.campaignId, input.generationId);
+  const dir = shotRoot(input.campaignId, input.generationId, input.iteration);
   mkdirSync(path.join(dir, "desktop"), { recursive: true });
   mkdirSync(path.join(dir, "mobile"), { recursive: true });
   const base = (input.baseUrl ?? "http://127.0.0.1:3000").replace(/\/$/, "");

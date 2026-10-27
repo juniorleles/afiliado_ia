@@ -17,16 +17,21 @@ function cx(...parts: Array<string | false | null | undefined>): string {
 function Hop({ model, slot }: { model: V4Model; slot: "hero" | "offers" | "sticky" }) {
   if (!model.hopHref || !model.hopLabel) return null;
   const sandbox = Boolean(model.sandbox?.mode);
+  const quiet = Boolean(model.qualityPatch?.sandboxQuiet);
   return (
     <a
-      className="ds-btn"
+      className={cx("ds-btn", quiet && "ds-btn--sandbox-quiet")}
       href={model.hopHref}
       rel="noopener noreferrer"
       data-v4-cta={slot}
       data-v4-track={sandbox ? "sandbox_offer_click" : "official_offer_click"}
       data-sandbox={sandbox ? "true" : undefined}
     >
-      {sandbox ? <span className="v4-sandbox-badge" data-sandbox-badge="">SANDBOX</span> : null}
+      {sandbox ? (
+        <span className={cx("v4-sandbox-badge", quiet && "v4-sandbox-badge--quiet")} data-sandbox-badge="">
+          SANDBOX
+        </span>
+      ) : null}
       {model.hopLabel}
     </a>
   );
@@ -51,7 +56,10 @@ function toneFor(type: BlueprintSection["sectionType"]): "plain" | "alt" | "soft
 function Hero({ model }: { model: V4Model }) {
   const image = model.commercialImage;
   const split = Boolean(image);
-  const compact = model.density === "thin" || model.blueprint.narrative.shape === "FACTS_LED";
+  const compact =
+    model.density === "thin" ||
+    model.blueprint.narrative.shape === "FACTS_LED" ||
+    Boolean(model.qualityPatch?.tightenHero && !image);
   const name = model.contract.identity.productName;
   const kind = model.contract.identity.productKind;
   const headline = model.copy.headline.text;
@@ -59,7 +67,12 @@ function Hero({ model }: { model: V4Model }) {
   const value = model.copy.valueProposition?.text;
   const introduction = model.copy.introduction.text;
   return (
-    <section className={cx("ds-hero-band", compact && "ds-hero-band--compact")} id="hero" data-v4-section="hero">
+    <section
+      className={cx("ds-hero-band", compact && "ds-hero-band--compact", model.qualityPatch?.tightenHero && "ds-hero-band--quality-tight")}
+      id="hero"
+      data-v4-section="hero"
+      data-quality-hero={model.qualityPatch?.tightenHero ? "tight" : undefined}
+    >
       <DsContainer>
         <div
           className={cx(
@@ -309,8 +322,15 @@ function LegalSection({ model, section }: { model: V4Model; section: BlueprintSe
 
 export function V4Page({ model }: { model: V4Model }) {
   const order = model.blueprint.sections.filter((section) => visible(model, section.sectionType));
+  const patch = model.qualityPatch;
   return (
-    <main data-v4="page" data-v4-composition={model.composition} data-v4-goal={model.blueprint.conversionGoal} data-v4-photo={model.commercialImage ? "commercial" : "none"}>
+    <main
+      data-v4="page"
+      data-v4-composition={model.composition}
+      data-v4-goal={model.blueprint.conversionGoal}
+      data-v4-photo={model.commercialImage ? "commercial" : "none"}
+      data-quality-fixes={patch?.applied.join(" ") || undefined}
+    >
       {order.map((section) => {
         if (section.sectionType === "hero") {
           return (
@@ -320,8 +340,8 @@ export function V4Page({ model }: { model: V4Model }) {
                 <DsSection tone="alt" className="v4-band" id="gallery">
                   <DsContainer width="wide">
                     <div data-v4-section="gallery">
-                      <h2 className="ds-h2">More images</h2>
-                      <div className="v4-gallery" data-v4-gallery="">
+                      <h2 className="ds-h2">{patch?.galleryLead ? "Product images" : "More images"}</h2>
+                      <div className={cx("v4-gallery", patch?.galleryLead && "v4-gallery--lead")} data-v4-gallery="">
                         {model.galleryImages.map((image) => (
                           <img key={image.src} src={image.src} alt={image.alt} data-v4-image="commercial" />
                         ))}
@@ -375,7 +395,7 @@ export function V4Page({ model }: { model: V4Model }) {
           >
             <DsContainer width={section.sectionType === "offers" || section.sectionType === "differentiators" ? "wide" : "content"}>
               <div data-v4-section={section.sectionType} data-v4-purpose={section.commercialPurpose}>
-                <h2 className="ds-h2">{publicSectionTitle(section.sectionType, section.headline.text)}</h2>
+                <h2 className="ds-h2">{publicSectionTitle(section.sectionType, section.headline.text, patch?.titles)}</h2>
                 {inner}
               </div>
             </DsContainer>

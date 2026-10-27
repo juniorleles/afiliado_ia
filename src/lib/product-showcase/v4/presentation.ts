@@ -49,7 +49,12 @@ export function themeForV4(input: {
   return "ink";
 }
 
-export function publicSectionTitle(sectionType: SectionType, headline: string): string {
+export function publicSectionTitle(
+  sectionType: SectionType,
+  headline: string,
+  titles?: Partial<Record<SectionType, string>>,
+): string {
+  if (titles?.[sectionType]) return titles[sectionType]!;
   if (AUDIT_HEADLINE.test(headline) && EDITORIAL_TITLE[sectionType]) return EDITORIAL_TITLE[sectionType]!;
   if (sectionType === "specifications" && /^(details|ingredients)$/i.test(headline)) {
     return /^ingredients$/i.test(headline) ? "Ingredients" : "Specifications";

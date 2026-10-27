@@ -13,4 +13,10 @@ export { createMultimodalPresellEvaluator } from "@/lib/presell-quality/multimod
 export type { MultimodalPresellEvaluator } from "@/lib/presell-quality/multimodal";
 export type { PresellEvaluationInput } from "@/lib/presell-quality/input";
 export { QUALITY_VIEWPORTS } from "@/lib/presell-quality/capture";
+export { OPENAI_VISION_PROVIDER_ID, OPENAI_VISION_MODEL, openaiVisionProviderStatus, createOpenAiVisionClient } from "@/lib/presell-quality/openai-provider";
+export { OPENAI_LOOP_BUDGET, budgetAllowsCall } from "@/lib/presell-quality/budget";
+export { classifyQualityFixes } from "@/lib/presell-quality/classify";
+export { applyQualityPatch, readQualityPatch, writeQualityPatch } from "@/lib/presell-quality/patch";
+export { runQualityImprovementLoop } from "@/lib/presell-quality/loop";
+export { runWithTemporaryPaidAi, paidProviderAllowed } from "@/lib/ai/paid-gate";
 export { MULTIMODAL_PROVIDER_ID, MULTIMODAL_MODEL_ID, multimodalProviderStatus } from "@/lib/presell-quality/provider";

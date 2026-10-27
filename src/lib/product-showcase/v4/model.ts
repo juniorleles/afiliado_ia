@@ -10,6 +10,7 @@ import type { ProductContract } from "@/lib/product-contract/types";
 import { enrichProduct } from "@/lib/product-enrichment/pipeline";
 import { labSources } from "@/lib/product-enrichment/lab-sources";
 import { commercialImageOf, themeForV4, type CommercialImage } from "@/lib/product-showcase/v4/presentation";
+import type { QualityPresentationPatch } from "@/lib/presell-quality/patch";
 import { applyEditorialNeutrality } from "@/lib/editorial-neutrality/apply";
 
 export type HopSlot = "hero" | "offers" | "none";
@@ -30,6 +31,7 @@ export type V4Model = {
   sticky: boolean;
   commercialImage?: CommercialImage;
   galleryImages?: CommercialImage[];
+  qualityPatch?: QualityPresentationPatch;
 };
 
 export function hopSlotFor(blueprint: PageBlueprint, contract: ProductContract): HopSlot {

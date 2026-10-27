@@ -8,6 +8,7 @@ import { THEMES } from "@/lib/design-system/tokens";
 import { DsTokenStyle } from "@/components/design-system/primitives";
 import { V4Page } from "@/components/product-showcase/v4/page";
 import { applySandboxToModel } from "@/lib/sandbox/cta";
+import { applyQualityPatch, readQualityPatch } from "@/lib/presell-quality/patch";
 import "@/app/design-system-lab.css";
 import "@/app/renderer-v4-lab.css";
 
@@ -25,9 +26,11 @@ export default async function LpGenerationPreview({ params }: { params: Promise<
   const record = readGeneration(id);
   const stored = readGenerationModel(id);
   if (!record || !stored) notFound();
+  const patch = readQualityPatch(id);
+  const patched = patch ? applyQualityPatch(stored, patch) : stored;
   const model = record.sandbox?.enabled
-    ? applySandboxToModel(stored, { href: record.sandbox.ctaPath })
-    : stored;
+    ? applySandboxToModel(patched, { href: record.sandbox.ctaPath })
+    : patched;
   return (
     <div
       className="ds-root"

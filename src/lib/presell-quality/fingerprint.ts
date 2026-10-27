@@ -25,6 +25,7 @@ export function evaluationFingerprint(input: PresellEvaluationInput): string {
       approvedAssets: input.approvedAssets,
       desktop: input.screenshots.desktop?.sha256 ?? null,
       mobile: input.screenshots.mobile?.sha256 ?? null,
+      pageVersionToken: input.pageVersionToken ?? null,
     }),
   );
 }

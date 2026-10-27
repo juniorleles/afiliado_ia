@@ -26,6 +26,23 @@ function asStringArray(value: unknown): string[] {
   return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
 }
 
+function coerceScore(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value))) return Number(value);
+  return null;
+}
+
+function coerceDimensionRows(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>).map(([dimension, row]) => {
+      if (row && typeof row === "object") return { dimension, ...(row as Record<string, unknown>) };
+      return { dimension, score: row, rationale: "Score map." };
+    });
+  }
+  return [];
+}
+
 export function normalizeModelPayload(raw: string): ModelQualityPayload {
   let parsed: unknown;
   try {
@@ -35,13 +52,14 @@ export function normalizeModelPayload(raw: string): ModelQualityPayload {
     const message = err instanceof JsonExtractError || err instanceof Error ? err.message : "invalid JSON";
     throw new ModelPayloadError("INVALID_JSON", message);
   }
-  if (!parsed || typeof parsed !== "object") throw new ModelPayloadError("INVALID_JSON", "Payload is not an object.");
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new ModelPayloadError("INVALID_JSON", "Payload is not an object.");
   const rec = parsed as Record<string, unknown>;
-  if (!Array.isArray(rec.dimensionScores)) throw new ModelPayloadError("MISSING_DIMENSION", "dimensionScores is required.");
+  const rows = coerceDimensionRows(rec.dimensionScores);
+  if (!rows.length) throw new ModelPayloadError("MISSING_DIMENSION", "dimensionScores is required.");
 
   const seen = new Set<string>();
   const dimensionScores: ModelQualityPayload["dimensionScores"] = [];
-  for (const row of rec.dimensionScores) {
+  for (const row of rows) {
     if (!row || typeof row !== "object") throw new ModelPayloadError("INVALID_JSON", "Dimension row is not an object.");
     const item = row as Record<string, unknown>;
     const dimension = item.dimension;
@@ -50,16 +68,15 @@ export function normalizeModelPayload(raw: string): ModelQualityPayload {
     }
     if (seen.has(dimension)) throw new ModelPayloadError("MISSING_DIMENSION", `Duplicate dimension ${dimension}.`);
     seen.add(dimension);
-    if (typeof item.score !== "number" || !Number.isFinite(item.score) || item.score < 0 || item.score > 100) {
+    const score = coerceScore(item.score);
+    if (score === null || score < 0 || score > 100) {
       throw new ModelPayloadError("SCORE_OUT_OF_RANGE", `Score for ${dimension} is not 0-100.`);
     }
-    if (typeof item.rationale !== "string" || !item.rationale.trim()) {
-      throw new ModelPayloadError("INVALID_JSON", `Rationale missing for ${dimension}.`);
-    }
+    const rationale = typeof item.rationale === "string" && item.rationale.trim() ? item.rationale.trim() : "No rationale provided.";
     dimensionScores.push({
       dimension: dimension as QualityDimension,
-      score: Math.round(item.score),
-      rationale: item.rationale.trim(),
+      score: Math.round(score),
+      rationale,
       evidence: asStringArray(item.evidence),
       problems: asStringArray(item.problems),
       recommendedActions: asStringArray(item.recommendedActions),
@@ -70,8 +87,11 @@ export function normalizeModelPayload(raw: string): ModelQualityPayload {
   }
 
   const criticalFailures: CriticalFailureCode[] = [];
-  if (!Array.isArray(rec.criticalFailures)) throw new ModelPayloadError("INVALID_JSON", "criticalFailures is required.");
-  for (const code of rec.criticalFailures) {
+  if (rec.criticalFailures !== undefined && !Array.isArray(rec.criticalFailures)) {
+    throw new ModelPayloadError("INVALID_JSON", "criticalFailures is required.");
+  }
+  const criticalList = Array.isArray(rec.criticalFailures) ? rec.criticalFailures : [];
+  for (const code of criticalList) {
     if (typeof code !== "string" || !CRITICALS.has(code)) {
       throw new ModelPayloadError("INVALID_ENUM", `Unknown critical failure ${String(code)}.`);
     }
@@ -79,8 +99,11 @@ export function normalizeModelPayload(raw: string): ModelQualityPayload {
   }
 
   const findings: ModelQualityPayload["findings"] = [];
-  if (!Array.isArray(rec.findings)) throw new ModelPayloadError("INVALID_JSON", "findings is required.");
-  for (const row of rec.findings) {
+  const findingRows = Array.isArray(rec.findings) ? rec.findings : [];
+  if (rec.findings !== undefined && !Array.isArray(rec.findings)) {
+    throw new ModelPayloadError("INVALID_JSON", "findings is required.");
+  }
+  for (const row of findingRows) {
     if (!row || typeof row !== "object") continue;
     const item = row as Record<string, unknown>;
     const dimension = item.dimension;
@@ -104,8 +127,11 @@ export function normalizeModelPayload(raw: string): ModelQualityPayload {
   }
 
   const recommendedActions: ModelQualityPayload["recommendedActions"] = [];
-  if (!Array.isArray(rec.recommendedActions)) throw new ModelPayloadError("INVALID_JSON", "recommendedActions is required.");
-  for (const row of rec.recommendedActions) {
+  const actionRows = Array.isArray(rec.recommendedActions) ? rec.recommendedActions : [];
+  if (rec.recommendedActions !== undefined && !Array.isArray(rec.recommendedActions)) {
+    throw new ModelPayloadError("INVALID_JSON", "recommendedActions is required.");
+  }
+  for (const row of actionRows) {
     if (!row || typeof row !== "object") continue;
     const item = row as Record<string, unknown>;
     if (typeof item.id !== "string" || typeof item.action !== "string" || typeof item.reason !== "string" || typeof item.allowed !== "boolean") {
