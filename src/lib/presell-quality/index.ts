@@ -33,6 +33,12 @@ export {
   AUTO_ACCEPT_POLICY_AUTHORIZED,
 } from "@/lib/presell-quality/evidence-inventory";
 export { buildContentGapReport } from "@/lib/presell-quality/content-gap-report";
+export { reconcileStoredCandidates, loadStoredFactCandidates, loadOrReconcileLedger } from "@/lib/presell-quality/candidate-ledger";
+export { classifySourceIdentity, investigateCampaignSourceIdentity, confirmSourceIdentity } from "@/lib/presell-quality/source-identity";
+export { prepareReviewQueue, prepareReviewCandidate, reviewSummary } from "@/lib/presell-quality/review-prepare";
+export { decideEvidenceCandidate, evidenceReviewAuthGate } from "@/lib/presell-quality/review-decide";
+export { loadEvidenceReviewWorkspace } from "@/lib/presell-quality/review-workspace";
+export { mapContentGapsToCandidates } from "@/lib/presell-quality/content-gap-map";
 export { auditApprovedCopy } from "@/lib/presell-quality/copy-audit";
 export { validateCopyRewrite, onlySafeRewrites, extractComparableNumbers } from "@/lib/presell-quality/copy-validate";
 export { proposeDeterministicRewrites, splitUsageSteps } from "@/lib/presell-quality/copy-rewrite";

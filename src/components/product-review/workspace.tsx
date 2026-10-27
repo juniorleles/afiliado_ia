@@ -7,9 +7,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProductReviewHeader } from "@/components/product-review/review-header";
 import { SourcesStep } from "@/components/product-review/sources-step";
 import { FactsStep } from "@/components/product-review/facts-step";
+import { EvidenceReviewStep } from "@/components/product-review/evidence-review-step";
 import { GalleryStep } from "@/components/product-review/gallery-step";
 import { PreviewStep } from "@/components/product-review/preview-step";
-import { decideProductFactsAssetAction, decideProductFactsResearchAction, executeProductFactsResearchAction, readProductFactsResearchAction, startProductFactsResearchAction } from "@/app/admin/[id]/fatos/research-actions";
+import { confirmSourceIdentityAction, decideEvidenceCandidateAction, decideProductFactsAssetAction, decideProductFactsResearchAction, executeProductFactsResearchAction, readEvidenceReviewAction, readProductFactsResearchAction, startProductFactsResearchAction } from "@/app/admin/[id]/fatos/research-actions";
+import type { EvidenceReviewWorkspace } from "@/lib/presell-quality/review-workspace";
 import { indicatorsFromResearch } from "@/lib/product-research/indicators";
 import type { AssetDecisionAction } from "@/lib/product-research/asset-display";
 import type { ProductResearchField, ProductResearchRun } from "@/lib/product-research/types";
@@ -26,6 +28,7 @@ export function ProductReviewWorkspace({
   defaultProductUrl,
   defaultAffiliateResourceUrl = "",
   advanced,
+  initialEvidence = null,
 }: {
   campaignId: number;
   productName: string;
@@ -36,9 +39,11 @@ export function ProductReviewWorkspace({
   defaultProductUrl: string;
   defaultAffiliateResourceUrl?: string;
   advanced?: React.ReactNode;
+  initialEvidence?: EvidenceReviewWorkspace | null;
 }) {
   const router = useRouter();
   const [run, setRun] = useState<ProductResearchRun | null>(initial);
+  const [evidence, setEvidence] = useState(initialEvidence ?? null);
   const [productUrl, setProductUrl] = useState(defaultProductUrl);
   const [affiliateResourceUrl, setAffiliateResourceUrl] = useState(defaultAffiliateResourceUrl);
   const [error, setError] = useState("");
@@ -54,6 +59,11 @@ export function ProductReviewWorkspace({
       return current;
     });
   }, [initial]);
+
+  useEffect(() => {
+    if (evidence) return;
+    void readEvidenceReviewAction({ campaignId }).then((next) => setEvidence(next));
+  }, [campaignId, evidence]);
 
   useEffect(() => {
     if (!run || (run.status !== "QUEUED" && run.status !== "RESEARCHING")) return;
@@ -105,6 +115,33 @@ export function ProductReviewWorkspace({
     });
   }
 
+  function decideCandidate(candidateId: string, expectedVersion: number, decision: "ACCEPT" | "REJECT") {
+    startTransition(async () => {
+      try {
+        const result = await decideEvidenceCandidateAction({ campaignId, candidateId, expectedVersion, decision });
+        if (!result.ok) setError(result.reason);
+        if (result.run) setRun(result.run);
+        setEvidence(await readEvidenceReviewAction({ campaignId }));
+        router.refresh();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Não foi possível registrar a evidência.");
+      }
+    });
+  }
+
+  function confirmIdentity(host: string) {
+    const documentation = window.prompt("Documente a identidade da fonte. Não afirme fabricante sem prova.");
+    if (!documentation?.trim()) return;
+    startTransition(async () => {
+      try {
+        setEvidence(await confirmSourceIdentityAction({ campaignId, host, state: "PARTIALLY_SUPPORTED", documentation }));
+        router.refresh();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Não foi possível confirmar a identidade.");
+      }
+    });
+  }
+
   const busy = pending || run?.status === "QUEUED" || run?.status === "RESEARCHING";
   const indicators = indicatorsFromResearch(run);
 
@@ -116,6 +153,7 @@ export function ProductReviewWorkspace({
         <TabsList>
           <TabsTrigger value="fontes">Fontes</TabsTrigger>
           <TabsTrigger value="informacoes">Informações do produto</TabsTrigger>
+          <TabsTrigger value="evidencias">Evidências</TabsTrigger>
           <TabsTrigger value="imagens">Imagens</TabsTrigger>
           <TabsTrigger value="previa">Prévia</TabsTrigger>
         </TabsList>
@@ -134,6 +172,18 @@ export function ProductReviewWorkspace({
         </TabsContent>
         <TabsContent value="informacoes">
           <FactsStep run={run} busy={busy} onDecide={decideFacts} />
+        </TabsContent>
+        <TabsContent value="evidencias">
+          <EvidenceReviewStep
+            summary={evidence?.summary ?? { total: 0, readyForReview: 0, identityUnresolved: 0, highRisk: 0 }}
+            acceptedCount={evidence?.acceptedCount ?? 0}
+            gapsReady={evidence?.gaps.filter((item) => item.resolutionClass === "REQUIRES_HUMAN").length ?? 0}
+            lastReviewAt={evidence?.lastReview?.at ?? null}
+            queue={evidence?.queue ?? []}
+            busy={busy}
+            onDecide={decideCandidate}
+            onConfirmIdentity={confirmIdentity}
+          />
         </TabsContent>
         <TabsContent value="imagens">
           <GalleryStep run={run} busy={busy} onDecide={decideAsset} />

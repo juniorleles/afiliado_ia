@@ -14,6 +14,9 @@ import {
   runApprovedReviewGeneration,
   type ApprovedReviewGeneration,
 } from "@/lib/lp-generator/from-approved-review";
+import { loadEvidenceReviewWorkspace } from "@/lib/presell-quality/review-workspace";
+import { decideEvidenceCandidate } from "@/lib/presell-quality/review-decide";
+import { confirmSourceIdentity } from "@/lib/presell-quality/source-identity";
 
 function campaignOf(id: number) {
   if (!Number.isInteger(id) || id < 1 || !getCampaignById(id)) throw new Error("Campanha não encontrada.");
@@ -124,4 +127,53 @@ export async function generateSandboxPresellAction(input: {
   const campaignId = campaignOf(input.campaignId);
   process.env.AIA_ALLOW_PAID_AI = "0";
   return runApprovedReviewGeneration({ campaignId, runId: input.runId });
+}
+
+export async function readEvidenceReviewAction(input: { campaignId: number }) {
+  await requireAdmin();
+  return loadEvidenceReviewWorkspace(campaignOf(input.campaignId));
+}
+
+export async function decideEvidenceCandidateAction(input: {
+  campaignId: number;
+  candidateId: string;
+  expectedVersion: number;
+  decision: "ACCEPT" | "REJECT" | "REQUEST_NEW_EVIDENCE" | "MARK_DUPLICATE";
+  confirmOverwrite?: boolean;
+}) {
+  await requireAdmin();
+  const campaignId = campaignOf(input.campaignId);
+  const workspace = loadEvidenceReviewWorkspace(campaignId);
+  const candidate = workspace.ledger.candidates.find((item) => item.candidateId === input.candidateId);
+  if (!candidate) throw new Error("Candidato não encontrado.");
+  const identity = workspace.identities.find((item) => item.host === candidate.sourceHost) ?? null;
+  return decideEvidenceCandidate({
+    campaignId,
+    candidate,
+    ledger: workspace.ledger,
+    run: workspace.run,
+    identity,
+    decision: input.decision,
+    expectedVersion: input.expectedVersion,
+    officialHosts: workspace.identities.filter((item) => item.role === "MANUFACTURER").map((item) => item.host),
+    confirmOverwrite: input.confirmOverwrite,
+  });
+}
+
+export async function confirmSourceIdentityAction(input: {
+  campaignId: number;
+  host: string;
+  state: "VERIFIED" | "PARTIALLY_SUPPORTED" | "UNRESOLVED" | "CONTRADICTED";
+  documentation: string;
+}) {
+  await requireAdmin();
+  const campaignId = campaignOf(input.campaignId);
+  if (!input.documentation.trim()) throw new Error("Documente a identidade da fonte.");
+  confirmSourceIdentity({
+    campaignId,
+    host: input.host,
+    state: input.state,
+    documentation: input.documentation.trim(),
+  });
+  return loadEvidenceReviewWorkspace(campaignId);
 }

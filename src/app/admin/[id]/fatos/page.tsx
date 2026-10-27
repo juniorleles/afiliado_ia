@@ -9,6 +9,7 @@ import { COUNTRIES, LANGUAGES, MARKETPLACES, labelFor, readCampaignBrief } from 
 import { readKnowledgeText } from "@/lib/product-knowledge";
 import { snapshotProductResearch } from "@/lib/product-research/run";
 import { readCampaignSources } from "@/lib/campaign-sources/store";
+import { loadEvidenceReviewWorkspace } from "@/lib/presell-quality/review-workspace";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -59,6 +60,7 @@ export default async function ProductFactsPage({ params, searchParams }: Props) 
           knowledge={text}
           defaultProductUrl={text.productUrl}
           defaultAffiliateResourceUrl={text.affiliateResourceUrl ?? ""}
+          initialEvidence={loadEvidenceReviewWorkspace(campaign.id)}
           advanced={
             <ProductFactsForm
               campaignId={campaign.id}
