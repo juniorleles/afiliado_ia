@@ -14,6 +14,7 @@ export async function fetchCoverageSources(input: {
   limits?: Partial<ResearchLimits>;
   startedAt?: number;
   gaps?: CoverageSlot[];
+  relatedHosts?: string[];
 }): Promise<{
   sources: EnrichmentSource[];
   records: SourceFetchRecord[];
@@ -54,6 +55,7 @@ export async function fetchCoverageSources(input: {
         html: source.html,
         pageUrl: source.url,
         known: [...known, ...pool.map((item) => item.url)],
+        relatedHosts: input.relatedHosts,
       });
       skippedDiscoveries.push(...found.skipped);
       pool.push(...found.candidates);
