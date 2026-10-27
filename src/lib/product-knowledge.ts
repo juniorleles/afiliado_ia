@@ -9,8 +9,15 @@ import {
   type OverrideField,
 } from "@/lib/manual-overrides";
 import { applyManualFacts, emptyProductFacts, type FactConfidence, type ProductFacts, type SourceFact } from "@/lib/product-facts";
+import { displaySalesUrl, mergeCampaignSources, readCampaignSources } from "@/lib/campaign-sources/store";
+import { classifySubmittedUrl } from "@/lib/campaign-sources/classify";
+import type { CampaignSource } from "@/lib/campaign-sources/types";
 
 export type KnowledgeText = {
+  productUrl: string;
+  affiliateResourceUrl?: string;
+  authorizedDestinationUrl?: string;
+  trackingHopUrl?: string;
   brand: string;
   category: string;
   description: string;
@@ -25,6 +32,10 @@ export type KnowledgeText = {
   images: string;
   videos: string;
 };
+
+function sourceOf(sources: CampaignSource[], type: CampaignSource["sourceType"]): string {
+  return sources.find((item) => item.sourceType === type)?.originalUrl ?? "";
+}
 
 export type KnowledgeCheck = { id: string; label: string; filled: boolean };
 
@@ -79,7 +90,16 @@ export function readKnowledgeText(campaign: Campaign, brief: CampaignBrief | nul
   const facts = resolveProductFacts(imported, listManualOverrides(campaign.id));
   const images = unique([...(facts.imageUrls ?? []), facts.productImageUrl ?? ""]);
   const videos = unique(facts.videoUrls ?? []);
+  const hop = campaign.affiliateUrl.trim();
+  const source = (facts.sourceUrl ?? "").trim();
+  const stored = readCampaignSources(campaign.id);
   const text: KnowledgeText = {
+    productUrl:
+      displaySalesUrl(stored) ||
+      (source && source !== hop && classifySubmittedUrl(source).sourceStatus !== "CHECKOUT_SUSPECTED" ? source : ""),
+    affiliateResourceUrl: sourceOf(stored, "AFFILIATE_RESOURCE"),
+    authorizedDestinationUrl: sourceOf(stored, "AUTHORIZED_DESTINATION"),
+    trackingHopUrl: sourceOf(stored, "TRACKING_HOPLINK") || hop,
     brand: brief?.brand ?? "",
     category: brief?.category ?? "",
     description: facts.description ?? "",
@@ -133,7 +153,18 @@ function faqText(facts: ProductFacts): string {
 }
 
 export function parseKnowledgeForm(formData: FormData): { text: KnowledgeText } | { error: "url" | "marca" | "categoria" } {
+  const productUrl = String(formData.get("productUrl") ?? formData.get("salesUrl") ?? "").trim();
+  const affiliateResourceUrl = String(formData.get("affiliateResourceUrl") ?? "").trim();
+  const authorizedDestinationUrl = String(formData.get("authorizedDestinationUrl") ?? "").trim();
+  const trackingHopUrl = String(formData.get("trackingHopUrl") ?? "").trim();
+  if ([productUrl, affiliateResourceUrl, authorizedDestinationUrl, trackingHopUrl].some((value) => value && !isHttp(value))) {
+    return { error: "url" };
+  }
   const text: KnowledgeText = {
+    productUrl,
+    affiliateResourceUrl,
+    authorizedDestinationUrl,
+    trackingHopUrl,
     brand: String(formData.get("brand") ?? "").trim(),
     category: String(formData.get("category") ?? "").trim(),
     description: String(formData.get("description") ?? "").trim(),
@@ -167,6 +198,12 @@ export function saveProductKnowledge(campaignId: number, text: KnowledgeText): v
   const base = campaign.sourceFactsJson?.trim() ? current : emptyProductFacts(productName, campaign.affiliateUrl, "MANUAL");
   const next = applyManualFacts(base, {
     productName,
+    sourceUrl:
+      (text.productUrl && classifySubmittedUrl(text.productUrl).sourceStatus !== "CHECKOUT_SUSPECTED"
+        ? text.productUrl
+        : current.sourceUrl && classifySubmittedUrl(current.sourceUrl).sourceStatus !== "CHECKOUT_SUSPECTED"
+          ? current.sourceUrl
+          : current.sourceUrl),
     description: text.description,
     featuresText: text.benefits,
     ingredientsText: text.ingredients,
@@ -201,6 +238,12 @@ export function saveProductKnowledge(campaignId: number, text: KnowledgeText): v
     saveImportedEdits(campaignId, text, campaign.sourceFactsJson ?? "");
   }
   if (brief) updateCampaignBriefIdentity(campaignId, text.brand || null, text.category);
+  mergeCampaignSources(campaignId, {
+    salesUrl: text.productUrl,
+    affiliateResourceUrl: text.affiliateResourceUrl ?? "",
+    authorizedDestinationUrl: text.authorizedDestinationUrl ?? "",
+    trackingHopUrl: text.trackingHopUrl ?? "",
+  });
 }
 
 function saveImportedEdits(campaignId: number, text: KnowledgeText, sourceFactsJson: string): void {
@@ -235,6 +278,7 @@ function saveImportedEdits(campaignId: number, text: KnowledgeText, sourceFactsJ
   const raw = JSON.parse(sourceFactsJson) as ProductFacts;
   raw.imageUrls = lines(text.images);
   raw.videoUrls = lines(text.videos);
+  if (text.productUrl.trim()) raw.sourceUrl = text.productUrl.trim();
   writeCampaignSourceFacts(campaignId, JSON.stringify(raw));
 }
 

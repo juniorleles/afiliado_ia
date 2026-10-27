@@ -2,12 +2,14 @@ import { purchaseCtaAllowed } from "@/lib/design-system/layout";
 import type { ProductContract } from "@/lib/product-contract/types";
 import type { ConversionBrief } from "@/lib/conversion-strategy/types";
 import type { GroundedText, GroundingReport, PageBlueprint, SalesCopy } from "@/lib/page-blueprint/types";
+import { buildEvidenceIndex, classifyCopyText, type TextGrounding } from "@/lib/page-blueprint/semantic-grounding";
+import { isIntentAlignedHeadline } from "@/lib/search-intent/headline";
 
 const FORBIDDEN =
   /clinically proven|doctors worldwide|verified buyer|★★|testimonial|limited time|%\s*off|best greens|immune support complex|erases wrinkles|never needs charging|recommended by doctors/i;
 
 const STRUCTURAL =
-  /^(what it is|what the source states|seller-stated claims|product image|details|packages|guarantee|returns, shipping and cautions|questions the source answered|next step|disclosure|no authorized purchase link is available\.?|see the packages the source listed\.?)$/i;
+  /^(what it is|what the source states|seller-stated claims|product image|details|packages|guarantee|returns, shipping and cautions|returns and shipping|cautions|questions the source answered|next step|disclosure|how it works|how to use|how to apply|directions for use|ingredients|specifications|no authorized purchase link is available\.?|see the packages the source listed\.?)$/i;
 
 function remember(set: Set<string>, text: string | undefined): void {
   if (text) set.add(text.trim());
@@ -66,6 +68,7 @@ function allowed(text: string, known: Set<string>, contract: ProductContract): b
   const name = contract.identity.productName;
   if (trimmed === `${name}. ${contract.description?.text ?? ""}`.trim() && contract.description) return true;
   if (trimmed.startsWith(`${name}. `) && known.has(trimmed.slice(name.length + 2))) return true;
+  if (isIntentAlignedHeadline(trimmed, contract)) return true;
   return false;
 }
 
@@ -84,8 +87,8 @@ function walkCopy(copy: SalesCopy): Array<{ path: string; text: GroundedText }> 
     section.body.forEach((item, j) => out.push({ path: `sections[${i}].body[${j}]`, text: item }));
     if (section.cta) out.push({ path: `sections[${i}].cta`, text: section.cta });
     section.items.forEach((item, j) => {
-      if (item.title) out.push({ path: `sections[${i}].items[${j}].title`, text: item.title });
-      out.push({ path: `sections[${i}].items[${j}].text`, text: item.text });
+      if (item.title?.text.trim()) out.push({ path: `sections[${i}].items[${j}].title`, text: item.title });
+      if (item.text.text.trim()) out.push({ path: `sections[${i}].items[${j}].text`, text: item.text });
     });
   });
   copy.faq.forEach((item, i) => {
@@ -99,8 +102,10 @@ export function validateSalesCopy(copy: SalesCopy, contract: ProductContract, br
   const violations: GroundingReport["violations"] = [];
   const known = contractTexts(contract);
   const evidenceIds = new Set(contract.evidence.map((entry) => entry.id));
+  const classifications: TextGrounding[] = [];
+  const index = copy.producer === "AI_COMMERCIAL" ? buildEvidenceIndex(contract) : null;
 
-  if (copy.producer !== "DETERMINISTIC_OFFLINE" && copy.producer !== "EDITORIAL_ADAPTER") {
+  if (copy.producer !== "DETERMINISTIC_OFFLINE" && copy.producer !== "EDITORIAL_ADAPTER" && copy.producer !== "AI_COMMERCIAL") {
     violations.push({ rule: "PRODUCER", path: "producer", message: "unknown copy producer" });
   }
 
@@ -108,7 +113,13 @@ export function validateSalesCopy(copy: SalesCopy, contract: ProductContract, br
     if (FORBIDDEN.test(text.text)) {
       violations.push({ rule: "POLICY", path, message: "forbidden commercial invention" });
     }
-    if (!allowed(text.text, known, contract)) {
+    let grounded = allowed(text.text, known, contract);
+    if (copy.producer === "AI_COMMERCIAL" && index) {
+      const classified = classifyCopyText({ text: text.text, path, contract, index });
+      classifications.push(classified);
+      grounded = classified.allowed;
+    }
+    if (!grounded) {
       violations.push({ rule: "TRACE", path, message: `text is not in the contract: ${text.text}` });
     }
     for (const ref of text.evidenceRefs) {
@@ -130,7 +141,7 @@ export function validateSalesCopy(copy: SalesCopy, contract: ProductContract, br
   const inventedOffer = copy.offerMicrocopy.some((pack) => !(contract.offer?.packages ?? []).some((real) => real.label === pack.label));
   if (inventedOffer) violations.push({ rule: "OFFER", path: "offerMicrocopy", message: "package was not in the contract" });
 
-  return { ok: violations.length === 0, violations };
+  return { ok: violations.length === 0, violations, classifications: classifications.length ? classifications : undefined };
 }
 
 export function validateBlueprint(blueprint: PageBlueprint, contract: ProductContract, brief: ConversionBrief): GroundingReport {

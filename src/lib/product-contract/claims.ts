@@ -30,7 +30,7 @@ const SUPERLATIVE =
   /\b(?:the\s+best|best[- ](?:in|of|ever|on)\b|#\s?1\b|no\.?\s?1\b|number[- ]one|world'?s\s+(?:best|first|leading|most|finest)|top[- ]rated|finest|ultimate|unbeatable|unmatched|unrivall?ed|incomparable|greatest)\b/i;
 
 const UNATTRIBUTED_AUTHORITY =
-  /\b(?:(?:doctors?|physicians?|dermatologists?|scientists?|experts?|specialists?|dentists?|nutritionists?|veterinarians?|vets?)\s+(?:recommend|approve|endorse|trust|love|swear|agree|say)\w*|(?:recommended|approved|endorsed|trusted)\s+by\s+(?:doctors?|physicians?|dermatologists?|experts?|scientists?|professionals?)|clinically\s+(?:proven|tested|shown|studied)|scientifically\s+(?:proven|tested)|proven\s+to\b|dermatologist[- ](?:tested|approved))/i;
+  /\b(?:(?:doctors?|physicians?|dermatologists?|scientists?|experts?|specialists?|dentists?|nutritionists?|veterinarians?|vets?)\s+(?:recommend|approve|endorse|trust|love|swear|agree|say)\w*|(?:recommended|approved|endorsed|trusted)\s+by\s+(?:doctors?|physicians?|dermatologists?|experts?|scientists?|professionals?)|clinically\s+(?:proven|tested|shown|studied)|scientifically\s+(?:proven|tested)|(?:backed by )?(?:clinical|scientific) research|proven\s+to\b|dermatologist[- ](?:tested|approved))/i;
 
 const PROMISSORY_VERB = /\b(?:erases?|eliminates?|eradicates?|reverses?|cures?|melts?|banishes?|obliterates?|destroys?)\b/i;
 const PERSONAL_EFFECT = /\b(?:wrinkles?|fatigue|pain|acne|cellulite|fat|scars?|aging|ageing|stress|anxiety|insomnia|dandruff|hair\s+loss|stains?|odou?r)\b/i;

@@ -43,7 +43,7 @@ export function productionReadiness(): ReadinessReport {
     APP_BASE_URL: origin ? "READY" : isProduction() ? "MISSING" : "OPTIONAL",
     HTTPS_CONFIG: origin && originIsHttps(origin) ? "READY" : isProduction() ? "MISSING" : "OPTIONAL",
     CLICKBANK_INS: getClickBankInsSecret() ? "READY" : isProduction() ? "MISSING" : "OPTIONAL",
-    AI_PROVIDER: process.env.ANTHROPIC_API_KEY?.trim() ? "READY" : "OPTIONAL",
+    AI_PROVIDER: process.env.OPENAI_API_KEY?.trim() || process.env.ANTHROPIC_API_KEY?.trim() ? "READY" : "OPTIONAL",
     ADMIN_AUTH: adminAuthRequired() && adminPasswordConfigured() ? "READY" : isProduction() ? "MISSING" : "OPTIONAL",
     MIGRATIONS: migrations,
     BACKUP_STRATEGY: "READY",

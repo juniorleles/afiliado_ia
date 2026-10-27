@@ -1,0 +1,392 @@
+import React from "react";
+import { autoGridCount } from "@/lib/design-system/layout";
+import type { BlueprintSection } from "@/lib/page-blueprint/types";
+import { shouldRenderSection, type V4Model } from "@/lib/product-showcase/v4/model";
+import {
+  distinctText,
+  publicItemText,
+  publicLegalLines,
+  publicSectionTitle,
+} from "@/lib/product-showcase/v4/presentation";
+import { DsAutoGrid, DsContainer, DsKicker, DsSection } from "@/components/design-system/primitives";
+
+function cx(...parts: Array<string | false | null | undefined>): string {
+  return parts.filter(Boolean).join(" ");
+}
+
+function Hop({ model, slot }: { model: V4Model; slot: "hero" | "offers" | "sticky" }) {
+  if (!model.hopHref || !model.hopLabel) return null;
+  const sandbox = Boolean(model.sandbox?.mode);
+  return (
+    <a
+      className="ds-btn"
+      href={model.hopHref}
+      rel="noopener noreferrer"
+      data-v4-cta={slot}
+      data-v4-track={sandbox ? "sandbox_offer_click" : "official_offer_click"}
+      data-sandbox={sandbox ? "true" : undefined}
+    >
+      {sandbox ? <span className="v4-sandbox-badge" data-sandbox-badge="">SANDBOX</span> : null}
+      {model.hopLabel}
+    </a>
+  );
+}
+
+function visible(model: V4Model, type: BlueprintSection["sectionType"]): boolean {
+  return shouldRenderSection({
+    type,
+    blueprint: model.blueprint,
+    hopSlot: model.hopSlot,
+    hasHeroImage: Boolean(model.commercialImage),
+  });
+}
+
+function toneFor(type: BlueprintSection["sectionType"]): "plain" | "alt" | "soft" | "accent" {
+  if (type === "offers") return "soft";
+  if (type === "guarantee") return "alt";
+  if (type === "differentiators" || type === "trust") return "alt";
+  return "plain";
+}
+
+function Hero({ model }: { model: V4Model }) {
+  const image = model.commercialImage;
+  const split = Boolean(image);
+  const compact = model.density === "thin" || model.blueprint.narrative.shape === "FACTS_LED";
+  const name = model.contract.identity.productName;
+  const kind = model.contract.identity.productKind;
+  const headline = model.copy.headline.text;
+  const subheadline = model.copy.subheadline?.text;
+  const value = model.copy.valueProposition?.text;
+  const introduction = model.copy.introduction.text;
+  return (
+    <section className={cx("ds-hero-band", compact && "ds-hero-band--compact")} id="hero" data-v4-section="hero">
+      <DsContainer>
+        <div
+          className={cx(
+            "ds-hero",
+            split ? "ds-hero--split" : model.blueprint.narrative.shape === "FACTS_LED" ? "ds-hero--info" : "ds-hero--editorial",
+          )}
+        >
+          <div className="v4-hero__copy">
+            {kind ? <DsKicker>{kind}</DsKicker> : null}
+            {distinctText(headline, name) ? <p className="v4-identity">{name}</p> : null}
+            <h1 className="ds-display">{distinctText(headline, name) ? headline : name}</h1>
+            {distinctText(subheadline, headline, name, kind) ? <p className="ds-lead">{subheadline}</p> : null}
+            {distinctText(value, headline, subheadline, name) ? <p className="ds-lead">{value}</p> : null}
+            {distinctText(introduction, headline, subheadline, value, name) ? <p className="ds-body">{introduction}</p> : null}
+            <div className="ds-hero__actions">
+              {model.hopSlot === "hero" ? <Hop model={model} slot="hero" /> : null}
+              {model.hopSlot === "offers" ? (
+                <a className="ds-btn ds-btn--ghost" href="#offers" data-v4-cta="inpage">
+                  See packages
+                </a>
+              ) : null}
+            </div>
+          </div>
+          {split && image ? (
+            <div className="ds-hero__media">
+              <div className="ds-hero__stage">
+                <div className="ds-hero__frame">
+                  <img src={image.src} alt={image.alt} width={1200} height={1200} data-v4-image="commercial" />
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </DsContainer>
+    </section>
+  );
+}
+
+function shortAttribute(text: string): boolean {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  return words.length > 0 && words.length <= 4 && text.trim().length <= 32;
+}
+
+function FeatureSection({ section }: { section: BlueprintSection }) {
+  const items = section.items.length ? section.items : section.body.map((item) => ({ text: item }));
+  const compact = items.length >= 3 && items.every((item) => shortAttribute(publicItemText(item.text.text)));
+  if (compact) {
+    return (
+      <ul className="v4-feature-chips" data-v4-features="compact">
+        {items.map((item, index) => (
+          <li key={`${section.sectionId}-${index}`}>{publicItemText(item.text.text)}</li>
+        ))}
+      </ul>
+    );
+  }
+  return (
+    <DsAutoGrid count={autoGridCount(items.length)}>
+      {items.map((item, index) => (
+        <article className="ds-feature" key={`${section.sectionId}-${index}`}>
+          <span className="ds-feature__n">{String(index + 1).padStart(2, "0")}</span>
+          <p className="ds-body">{publicItemText(item.text.text)}</p>
+        </article>
+      ))}
+    </DsAutoGrid>
+  );
+}
+
+function BenefitSection({ section }: { section: BlueprintSection }) {
+  const items = section.items.length ? section.items : section.body.map((item) => ({ text: item }));
+  return (
+    <div className="v4-points">
+      {items.map((item, index) => (
+        <p className="v4-point" key={`${section.sectionId}-${index}`}>
+          {publicItemText(item.text.text)}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function SpecSection({ section }: { section: BlueprintSection }) {
+  const rows = section.items.length ? section.items : section.body.map((item) => ({ text: item }));
+  const labeled: Array<{ name: string; value: string }> = [];
+  const notes: string[] = [];
+  for (const item of rows) {
+    const idx = item.text.text.indexOf(":");
+    if (idx > 0 && idx <= 48) {
+      labeled.push({ name: item.text.text.slice(0, idx).trim(), value: item.text.text.slice(idx + 1).trim() });
+    } else {
+      notes.push(item.text.text);
+    }
+  }
+  return (
+    <div className="v4-specs">
+      {labeled.length >= 2 ? (
+        <table className="ds-spec">
+          <tbody>
+            {labeled.map((row) => (
+              <tr key={`${section.sectionId}-${row.name}`}>
+                <th scope="row">{row.name}</th>
+                <td>{row.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        labeled.map((row) => (
+          <article className="ds-card ds-card--soft" key={`${section.sectionId}-${row.name}`}>
+            <p className="ds-kicker">{row.name}</p>
+            <p className="ds-body">{row.value}</p>
+          </article>
+        ))
+      )}
+      {notes.length ? (
+        <ul className={notes.length >= 3 ? "v4-notes" : "ds-list"}>
+          {notes.map((note) => (
+            <li className={notes.length >= 3 ? "v4-note" : undefined} key={`${section.sectionId}-${note}`}>
+              {note}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
+function OfferSection({ model, section }: { model: V4Model; section: BlueprintSection }) {
+  const packs = model.copy.offerMicrocopy;
+  return (
+    <>
+      <DsAutoGrid count={autoGridCount(packs.length)}>
+        {packs.map((pack) => (
+          <article className="v4-offer" key={pack.label} data-v4-offer="1">
+            <p className="v4-offer__qty">{pack.quantityText || pack.label}</p>
+            {pack.quantityText && pack.quantityText !== pack.label ? <h3 className="ds-h3">{pack.label}</h3> : null}
+            {pack.totalPrice ? <p className="v4-offer__price">{pack.totalPrice}</p> : pack.unitPrice ? <p className="v4-offer__price">{pack.unitPrice}</p> : null}
+            {pack.unitPrice && pack.totalPrice && pack.unitPrice !== pack.totalPrice ? (
+              <p className="ds-caption">{pack.unitPrice}</p>
+            ) : null}
+          </article>
+        ))}
+      </DsAutoGrid>
+      {model.hopSlot === "offers" ? (
+        <div className="v4-offer-cta">
+          <Hop model={model} slot="offers" />
+        </div>
+      ) : null}
+      {model.hopSlot === "none" && model.copy.cta.caption ? (
+        <p className="ds-caption" data-v4-offer-note="informational">
+          {model.copy.cta.caption.text}
+        </p>
+      ) : null}
+      {section.body.map((item, index) => (
+        <p className="ds-caption" key={`${section.sectionId}-b-${index}`}>
+          {item.text}
+        </p>
+      ))}
+    </>
+  );
+}
+
+function FaqSection({ section, model }: { section: BlueprintSection; model: V4Model }) {
+  const entries = (model.copy.faq.length
+    ? model.copy.faq.map((item) => ({ title: item.question.text, body: item.answer.text }))
+    : section.items.map((item) => ({
+        title: item.title?.text ?? item.text.text,
+        body: item.title ? item.text.text : "",
+      }))
+  ).filter((item) => item.title.trim() && item.body.trim());
+  return (
+    <div className="ds-faq">
+      {entries.map((item, index) => (
+        <details className="ds-faq__item" key={`${section.sectionId}-${index}`}>
+          <summary>{item.title}</summary>
+          <p className="ds-body">{item.body}</p>
+        </details>
+      ))}
+    </div>
+  );
+}
+
+function TrustSection({ section }: { section: BlueprintSection }) {
+  const items = section.items.length ? section.items : section.body.map((item) => ({ text: item }));
+  return (
+    <ul className="ds-list">
+      {items.map((item, index) => (
+        <li key={`${section.sectionId}-${index}`}>{publicItemText(item.text.text)}</li>
+      ))}
+    </ul>
+  );
+}
+
+function GuaranteeSection({ section }: { section: BlueprintSection }) {
+  return (
+    <div className="ds-guarantee">
+      {section.body.map((item, index) => (
+        <p className="ds-body" key={`${section.sectionId}-${index}`}>
+          {item.text}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function DemoSection({ model, section }: { model: V4Model; section: BlueprintSection }) {
+  const image = model.commercialImage;
+  if (!image) return null;
+  return (
+    <div className="ds-hero__stage" style={{ maxWidth: "28rem", marginInline: "auto" }}>
+      <div className="ds-hero__frame">
+        <img src={image.src} alt={image.alt} width={1200} height={1200} data-v4-image="commercial" />
+      </div>
+      {section.body.map((item, index) => (
+        <p className="ds-caption" key={`${section.sectionId}-${index}`}>
+          {item.text}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function LegalSection({ model, section }: { model: V4Model; section: BlueprintSection }) {
+  const lines = publicLegalLines({
+    hopSlot: model.hopSlot,
+    body: section.body,
+    caption: model.copy.cta.caption,
+  });
+  return (
+    <footer className="ds-footer" id={section.sectionId} data-v4-section="legal">
+      <DsContainer width="content">
+        {lines.map((line, index) => (
+          <p className="ds-caption" key={`${section.sectionId}-${index}`}>
+            {line}
+          </p>
+        ))}
+        <nav aria-label="Legal">
+          {model.contract.legal.trustLinks.map((link) => (
+            <a key={link.href} href={link.href}>
+              {link.label}
+            </a>
+          ))}
+        </nav>
+      </DsContainer>
+    </footer>
+  );
+}
+
+export function V4Page({ model }: { model: V4Model }) {
+  const order = model.blueprint.sections.filter((section) => visible(model, section.sectionType));
+  return (
+    <main data-v4="page" data-v4-composition={model.composition} data-v4-goal={model.blueprint.conversionGoal} data-v4-photo={model.commercialImage ? "commercial" : "none"}>
+      {order.map((section) => {
+        if (section.sectionType === "hero") {
+          return (
+            <div key={section.sectionId}>
+              <Hero model={model} />
+              {model.galleryImages && model.galleryImages.length > 0 ? (
+                <DsSection tone="alt" className="v4-band" id="gallery">
+                  <DsContainer width="wide">
+                    <div data-v4-section="gallery">
+                      <h2 className="ds-h2">More images</h2>
+                      <div className="v4-gallery" data-v4-gallery="">
+                        {model.galleryImages.map((image) => (
+                          <img key={image.src} src={image.src} alt={image.alt} data-v4-image="commercial" />
+                        ))}
+                      </div>
+                    </div>
+                  </DsContainer>
+                </DsSection>
+              ) : null}
+            </div>
+          );
+        }
+        if (section.sectionType === "legal") return <LegalSection model={model} section={section} key={section.sectionId} />;
+        const inner =
+          section.sectionType === "differentiators" ? (
+            <FeatureSection section={section} />
+          ) : section.sectionType === "benefits" ? (
+            <BenefitSection section={section} />
+          ) : section.sectionType === "specifications" ? (
+            <SpecSection section={section} />
+          ) : section.sectionType === "offers" ? (
+            <OfferSection model={model} section={section} />
+          ) : section.sectionType === "faq" ? (
+            <FaqSection model={model} section={section} />
+          ) : section.sectionType === "trust" || section.sectionType === "how_it_works" ? (
+            <TrustSection section={section} />
+          ) : section.sectionType === "guarantee" ? (
+            <GuaranteeSection section={section} />
+          ) : section.sectionType === "demonstration" ? (
+            <DemoSection model={model} section={section} />
+          ) : (
+            <div className="ds-stack">
+              {section.body.map((item, i) => (
+                <p className="ds-body" key={`${section.sectionId}-${i}`}>
+                  {item.text}
+                </p>
+              ))}
+              {section.items.map((item, i) => (
+                <p className="ds-body" key={`${section.sectionId}-i-${i}`}>
+                  {publicItemText(item.text.text)}
+                </p>
+              ))}
+            </div>
+          );
+        return (
+          <DsSection
+            key={section.sectionId}
+            id={section.sectionType === "offers" ? "offers" : section.sectionId}
+            tone={toneFor(section.sectionType)}
+            className="v4-band"
+            tight={model.density === "thin"}
+          >
+            <DsContainer width={section.sectionType === "offers" || section.sectionType === "differentiators" ? "wide" : "content"}>
+              <div data-v4-section={section.sectionType} data-v4-purpose={section.commercialPurpose}>
+                <h2 className="ds-h2">{publicSectionTitle(section.sectionType, section.headline.text)}</h2>
+                {inner}
+              </div>
+            </DsContainer>
+          </DsSection>
+        );
+      })}
+      {model.sticky && model.hopHref && model.hopLabel ? (
+        <div className="ds-sticky-cta" data-ds-sticky="1">
+          <Hop model={model} slot="sticky" />
+        </div>
+      ) : null}
+    </main>
+  );
+}

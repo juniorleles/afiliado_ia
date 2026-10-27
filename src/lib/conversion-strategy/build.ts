@@ -1,5 +1,5 @@
 import { pickComposition } from "@/lib/design-system/compose";
-import { pageDensity, purchaseCtaAllowed } from "@/lib/design-system/layout";
+import { pageDensity } from "@/lib/design-system/layout";
 import type { DataState, EvidenceEntry, ProductContract, Statement } from "@/lib/product-contract/types";
 import type {
   ConversionBrief,
@@ -17,6 +17,7 @@ import type {
   VisualPriority,
 } from "@/lib/conversion-strategy/types";
 import { CONVERSION_BRIEF_VERSION } from "@/lib/conversion-strategy/types";
+import { presellCtaAuthorization, shouldIncludeHowItWorks } from "@/lib/presell-strategy/plan";
 
 /**
  * Deterministic Conversion Strategy Engine (Execution 50C).
@@ -72,8 +73,9 @@ function featureScore(text: string): number {
 }
 
 function conversionGoal(contract: ProductContract): ConversionGoal {
-  if (purchaseCtaAllowed(contract) && contract.offer?.packages.length) return "SEND_TO_OFFER";
-  if (purchaseCtaAllowed(contract)) return "SEND_TO_DETAILS";
+  const hop = presellCtaAuthorization(contract).status === "AUTHORIZED";
+  if (hop && contract.offer?.packages.length) return "SEND_TO_OFFER";
+  if (hop) return "SEND_TO_DETAILS";
   return "INFORM";
 }
 
@@ -246,6 +248,8 @@ function includeSection(type: SectionType, contract: ProductContract): boolean {
       return Boolean(contract.valueProposition?.headline || contract.description);
     case "differentiators":
       return Boolean(contract.features?.length);
+    case "how_it_works":
+      return shouldIncludeHowItWorks(contract);
     case "benefits":
       return Boolean(contract.benefits?.length);
     case "demonstration":
@@ -261,7 +265,7 @@ function includeSection(type: SectionType, contract: ProductContract): boolean {
     case "faq":
       return Boolean(contract.faq?.length);
     case "cta_final":
-      return purchaseCtaAllowed(contract);
+      return presellCtaAuthorization(contract).status === "AUTHORIZED";
     default:
       return false;
   }
@@ -272,6 +276,7 @@ function sectionMeta(type: SectionType): { goal: string; needed: string[]; paths
     hero: { goal: "Identify the product and open with the grounded proposition", needed: ["product name", "value proposition"], paths: ["identity.productName", "valueProposition.headline"] },
     presentation: { goal: "State what the source said the product is", needed: ["description or value proposition"], paths: ["valueProposition.headline", "description"] },
     differentiators: { goal: "Show source-stated characteristics", needed: ["features"], paths: ["features"] },
+    how_it_works: { goal: "Restate source-stated usage or operation", needed: ["distinct usage instructions"], paths: ["usage"] },
     benefits: { goal: "Show seller-stated claims that passed policy, attributed as claims", needed: ["benefits"], paths: ["benefits"] },
     demonstration: { goal: "Show the authorized product image", needed: ["approved image"], paths: ["images.hero"] },
     specifications: { goal: "Show structured specifications and declared composition", needed: ["specifications or components"], paths: ["specifications", "components"] },
@@ -290,6 +295,7 @@ function availableFor(type: SectionType, contract: ProductContract): { available
     hero: [contract.identity.productName, contract.valueProposition?.headline?.text].filter((v): v is string => Boolean(v)),
     presentation: [contract.valueProposition?.headline?.text, contract.description?.text].filter((v): v is string => Boolean(v)),
     differentiators: (contract.features ?? []).map((item) => item.text),
+    how_it_works: (contract.usage ?? []).map((item) => item.text),
     benefits: (contract.benefits ?? []).map((item) => item.text),
     demonstration: contract.images?.hero ? [contract.images.hero.alt] : [],
     specifications: [...(contract.specifications ?? []).map((item) => item.name), ...(contract.components ?? []).map((item) => item.name)],
@@ -314,12 +320,12 @@ function sectionOrder(contract: ProductContract): SectionType[] {
   const hasImage = Boolean(contract.images?.hero);
   const rich = (contract.features?.length ?? 0) + (contract.specifications?.length ?? 0) >= 4;
   if (hasOffer && hasImage) {
-    return ["hero", "presentation", "offers", "differentiators", "benefits", "specifications", "demonstration", "guarantee", "trust", "faq", "cta_final", "legal"];
+    return ["hero", "presentation", "offers", "differentiators", "how_it_works", "benefits", "specifications", "demonstration", "guarantee", "trust", "faq", "cta_final", "legal"];
   }
   if (rich && !hasImage) {
-    return ["hero", "presentation", "differentiators", "specifications", "benefits", "offers", "guarantee", "trust", "faq", "cta_final", "legal"];
+    return ["hero", "presentation", "differentiators", "how_it_works", "specifications", "benefits", "offers", "guarantee", "trust", "faq", "cta_final", "legal"];
   }
-  return ["hero", "presentation", "differentiators", "specifications", "benefits", "demonstration", "offers", "guarantee", "trust", "faq", "cta_final", "legal"];
+  return ["hero", "presentation", "differentiators", "how_it_works", "specifications", "benefits", "demonstration", "offers", "guarantee", "trust", "faq", "cta_final", "legal"];
 }
 
 function buildSectionPlan(contract: ProductContract): SectionPlanItem[] {
@@ -384,7 +390,7 @@ export function buildConversionBrief(contract: ProductContract): ConversionBrief
   (contract.operational?.shipping ?? []).forEach((item, i) => trust.push(claim(`trust-ship-${i + 1}`, item.statement, item.evidenceRefs, `operational.shipping[${i}]`, map)));
   (contract.cautions ?? []).forEach((item, i) => trust.push(claim(`trust-caution-${i + 1}`, item.text, item.evidenceRefs, `cautions[${i}]`, map)));
 
-  const hop = purchaseCtaAllowed(contract);
+  const hop = presellCtaAuthorization(contract).status === "AUTHORIZED";
   decisions.push({
     id: "d-status",
     decision: `status=${status}`,

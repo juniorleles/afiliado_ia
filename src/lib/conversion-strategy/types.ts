@@ -17,6 +17,7 @@ export type SectionType =
   | "hero"
   | "presentation"
   | "differentiators"
+  | "how_it_works"
   | "benefits"
   | "demonstration"
   | "specifications"

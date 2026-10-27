@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" role="img" aria-label="Neutral synthetic fixture graphic">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8edf3"/>
+      <stop offset="1" stop-color="#d3dae3"/>
+    </linearGradient>
+    <linearGradient id="box" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dfe5ee"/>
+    </linearGradient>
+    <linearGradient id="side" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#c5ced9"/>
+      <stop offset="1" stop-color="#9eabb8"/>
+    </linearGradient>
+    <linearGradient id="top" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#f7f9fb"/>
+      <stop offset="1" stop-color="#cfd7e1"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="1200" fill="url(#bg)"/>
+  <ellipse cx="600" cy="980" rx="280" ry="36" fill="#1b2430" opacity="0.12"/>
+  <polygon points="430,300 780,230 980,330 630,400" fill="url(#top)"/>
+  <polygon points="430,300 630,400 630,860 430,760" fill="url(#box)"/>
+  <polygon points="630,400 980,330 980,790 630,860" fill="url(#side)"/>
+  <polyline points="430,300 630,400 980,330" fill="none" stroke="#8b97a6" stroke-width="6"/>
+  <line x1="630" y1="400" x2="630" y2="860" stroke="#8b97a6" stroke-width="6"/>
+  <rect x="500" y="520" width="90" height="14" rx="7" fill="#9aa6b4"/>
+  <rect x="500" y="552" width="70" height="10" rx="5" fill="#b7c0cb"/>
+</svg>

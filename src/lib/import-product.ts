@@ -790,10 +790,13 @@ function chooseDescription(
   html: string,
   productName: string,
   sections: Array<{ title: string; kind: HeadingKind; body: string }>,
+  metaHtml = html,
 ): { value: string; confidence: FactConfidence } | null {
-  const meta = metaContent(html, ["og:description", "description"]);
-  if (meta && isUsefulDescription(meta)) {
-    return { value: clip(meta), confidence: "DIRECT_SOURCE" };
+  for (const key of ["og:description", "description"] as const) {
+    const meta = metaContent(metaHtml, [key]);
+    if (meta && isUsefulDescription(meta)) {
+      return { value: clip(meta), confidence: "DIRECT_SOURCE" };
+    }
   }
 
   const name = productName.trim();
@@ -964,7 +967,7 @@ export function extractProductFacts(html: string, sourceUrl = "", options: Extra
   }
 
   const sections = headingSections(cleaned);
-  const description = chooseDescription(cleaned, facts.productName, sections);
+  const description = chooseDescription(cleaned, facts.productName, sections, html);
   if (description) {
     facts.description = description.value;
     facts.confidence.description = description.confidence;
@@ -1044,6 +1047,16 @@ export function extractProductFacts(html: string, sourceUrl = "", options: Extra
       case "faq": {
         recognizedFaq = true;
         const pairs = extractFaqQaPairsFromHtml(section.title, section.body);
+        const storedQuestions = new Set<string>();
+        for (const pair of pairs) {
+          if (!pair.question || !pair.answer) continue;
+          const key = pair.question.toLowerCase();
+          if (storedQuestions.has(key)) continue;
+          storedQuestions.add(key);
+          facts.sourceSnippets.push(
+            snippet("faq", pair.answer, sourceUrl, "DIRECT_SOURCE", { question: pair.question, boundary }),
+          );
+        }
         const rawItems = listItems.length > 0 ? listItems : paragraphs;
         const toStore =
           rawItems.length > 0

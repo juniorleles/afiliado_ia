@@ -35,6 +35,9 @@ export type EnrichmentSource = {
   pageCategory?: SourcePageCategory;
   html?: string;
   records?: StructuredRecord[];
+  extractionMode?: "HTTP" | "BROWSER_RENDERED";
+  renderMode?: string;
+  finalUrl?: string;
 };
 
 export type ProvenanceRecord = {

@@ -4,7 +4,7 @@ import type { ConversionGoal, MissingEvidenceItem, SectionType, StrategyStatus, 
 export const PAGE_BLUEPRINT_VERSION = 1 as const;
 export const SALES_COPY_VERSION = 1 as const;
 
-export type CopyProducer = "DETERMINISTIC_OFFLINE" | "EDITORIAL_ADAPTER";
+export type CopyProducer = "DETERMINISTIC_OFFLINE" | "EDITORIAL_ADAPTER" | "AI_COMMERCIAL";
 
 export type RenderEligibility = "ELIGIBLE" | "WITHHELD" | "INSUFFICIENT";
 
@@ -117,4 +117,11 @@ export type EditorialQualityReport = {
 export type GroundingReport = {
   ok: boolean;
   violations: Array<{ rule: string; path: string; message: string }>;
+  classifications?: Array<{
+    path: string;
+    text: string;
+    classification: string;
+    allowed: boolean;
+    reason: string;
+  }>;
 };

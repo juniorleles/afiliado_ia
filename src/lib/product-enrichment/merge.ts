@@ -1,4 +1,5 @@
 import { statementAllowed } from "@/lib/product-contract/claims";
+import { faqEntryAllowed } from "@/lib/presell-copy/faq-select";
 import type { OfferFact, ProductFacts, SpecificationFact, SourceFact } from "@/lib/product-facts";
 import { withImportQuality } from "@/lib/product-facts";
 import type { ExtractedBatch } from "@/lib/product-enrichment/extract";
@@ -256,8 +257,9 @@ function mergeSnippets(out: MergeOutput, snippets: SourceFact[]): void {
       (item) => item.question && keyOf(item.question) === keyOf(snippet.question ?? ""),
     );
     if (exists) continue;
-    if (!statementAllowed(snippet.text, "PROMOTIONAL") || !statementAllowed(snippet.question, "PROMOTIONAL")) {
-      out.withheld.push({ field: "faq", text: `${snippet.question} ${snippet.text}`, reason: "FAQ failed the claim gate" });
+    const faqGate = faqEntryAllowed(snippet.question, snippet.text);
+    if (!faqGate.ok) {
+      out.withheld.push({ field: "faq", text: `${snippet.question} ${snippet.text}`, reason: faqGate.reason });
       continue;
     }
     out.addedFields.push("faq");

@@ -1,0 +1,18 @@
+export { PRODUCT_RESEARCH_VERSION, PRODUCT_RESEARCH_FIELDS, RESEARCH_JOB_STATUSES, FIELD_REVIEW_STATUSES } from "@/lib/product-research/types";
+export type { FieldDecision, FieldProposal, ProductResearchField, ProductResearchRun, ResearchJobStatus } from "@/lib/product-research/types";
+export { resolveResearchSeeds, isHopLink, isAffiliateProgramUrl } from "@/lib/product-research/seeds";
+export { adaptContractToKnowledge, productFactsFromKnowledge, reviewCompletion, mergeFieldDecisions, derivedNeutralDescription } from "@/lib/product-research/adapter";
+export { applyEditorialRecovery, classifyFaqEntry, factualFaqEligible } from "@/lib/product-research/recover";
+export { coverageGapsFromProposals, classifyMissingFieldCause } from "@/lib/product-research/gaps";
+export { assessPresellQuality } from "@/lib/product-research/presell-quality";
+export { splitIngredientPresentation } from "@/lib/product-research/approved-facts";
+export { displayFieldStatus, displayFieldStatuses, indicatorsFromResearch } from "@/lib/product-research/indicators";
+export type { ResearchIndicators, GenerationReadiness } from "@/lib/product-research/indicators";
+export { createProductResearchJob, executeProductResearch, snapshotProductResearch } from "@/lib/product-research/run";
+export { decideProductResearchFields, latestRunForCampaign } from "@/lib/product-research/review";
+export { decideDiscoveredAsset } from "@/lib/product-research/assets";
+export { decorateDiscoveredAssets, galleryKindFromAsset, proposeGalleryKind } from "@/lib/product-research/asset-display";
+export { selectReviewMedia, reviewAssetId } from "@/lib/product-research/media-contract";
+export { productFactsFromAcceptedReview, acceptedProposals, approvedContentStatus } from "@/lib/product-research/approved-facts";
+export { readSandboxPresellPointer, writeSandboxPresellPointer } from "@/lib/product-research/sandbox-presell";
+export { readLatestProductResearch, readProductResearchRun, listProductResearchRuns } from "@/lib/product-research/store";

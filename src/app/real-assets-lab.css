@@ -1,0 +1,163 @@
+/* Isolated real-assets lab gallery. Never imported by a public route. */
+.rpa-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin: 1.25rem 0 1.5rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--ds-line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ds-bg) 88%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.rpa-toolbar p {
+  margin: 0;
+}
+
+.rpa-section {
+  margin-top: 2rem;
+}
+
+.rpa-section h2 {
+  margin: 0 0 0.85rem;
+  font-size: 1.15rem;
+}
+
+.rpa-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.rpa-grid--packshot {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.rpa-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--ds-line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ds-ink) 4%, var(--ds-bg));
+}
+
+.rpa-card[data-status="USER_APPROVED"] {
+  border-color: color-mix(in srgb, var(--ds-accent) 55%, var(--ds-line));
+}
+
+.rpa-card[data-status="REJECTED"],
+.rpa-card[data-status="REVOKED"],
+.rpa-card[data-status="BLOCKED_BY_POLICY"] {
+  opacity: 0.78;
+}
+
+.rpa-thumb-wrap {
+  position: relative;
+  aspect-ratio: 1;
+  background: #4b5563;
+}
+
+.rpa-thumb-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.rpa-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 1rem;
+  color: var(--ds-accent-text);
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.rpa-select {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ds-bg) 86%, transparent);
+  font-size: 0.75rem;
+}
+
+.rpa-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.8rem 0.9rem 1rem;
+}
+
+.rpa-body p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.rpa-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+}
+
+.rpa-preview {
+  display: inline-block;
+}
+
+.rpa-preview:not([open]) .rpa-lightbox {
+  display: none;
+}
+
+.rpa-preview > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.rpa-preview > summary::-webkit-details-marker {
+  display: none;
+}
+
+.rpa-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(16 24 40 / 0.72);
+}
+
+.rpa-lightbox-inner {
+  width: min(96vw, 1100px);
+  padding: 1rem;
+  border-radius: 16px;
+  background: var(--ds-bg);
+  color: var(--ds-ink);
+}
+
+.rpa-lightbox-inner img {
+  max-height: 72vh;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+@media (max-width: 640px) {
+  .rpa-grid,
+  .rpa-grid--packshot {
+    grid-template-columns: 1fr;
+  }
+}

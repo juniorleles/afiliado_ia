@@ -14,6 +14,7 @@ export type GateId =
   | "CONTENT_GROUNDING_GATE"
   | "COMMERCIAL_AUTHORIZATION_GATE"
   | "EDITORIAL_QUALITY_GATE"
+  | "EDITORIAL_NEUTRALITY_GATE"
   | "VISUAL_REVIEW_GATE"
   | "HUMAN_APPROVAL_GATE";
 
@@ -40,7 +41,8 @@ export type DefectKind =
   | "UNFIXABLE"
   | "ACCESSIBILITY"
   | "DISK"
-  | "EDITORIAL_QUALITY";
+  | "EDITORIAL_QUALITY"
+  | "EDITORIAL_NEUTRALITY";
 
 export type Defect = {
   id: string;

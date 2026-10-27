@@ -18,6 +18,16 @@ import { createCampaignAction } from "@/app/admin/actions";
 import { slugify } from "@/lib/slug";
 import { CompletenessCard } from "@/components/admin/completeness-card";
 import { LpQualityCard } from "@/components/admin/lp-quality-card";
+import { ResearchIndicatorsCard } from "@/components/admin/research-indicators";
+import { ProductReviewWorkspace } from "@/components/product-review/workspace";
+import type { KnowledgeText } from "@/lib/product-knowledge";
+import type { CampaignSource } from "@/lib/campaign-sources/types";
+import { productFactsFromKnowledge } from "@/lib/product-research/adapter";
+import type { ProductResearchRun } from "@/lib/product-research/types";
+import {
+  executeProductFactsResearchAction,
+  startProductFactsResearchAction,
+} from "@/app/admin/[id]/fatos/research-actions";
 import { analyzeImportCompleteness } from "@/lib/completeness-engine";
 import { predictLpQuality } from "@/lib/lp-quality-predictor";
 import type { PublicationGate } from "@/lib/policy-linter";
@@ -98,12 +108,31 @@ const GATE_CLASS: Record<PublicationGate, string> = {
   BLOCKED: "text-red-400",
 };
 
-export function GenerateClient() {
+export function GenerateClient({
+  campaignId = null,
+  campaignName = null,
+  marketplace = "Não informado",
+  campaigns = [],
+  initialRun = null,
+  defaultProductUrl = "",
+  knowledge = null,
+  sources = [],
+}: {
+  campaignId?: number | null;
+  campaignName?: string | null;
+  marketplace?: string;
+  campaigns?: Array<{ id: number; name: string }>;
+  initialRun?: ProductResearchRun | null;
+  defaultProductUrl?: string;
+  knowledge?: KnowledgeText | null;
+  sources?: CampaignSource[];
+} = {}) {
   const [step, setStep] = useState<Step>({ kind: "input" });
   const [error, setError] = useState<string | null>(null);
-  const [productName, setProductName] = useState("");
-  const [sourceUrl, setSourceUrl] = useState("");
+  const [productName, setProductName] = useState(campaignName ?? "");
+  const [sourceUrl, setSourceUrl] = useState(defaultProductUrl);
   const [affiliateUrl, setAffiliateUrl] = useState("");
+  const [researchRun, setResearchRun] = useState<ProductResearchRun | null>(initialRun);
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importStatus, setImportStatus] = useState<string | null>(null);
@@ -132,7 +161,7 @@ export function GenerateClient() {
   }, [step.kind]);
 
   async function handleImport() {
-    if (!sourceUrl.trim()) {
+    if (!campaignId && !sourceUrl.trim()) {
       setImportError("Cole uma URL de produto primeiro.");
       return;
     }
@@ -141,8 +170,52 @@ export function GenerateClient() {
     setImportedFacts(null);
     setTimedOut(false);
     setImporting(true);
-    setImportStatus("Checking primary source...");
+    setImportStatus(campaignId ? "Starting campaign research..." : "Checking primary source...");
     const operatorName = productName.trim();
+    if (campaignId) {
+      try {
+        const created = await startProductFactsResearchAction({ campaignId, productUrl: sourceUrl.trim() });
+        setResearchRun(created);
+        const finished =
+          created.status === "QUEUED" || created.status === "RESEARCHING"
+            ? await executeProductFactsResearchAction({ campaignId, runId: created.runId })
+            : created;
+        setResearchRun(finished);
+        const facts = productFactsFromKnowledge({
+          productName: operatorName || campaignName || finished.productName,
+          sourceUrl: sourceUrl.trim(),
+          text: {
+            productUrl: sourceUrl.trim(),
+            brand: "",
+            category: "",
+            description: finished.proposals.find((item) => item.field === "description")?.currentValue ?? "",
+            ingredients: finished.proposals.find((item) => item.field === "ingredients")?.currentValue ?? "",
+            benefits: finished.proposals.find((item) => item.field === "benefits")?.currentValue ?? "",
+            howItWorks: finished.proposals.find((item) => item.field === "howItWorks")?.currentValue ?? "",
+            warnings: finished.proposals.find((item) => item.field === "warnings")?.currentValue ?? "",
+            pricing: finished.proposals.find((item) => item.field === "pricing")?.currentValue ?? "",
+            guarantee: finished.proposals.find((item) => item.field === "guarantee")?.currentValue ?? "",
+            manufacturer: finished.proposals.find((item) => item.field === "manufacturer")?.currentValue ?? "",
+            faq: finished.proposals.find((item) => item.field === "faq")?.currentValue ?? "",
+            images: finished.proposals.find((item) => item.field === "images")?.currentValue ?? "",
+            videos: finished.proposals.find((item) => item.field === "videos")?.currentValue ?? "",
+          },
+        });
+        setImportedFacts(facts);
+        setImportStatus(null);
+        if (finished.status !== "NEED_URL") {
+          setStep({ kind: "facts", facts: { ...facts, productName: facts.productName || operatorName } });
+        } else {
+          setImportError(finished.seedRejection || finished.error || "Research needs a product URL.");
+        }
+      } catch (err) {
+        setImportError(err instanceof Error ? err.message : "Research failed.");
+      } finally {
+        setImporting(false);
+        setActiveImportId(null);
+      }
+      return;
+    }
     const importId =
       typeof crypto !== "undefined" && crypto.randomUUID
         ? crypto.randomUUID()
@@ -347,6 +420,26 @@ export function GenerateClient() {
     return (
       <div className="space-y-5">
         {error ? <Alert>{error}</Alert> : null}
+        <CampaignBinder campaignId={campaignId} campaigns={campaigns} />
+        {campaignId && knowledge ? (
+          <ProductReviewWorkspace
+            campaignId={campaignId}
+            productName={campaignName || knowledge.brand || "Campanha"}
+            marketplace={marketplace}
+            initial={researchRun}
+            sources={sources}
+            knowledge={knowledge}
+            defaultProductUrl={sourceUrl}
+            defaultAffiliateResourceUrl={knowledge.affiliateResourceUrl ?? ""}
+          />
+        ) : (
+          <>
+            <ResearchIndicatorsCard run={researchRun} />
+            <p className="text-sm text-amber-200">
+              Bind a campaign to consume the universal research contract. Unbound import stays a legacy sandbox session.
+            </p>
+          </>
+        )}
         <p className="text-sm text-zinc-400">
           Import factual product information first when possible. The AI must
           use those facts — it must not invent missing ingredients, prices, or
@@ -365,15 +458,17 @@ export function GenerateClient() {
         <div className="rounded-md border border-zinc-800 bg-zinc-900/40 p-4">
           <span className="mb-1 block text-sm font-medium text-zinc-300">Product / source URL</span>
           <p className="mb-3 text-xs text-zinc-500">
-            Checks robots.txt first and does not bypass blocks. Missing fields
-            stay NOT_FOUND — nothing is fabricated.
+            {campaignId
+              ? "Bound campaigns use the validated sales page from Campaign Sources. Checkout URLs stay in the audit trail and are not imported as the product page."
+              : "Checks robots.txt first and does not bypass blocks. Missing fields stay NOT_FOUND — nothing is fabricated."}
           </p>
           <div className="flex gap-2">
             <input
               type="url"
               value={sourceUrl}
               onChange={(e) => setSourceUrl(e.target.value)}
-              disabled={importing}
+              disabled={importing || Boolean(campaignId)}
+              readOnly={Boolean(campaignId)}
               placeholder="https://example.com/product-page"
               className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-100 disabled:opacity-60"
             />
@@ -427,17 +522,23 @@ export function GenerateClient() {
             </div>
           ) : null}
         </div>
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-zinc-300">Affiliate URL</span>
-          <input
-            type="url"
-            value={affiliateUrl}
-            onChange={(e) => setAffiliateUrl(e.target.value)}
-            required
-            placeholder="https://example.com/your-hop"
-            className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-100"
-          />
-        </label>
+        {campaignId ? (
+          <p className="text-xs text-zinc-500">
+            The campaign HopLink stays a tracking source. It is not copied into a commercial CTA.
+          </p>
+        ) : (
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium text-zinc-300">Affiliate URL</span>
+            <input
+              type="url"
+              value={affiliateUrl}
+              onChange={(e) => setAffiliateUrl(e.target.value)}
+              required
+              placeholder="https://example.com/your-hop"
+              className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-100"
+            />
+          </label>
+        )}
         <div className="flex flex-wrap gap-3">
           {importedFacts ? (
             <button
@@ -466,16 +567,33 @@ export function GenerateClient() {
     const loading = step.kind === "loading";
     const facts = step.facts;
     return (
-      <FactsForm
-        facts={facts}
-        loading={loading}
-        error={error}
-        providerStatus={providerStatus}
-        providerAttempt={providerAttempt}
-        providerRemaining={providerRemaining}
-        onCancel={() => setStep({ kind: "input" })}
-        onGenerate={(next) => handleGenerate(next)}
-      />
+      <div className="space-y-5">
+        <CampaignBinder campaignId={campaignId} campaigns={campaigns} />
+        {campaignId && knowledge ? (
+          <ProductReviewWorkspace
+            campaignId={campaignId}
+            productName={campaignName || knowledge.brand || "Campanha"}
+            marketplace={marketplace}
+            initial={researchRun}
+            sources={sources}
+            knowledge={knowledge}
+            defaultProductUrl={sourceUrl}
+            defaultAffiliateResourceUrl={knowledge.affiliateResourceUrl ?? ""}
+          />
+        ) : (
+          <ResearchIndicatorsCard run={researchRun} />
+        )}
+        <FactsForm
+          facts={facts}
+          loading={loading}
+          error={error}
+          providerStatus={providerStatus}
+          providerAttempt={providerAttempt}
+          providerRemaining={providerRemaining}
+          onCancel={() => setStep({ kind: "input" })}
+          onGenerate={(next) => handleGenerate(next)}
+        />
+      </div>
     );
   }
 
@@ -854,6 +972,43 @@ function builderHrefFromPreview(previewPath: string): string | null {
   const adminPreview = previewPath.match(/^\/admin\/preview\/([^/?#]+)/);
   if (adminPreview?.[1]) return `/admin/lp-builder/slug/${decodeURIComponent(adminPreview[1])}`;
   return null;
+}
+
+function CampaignBinder({
+  campaignId,
+  campaigns,
+}: {
+  campaignId: number | null;
+  campaigns: Array<{ id: number; name: string }>;
+}) {
+  return (
+    <form method="get" action="/admin/generate" className="rounded-md border border-zinc-800 bg-zinc-900/40 p-4">
+      <label className="block text-sm font-medium text-zinc-300" htmlFor="campaignId">
+        Campaign contract
+      </label>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <select
+          id="campaignId"
+          name="campaignId"
+          defaultValue={campaignId ?? ""}
+          className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-100 sm:w-auto"
+        >
+          <option value="">No campaign — legacy sandbox session</option>
+          {campaigns.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.name} #{item.id}
+            </option>
+          ))}
+        </select>
+        <button type="submit" className="rounded-md border border-zinc-600 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800">
+          Use contract
+        </button>
+      </div>
+      <p className="mt-2 text-xs text-zinc-500">
+        The Presell Content Engine V2 reads Product Contract proposals from the selected campaign. It does not create a second research pipeline.
+      </p>
+    </form>
+  );
 }
 
 function Alert({ children }: { children: string }) {

@@ -2,6 +2,8 @@ import type { ConversionBrief, SectionType } from "@/lib/conversion-strategy/typ
 import type { ProductContract } from "@/lib/product-contract/types";
 import { buildSalesCopy } from "@/lib/page-blueprint/copy";
 import { applyCopyIntelligence, offlineCopyAdapter, type CopyAdapter } from "@/lib/page-blueprint/adapter";
+import { applyEvidenceAwareCopy } from "@/lib/presell-copy/compose";
+import { applyEditorialNeutrality } from "@/lib/editorial-neutrality/apply";
 import type { BlueprintSection, PageBlueprint, SalesCopy, VisualIntent } from "@/lib/page-blueprint/types";
 import { PAGE_BLUEPRINT_VERSION } from "@/lib/page-blueprint/types";
 
@@ -9,6 +11,7 @@ const PURPOSE: Record<SectionType, string> = {
   hero: "Identify the product and open with the grounded proposition",
   presentation: "State what the source said the product is",
   differentiators: "Show source-stated characteristics without repeating the headline",
+  how_it_works: "Restate source-stated usage or operation without adding results",
   benefits: "Show seller-stated claims, attributed as claims",
   demonstration: "Show the authorized product image",
   specifications: "Show structured specifications and declared composition",
@@ -34,8 +37,13 @@ export function buildPageBlueprint(input: {
   copy?: SalesCopy;
   adapter?: CopyAdapter;
 }): { copy: SalesCopy; blueprint: PageBlueprint } {
-  const raw = input.copy ?? buildSalesCopy(input.contract, input.brief);
-  const copy = applyCopyIntelligence(raw, input.contract, input.brief, input.adapter ?? offlineCopyAdapter());
+  const raw = applyEvidenceAwareCopy(
+    input.copy ?? buildSalesCopy(input.contract, input.brief),
+    input.contract,
+    input.brief,
+  );
+  const intelligent = applyCopyIntelligence(raw, input.contract, input.brief, input.adapter ?? offlineCopyAdapter());
+  const copy = applyEditorialNeutrality(intelligent).copy;
   const sections: BlueprintSection[] = copy.sections.map((section, index) => ({
     sectionId: `${section.sectionType}-${index + 1}`,
     sectionType: section.sectionType,

@@ -1,0 +1,127 @@
+"use server";
+
+import { after } from "next/server";
+import { requireAdmin } from "@/lib/admin-auth";
+import { getCampaignById } from "@/lib/campaigns";
+import { inspectPublicHttpsUrl } from "@/lib/real-product-assets/ssrf";
+import { createProductResearchJob, executeProductResearch } from "@/lib/product-research/run";
+import { decideProductResearchFields } from "@/lib/product-research/review";
+import { decideDiscoveredAsset, type AssetDecisionAction } from "@/lib/product-research/assets";
+import { readLatestProductResearch, readProductResearchRun } from "@/lib/product-research/store";
+import { PRODUCT_RESEARCH_FIELDS, type ProductResearchField, type ProductResearchRun } from "@/lib/product-research/types";
+import {
+  loadApprovedReviewGeneration,
+  runApprovedReviewGeneration,
+  type ApprovedReviewGeneration,
+} from "@/lib/lp-generator/from-approved-review";
+
+function campaignOf(id: number) {
+  if (!Number.isInteger(id) || id < 1 || !getCampaignById(id)) throw new Error("Campanha não encontrada.");
+  return id;
+}
+
+function optionalUrl(value: string | null | undefined): string | undefined {
+  const trimmed = value?.trim() ?? "";
+  if (!trimmed) return undefined;
+  const safe = inspectPublicHttpsUrl(trimmed);
+  if (!safe.ok) throw new Error(safe.reason);
+  return safe.url.toString();
+}
+
+export async function startProductFactsResearchAction(input: {
+  campaignId: number;
+  productUrl?: string;
+  affiliateResourceUrl?: string;
+  authorizedDestinationUrl?: string;
+  trackingHopUrl?: string;
+}): Promise<ProductResearchRun> {
+  await requireAdmin();
+  const campaignId = campaignOf(input.campaignId);
+  const job = createProductResearchJob({
+    campaignId,
+    productUrl: optionalUrl(input.productUrl),
+    affiliateResourceUrl: optionalUrl(input.affiliateResourceUrl),
+    authorizedDestinationUrl: optionalUrl(input.authorizedDestinationUrl),
+    trackingHopUrl: optionalUrl(input.trackingHopUrl),
+  });
+  if (job.status === "QUEUED") {
+    after(() => {
+      void executeProductResearch({ campaignId, runId: job.runId });
+    });
+  }
+  return job;
+}
+
+export async function executeProductFactsResearchAction(input: {
+  campaignId: number;
+  runId: string;
+}): Promise<ProductResearchRun> {
+  await requireAdmin();
+  const campaignId = campaignOf(input.campaignId);
+  return executeProductResearch({ campaignId, runId: input.runId });
+}
+
+export async function readProductFactsResearchAction(input: {
+  campaignId: number;
+  runId?: string;
+}): Promise<ProductResearchRun | null> {
+  await requireAdmin();
+  const campaignId = campaignOf(input.campaignId);
+  if (input.runId) return readProductResearchRun(campaignId, input.runId);
+  return readLatestProductResearch(campaignId);
+}
+
+export async function decideProductFactsResearchAction(input: {
+  campaignId: number;
+  runId: string;
+  fields: ProductResearchField[];
+  action: "ACCEPT" | "REJECT";
+  confirmOverwrite?: boolean;
+}): Promise<ProductResearchRun> {
+  await requireAdmin();
+  const campaignId = campaignOf(input.campaignId);
+  const fields = input.fields.filter((field): field is ProductResearchField =>
+    (PRODUCT_RESEARCH_FIELDS as readonly string[]).includes(field),
+  );
+  if (!fields.length) throw new Error("Nenhum campo elegível foi enviado.");
+  return decideProductResearchFields({
+    campaignId,
+    runId: input.runId,
+    fields,
+    action: input.action,
+    confirmOverwrite: input.confirmOverwrite,
+  });
+}
+
+export async function decideProductFactsAssetAction(input: {
+  campaignId: number;
+  runId: string;
+  assetUrl: string;
+  action: AssetDecisionAction;
+}): Promise<ProductResearchRun> {
+  await requireAdmin();
+  const campaignId = campaignOf(input.campaignId);
+  return decideDiscoveredAsset({
+    campaignId,
+    runId: input.runId,
+    assetUrl: input.assetUrl,
+    action: input.action,
+  });
+}
+
+export async function readSandboxPresellAction(input: {
+  campaignId: number;
+}): Promise<ApprovedReviewGeneration | null> {
+  await requireAdmin();
+  return loadApprovedReviewGeneration(campaignOf(input.campaignId));
+}
+
+export async function generateSandboxPresellAction(input: {
+  campaignId: number;
+  runId?: string;
+}): Promise<ApprovedReviewGeneration> {
+  await requireAdmin();
+  const campaignId = campaignOf(input.campaignId);
+  process.env.AIA_ALLOW_PAID_AI = "0";
+  return runApprovedReviewGeneration({ campaignId, runId: input.runId });
+}

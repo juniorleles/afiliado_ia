@@ -26,6 +26,13 @@ const CTA_PATTERNS: RegExp[] = [
   /\bbottles?\s+order\b/i,
   /\btoday:\s*free\b/i,
   /\brrp\b/i,
+  /\bclick the button\b/i,
+  /\bsecure order checkout\b/i,
+  /\bcheckout page\b/i,
+  /\bone[- ]time payment\b/i,
+  /\brecurring shipments\b/i,
+  /\bcharges to your card\b/i,
+  /\bno recurring\b/i,
 ];
 
 const GENERIC_TITLE = [
@@ -39,6 +46,20 @@ export function isPromotionalOrCta(text: string): boolean {
   const t = text.replace(/\s+/g, " ").trim();
   if (!t) return false;
   return CTA_PATTERNS.some((re) => re.test(t));
+}
+
+/** Order, shipping, or billing copy is not a product identity statement. */
+export function isOperationalFulfillmentCopy(text: string): boolean {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (!t) return false;
+  return /\b(your order will be shipped|shipment should arrive|next business day|business days|one[- ]time payment|recurring shipments|charges to your card|no recurring)\b/i.test(t);
+}
+
+/** Navigation that points at another page is not a product description. */
+export function isPointerOrReferenceCopy(text: string): boolean {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (!t) return false;
+  return /\b(following link|click here|see references|at the following|you may find the label|find the label)\b/i.test(t);
 }
 
 export function isGenericTitleDescription(text: string): boolean {
@@ -161,6 +182,8 @@ export function isProductDefiningDescription(text: string): boolean {
 export function isUsefulDescription(text: string): boolean {
   const t = text.replace(/\s+/g, " ").trim();
   if (t.length < 40) return false;
+  if (isOperationalFulfillmentCopy(t) || isPointerOrReferenceCopy(t)) return false;
+  if (/\b(customer support agents|reply as soon as possible|every email or phone call|patients may experience|results might vary from individual|improvement faster|toxin cleanse|clears your entire body)\b/i.test(t)) return false;
   if (isGenericTitleDescription(t)) return false;
   if (isPromotionalOrCta(t)) return false;
   if (isSectionLabel(t)) return false;
@@ -475,6 +498,7 @@ export function looksLikeIngredientName(text: string): boolean {
 export function isIngredientIdentityName(text: string): boolean {
   const t = text.replace(/\s+/g, " ").replace(/[:]+$/g, "").trim();
   if (!looksLikeIngredientName(t)) return false;
+  if (/^(?:no|non[- ])\b|[- ]free$|^easy\s+to\b|habit[- ]forming/i.test(t)) return false;
   if (/\b(supports?|helps?|maintains?|promotes?|targets?|contains?)\b/i.test(t)) return false;
   if (/\b(is an?|is the)\b/i.test(t)) return false;
   const core = t.replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
@@ -544,7 +568,7 @@ export function isActualCaution(text: string): boolean {
   if (isSafetyMarketing(t) && !/\b(if|do not|pregnan|allerg|medication|consult|keep out)\b/i.test(t)) {
     return false;
   }
-  return /\b(do not (use|take|exceed)|not for use|keep out of reach|contraindicat|allerg(?:y|ies|ic)|pregnan|nurs(?:e|ing)|medication|prescription|drug interaction|consult (your )?(doctor|physician|healthcare|health[- ]care) (provider|professional)|talk to (a |your )?(doctor|clinician|physician)|if you (are|have|take)|under \d+|not intended to (diagnose|treat|cure)|warning\b|discontinue)\b/i.test(
+  return /\b(do not (use|take|exceed)|not for use|keep out of reach|contraindicat|allerg(?:y|ies|ic)|pregnan|nurs(?:e|ing)|medication|prescription|drug interaction|consult (your )?(doctor|physician|healthcare|health[- ]care) (provider|professional)|talk to (a |your )?(doctor|clinician|physician)|if you (are (pregnant|nursing)|have (a )?(medical|health)|take .{0,40}(medication|prescription))|not intended to (diagnose|treat|cure)|warning\b|discontinue)\b/i.test(
     t,
   );
 }

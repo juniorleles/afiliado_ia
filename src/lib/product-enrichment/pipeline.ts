@@ -10,6 +10,7 @@ import { mergeExtracted } from "@/lib/product-enrichment/merge";
 import { planPriorities } from "@/lib/product-enrichment/prioritize";
 import type { EnrichmentResult, EnrichmentSource } from "@/lib/product-enrichment/types";
 import { ENRICHMENT_VERSION } from "@/lib/product-enrichment/types";
+import { enrichPresellContent } from "@/lib/presell-enrichment/enrich";
 
 function rebuildInput(base: ContractInput, facts: ContractInput["facts"]): ContractInput {
   const plan = buildAdaptivePlan({ facts });
@@ -36,7 +37,16 @@ export function enrichProduct(input: {
 
   const batch = extractSources(input.sources);
   const merged = mergeExtracted(beforeInput.facts, batch);
-  const afterInput = rebuildInput(beforeInput, merged.facts);
+  const presell = enrichPresellContent({
+    facts: merged.facts,
+    sources: input.sources,
+    withheld: merged.withheld,
+    conflicts: merged.conflicts,
+  });
+  const afterInput = {
+    ...rebuildInput(beforeInput, presell.facts),
+    benefitCandidates: [...(beforeInput.benefitCandidates ?? []), ...presell.benefitCandidates],
+  };
   const afterBuild = buildProductContract(afterInput);
   const afterContract = afterBuild.contract;
   const afterBrief = buildConversionBrief(afterContract);
@@ -52,7 +62,7 @@ export function enrichProduct(input: {
     version: ENRICHMENT_VERSION,
     scenarioKey: input.scenarioKey,
     beforeFacts: beforeInput.facts,
-    afterFacts: merged.facts,
+    afterFacts: presell.facts,
     beforeContract,
     afterContract,
     beforeBrief,
@@ -62,7 +72,7 @@ export function enrichProduct(input: {
     withheld: merged.withheld,
     visualCandidates: merged.visualCandidates,
     stillMissing: afterBrief.missingEvidence,
-    addedFields: merged.addedFields,
+    addedFields: [...new Set([...merged.addedFields, ...presell.addedFields])],
     completenessBefore: completenessOf(beforeContract, beforeBrief),
     completenessAfter: completenessOf(afterContract, afterBrief),
     priorities: planPriorities(beforeBrief.missingEvidence, afterBrief.missingEvidence),

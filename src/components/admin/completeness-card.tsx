@@ -37,14 +37,16 @@ export function CompletenessCard({
   return (
     <section id="completeness" aria-label="Completeness" className="space-y-4 rounded-md border border-zinc-800 bg-zinc-900/40 p-4">
       <div>
-        <p className="text-sm text-zinc-400">Current score</p>
+        <p className="text-sm text-zinc-400">Import completeness</p>
         <p className={`mt-1 text-4xl font-semibold ${TONE_TEXT[report.tone]}`}>{report.score}%</p>
         <div className="mt-3 h-2 overflow-hidden rounded bg-zinc-800" aria-hidden="true">
           <div className={`h-2 rounded ${TONE_BAR[report.tone]}`} style={{ width: `${report.score}%` }} />
         </div>
-        <p className="mt-3 text-sm text-zinc-200">Estimated LP quality: {report.estimatedQuality}</p>
+        <p className="mt-3 text-sm text-zinc-200">Import-based LP estimate: {report.estimatedQuality}</p>
         {report.generationWarning ? <p className="mt-2 text-sm text-amber-200">{report.generationWarning}</p> : null}
-        <p className="mt-2 text-sm text-zinc-400">Generation remains available. This report does not block it.</p>
+        <p className="mt-2 text-sm text-zinc-400">
+          Sandbox draft generation may stay available. Import completeness is not research coverage, editorial quality, or publication readiness.
+        </p>
       </div>
       <ActionList title="Highest priority actions" items={report.priorityActions} campaignId={campaignId} />
       <SectionList title="Completed items" sections={report.completed} />

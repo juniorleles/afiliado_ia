@@ -13,6 +13,7 @@ import {
 } from "@/lib/product-facts";
 import type { ProductAssetsContract } from "@/lib/product-assets/types";
 import { guaranteeDurations, guaranteeStatesTerms, RESTATEMENT_EXEMPT_RULES, statementAllowed, statementFindings, type StatementKind } from "@/lib/product-contract/claims";
+import { neutralizeEditorialText } from "@/lib/editorial-neutrality/neutralize";
 import { normalizeOffers } from "@/lib/product-contract/offers";
 import { normalizeSpecifications } from "@/lib/product-contract/specifications";
 import {
@@ -31,6 +32,8 @@ import {
   type Statement,
 } from "@/lib/product-contract/types";
 import { validateProductContract } from "@/lib/product-contract/validate";
+import { classifyAttribute } from "@/lib/attribute-class";
+import { faqEntryAllowed } from "@/lib/presell-copy/faq-select";
 
 /**
  * Builds the universal presentation contract from ProductFacts and the already-resolved inputs.
@@ -330,8 +333,17 @@ export function buildProductContract(input: ContractInput): BuildResult {
   const benefitWithheld = benefitCandidates.filter((candidate) => featureScreen.withheld.some((item) => contractKey(item.text) === contractKey(candidate))).length;
 
   // Components --------------------------------------------------------------------------------------
-  const componentScreen = screen(facts ? copyEligibleList(facts.ingredientsOrComponents, facts.confidence.ingredientsOrComponents) : [], "OPERATIONAL");
-  withhold("components", componentScreen.withheld);
+  const ingredientNames: string[] = [];
+  const featureFromComponents: string[] = [];
+  const componentClassWithheld: Screened["withheld"] = [];
+  for (const name of facts ? copyEligibleList(facts.ingredientsOrComponents, facts.confidence.ingredientsOrComponents) : []) {
+    const classified = classifyAttribute(name);
+    if (classified.class === "INGREDIENT") ingredientNames.push(name);
+    else if (classified.class === "PRODUCT_FEATURE") featureFromComponents.push(name);
+    else componentClassWithheld.push({ text: name, categories: [classified.class] });
+  }
+  const componentScreen = screen(ingredientNames, "OPERATIONAL");
+  withhold("components", [...componentScreen.withheld, ...componentClassWithheld]);
   const componentKeys = new Set(componentScreen.kept.map(contractKey));
 
   // Statements shown elsewhere must not repeat (O4) ------------------------------------------------
@@ -342,6 +354,12 @@ export function buildProductContract(input: ContractInput): BuildResult {
     const key = contractKey(line);
     return !leadKeys.has(key) && !benefitKeys.has(key) && !usageKeys.has(key) && !componentKeys.has(key) && key !== guaranteeKey && key !== priceStatementKey;
   });
+  for (const name of featureFromComponents) {
+    const key = contractKey(name);
+    if (!key || leadKeys.has(key) || benefitKeys.has(key) || featureKept.some((line) => contractKey(line) === key)) continue;
+    rememberOrigin(name, "features", facts?.confidence.features ?? "NOT_FOUND");
+    featureKept.push(name);
+  }
   const descriptionKept = descriptionScreen.kept.filter((line) => !leadKeys.has(contractKey(line)));
 
   // Contract assembly ----------------------------------------------------------------------------------
@@ -560,11 +578,17 @@ export function buildProductContract(input: ContractInput): BuildResult {
   const operationalStatements = (field: "returnsInformation" | "shippingInformation"): OperationalStatement[] => {
     const kept: OperationalStatement[] = [];
     for (const item of operational.filter((entry) => entry.field === field)) {
-      const text = clean(item.statement);
-      if (!text) continue;
+      const raw = clean(item.statement);
+      if (!raw) continue;
+      const editorial = neutralizeEditorialText({ text: raw, role: "OPERATIONAL" });
+      if (!editorial.renderedText) {
+        diagnostics.withheld.push({ path: `operational.${field}`, text: raw, categories: [editorial.classification] });
+        continue;
+      }
+      const text = editorial.renderedText;
       const findings = statementFindings(text, "OPERATIONAL", RESTATEMENT_EXEMPT_RULES);
       if (findings.length > 0) {
-        diagnostics.withheld.push({ path: `operational.${field}`, text, categories: findings.map((entry) => entry.category) });
+        diagnostics.withheld.push({ path: `operational.${field}`, text: raw, categories: findings.map((entry) => entry.category) });
         continue;
       }
       if (kept.some((entry) => contractKey(entry.statement) === contractKey(text)) || contractKey(text) === guaranteeKey) continue;
@@ -593,12 +617,23 @@ export function buildProductContract(input: ContractInput): BuildResult {
   const faq: NonNullable<ProductContract["faq"]> = [];
   for (const snippet of facts?.sourceSnippets ?? []) {
     const question = clean(snippet.question);
-    const answer = clean(stripFactLabel(snippet.text));
-    if (!question || !answer || !isCopyEligibleConfidence(snippet.confidence)) continue;
+    const rawAnswer = clean(stripFactLabel(snippet.text));
+    if (!question || !rawAnswer || !isCopyEligibleConfidence(snippet.confidence)) continue;
+    const editorial = neutralizeEditorialText({ text: rawAnswer, role: "FAQ" });
+    const answer = editorial.renderedText ?? "";
+    if (!answer) {
+      diagnostics.withheld.push({ path: "faq", text: `${question} ${rawAnswer}`, categories: [editorial.classification] });
+      continue;
+    }
     if (shown.has(contractKey(answer)) || faq.some((entry) => contractKey(entry.question) === contractKey(question))) continue;
     const findings = [...statementFindings(question, "PROMOTIONAL"), ...statementFindings(answer, "PROMOTIONAL")];
-    if (findings.length > 0) {
-      diagnostics.withheld.push({ path: "faq", text: `${question} ${answer}`, categories: [...new Set(findings.map((entry) => entry.category))] });
+    const faqGate = faqEntryAllowed(question, answer);
+    if (findings.length > 0 || !faqGate.ok) {
+      diagnostics.withheld.push({
+        path: "faq",
+        text: `${question} ${answer}`,
+        categories: findings.length > 0 ? [...new Set(findings.map((entry) => entry.category))] : [faqGate.ok ? "PROMOTIONAL" : faqGate.reason],
+      });
       continue;
     }
     faq.push({ question, answer, evidenceRefs: [evidence.add({ field: "faq", text: `${question} ${answer}`, confidence: snippet.confidence, sourceUrl: snippet.sourceUrl, category: snippet.sourcePageCategory ?? null, unit: snippet.sourceUnit, location: snippet.sourceLocation, retrievedAt: snippet.retrievedAt })] });

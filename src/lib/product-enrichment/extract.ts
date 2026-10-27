@@ -3,6 +3,7 @@ import { extractOperationalFactsFromHtml } from "@/lib/operational-evidence";
 import { extractProductImageCandidates } from "@/lib/product-image";
 import { emptyProductFacts, type OfferFact, type ProductFacts, type SpecificationFact, type SourceFact } from "@/lib/product-facts";
 import type { EnrichmentSource, StructuredRecord } from "@/lib/product-enrichment/types";
+import { presellRecordsFromSource } from "@/lib/presell-enrichment/extract";
 
 export type ExtractedBatch = {
   facts: ProductFacts;
@@ -156,7 +157,10 @@ export function extractSources(sources: EnrichmentSource[]): ExtractedBatch {
         batch.visualCandidates.push({ url: image.url, sourceUrl: source.url });
       }
     }
-    applyRecords(batch, source);
+    applyRecords(batch, {
+      ...source,
+      records: [...(source.records ?? []), ...presellRecordsFromSource(source)],
+    });
   }
   return batch;
 }

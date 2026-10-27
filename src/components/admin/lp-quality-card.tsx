@@ -33,7 +33,10 @@ export function LpQualityCard({
         <div className="mt-3 h-2 overflow-hidden rounded bg-zinc-800" aria-hidden="true">
           <div className={`h-2 rounded ${QUALITY_BAR[prediction.quality]}`} style={{ width: `${prediction.score}%` }} />
         </div>
-        <p className="mt-3 text-sm text-zinc-200">Confidence {prediction.confidence}%</p>
+        <p className="mt-3 text-sm text-zinc-200">Extraction confidence unavailable</p>
+        <p className="mt-1 text-xs text-zinc-500">
+          The previous agreement percentage is not extraction quality and is not shown as confidence.
+        </p>
       </div>
       <dl className="grid gap-2 text-sm sm:grid-cols-2">
         <Metric label="Expected visual density" value={prediction.visualDensity} />
@@ -75,7 +78,9 @@ export function LpQualityCard({
           </ul>
         )}
       </div>
-      <p className="text-sm text-zinc-400">Generation remains available. This estimate does not block it.</p>
+      <p className="text-sm text-zinc-400">
+        Sandbox draft generation may stay available. This estimate is not publication readiness and does not authorize a commercial CTA.
+      </p>
     </section>
   );
 }

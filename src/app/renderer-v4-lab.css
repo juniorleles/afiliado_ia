@@ -1,0 +1,215 @@
+/* Isolated V4 lab stylesheet. Never imported by a public route. */
+.ds-root[data-lab="renderer-v4"] {
+  overflow-x: clip;
+}
+
+.ds-root[data-lab="renderer-v4"] a.ds-btn {
+  color: var(--ds-accent-ink);
+  background: var(--ds-accent);
+}
+
+.ds-root[data-lab="renderer-v4"] a.ds-btn:hover {
+  background: var(--ds-accent-hover);
+  color: var(--ds-accent-ink);
+}
+
+.ds-root[data-lab="renderer-v4"] a.ds-btn--ghost {
+  color: var(--ds-ink);
+  background: transparent;
+  border-color: var(--ds-line);
+}
+
+.ds-root[data-lab="renderer-v4"] a.ds-btn--ghost:hover {
+  background: var(--ds-surface-alt);
+  color: var(--ds-ink);
+}
+
+.v4-identity {
+  margin: 0 0 var(--ds-space-3);
+  color: var(--ds-ink);
+  font-size: 1.0625rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.v4-hero__copy .ds-display {
+  max-width: 18ch;
+}
+
+.v4-hero__copy .ds-lead + .ds-body,
+.v4-hero__copy .ds-display + .ds-body {
+  margin-top: var(--ds-space-4);
+}
+
+.v4-band .ds-h2 {
+  margin-bottom: var(--ds-space-5);
+}
+
+.v4-points {
+  display: grid;
+  gap: var(--ds-space-3);
+}
+
+.v4-point {
+  margin: 0;
+  padding: var(--ds-space-4) 0;
+  border-bottom: 1px solid var(--ds-line);
+  font-size: 1.0625rem;
+}
+
+.v4-point:last-child {
+  border-bottom: 0;
+}
+
+.v4-specs {
+  display: grid;
+  gap: var(--ds-space-4);
+}
+
+.v4-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.v4-note {
+  padding: 0.5rem 0.85rem;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-line);
+  font-weight: 600;
+}
+
+.v4-offer {
+  display: grid;
+  gap: var(--ds-space-2);
+  min-height: 100%;
+  padding: var(--ds-space-6);
+  border: 1px solid var(--ds-line);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-surface);
+}
+
+.v4-offer__qty {
+  margin: 0;
+  color: var(--ds-muted);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.v4-offer__price {
+  margin: 0;
+  color: var(--ds-ink);
+  font-family: var(--ds-font-display);
+  font-size: clamp(2rem, 1.6rem + 1.4vw, 2.75rem);
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.v4-gallery {
+  display: grid;
+  gap: var(--ds-space-4);
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
+.v4-gallery img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--ds-radius-lg);
+  border: 1px solid var(--ds-line);
+  background: var(--ds-surface);
+}
+
+.v4-offer-cta {
+  margin-top: var(--ds-space-5);
+}
+
+.v4-offer-cta .ds-btn {
+  min-width: 12rem;
+}
+
+.ds-faq__item summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.ds-faq__item[open] summary {
+  margin-bottom: var(--ds-space-2);
+}
+
+.ds-root[data-lab="renderer-v4"] .ds-topbar {
+  position: sticky;
+}
+
+.ds-root[data-lab="renderer-v4"] .ds-spec {
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-line);
+  border-radius: var(--ds-radius-lg);
+  overflow: hidden;
+}
+
+.ds-root[data-lab="renderer-v4"] .ds-spec th,
+.ds-root[data-lab="renderer-v4"] .ds-spec td {
+  padding: 0.9rem 1.1rem;
+}
+
+.ds-root[data-lab="renderer-v4"] .ds-spec tr:nth-child(even) {
+  background: var(--ds-surface-alt);
+}
+
+.ds-root[data-lab="renderer-v4"] .ds-auto-grid[data-count="1"] {
+  max-width: 22rem;
+}
+
+.ds-root[data-lab="renderer-v4"] .ds-hero-band {
+  padding-block: clamp(2.25rem, 1.6rem + 3vw, 4.75rem);
+}
+
+.ds-root[data-ds-density="thin"][data-lab="renderer-v4"] .ds-hero-band {
+  padding-block: clamp(1.5rem, 1.1rem + 2vw, 2.75rem);
+}
+
+@media (max-width: 639px) {
+  .ds-root[data-lab="renderer-v4"] .ds-hero__actions {
+    display: grid;
+  }
+
+  .ds-root[data-lab="renderer-v4"] .ds-hero__actions .ds-btn,
+  .ds-root[data-lab="renderer-v4"] .v4-offer-cta .ds-btn {
+    width: 100%;
+  }
+
+  .v4-hero__copy .ds-display {
+    max-width: none;
+  }
+
+  .ds-root[data-lab="renderer-v4"][data-ds-sticky="on"] main {
+    padding-bottom: 5.5rem;
+  }
+
+  .ds-root[data-lab="renderer-v4"][data-ds-sticky="on"] .ds-hero-band {
+    min-height: calc(100svh - 8.5rem);
+  }
+}
+
+@media (min-width: 960px) {
+  .ds-root[data-v4-status="PARTIAL"][data-ds-composition="information-first"] .ds-hero-band {
+    padding-block: clamp(1.75rem, 1.3rem + 2vw, 3rem);
+  }
+}
+
+.v4-sandbox-badge {
+  display: inline-block;
+  margin-right: 0.55em;
+  padding: 0.12em 0.45em;
+  border: 1px solid currentColor;
+  font-size: 0.68em;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+}

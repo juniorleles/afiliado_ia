@@ -6,6 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { KnowledgeText } from "@/lib/product-knowledge";
+import { currentSourceStatus } from "@/lib/campaign-sources/present";
+import type { CampaignSource } from "@/lib/campaign-sources/types";
+
+function sourceStatus(sources: CampaignSource[], type: CampaignSource["sourceType"]): string {
+  return currentSourceStatus(sources, type);
+}
 
 function Extracted({ show }: { show: boolean }) {
   if (!show) return null;
@@ -53,12 +59,14 @@ export function ProductFactsForm({
   text,
   extracted,
   locked,
+  sources = [],
   returnToStrategy = false,
 }: {
   campaignId: number;
   text: KnowledgeText;
   extracted: Record<string, boolean>;
   locked: { product: string; marketplace: string; language: string; country: string };
+  sources?: CampaignSource[];
   returnToStrategy?: boolean;
 }) {
   return (
@@ -82,6 +90,46 @@ export function ProductFactsForm({
         </div>
       </WizardSection>
 
+      <WizardSection id="fontes-pesquisa-produto" title="Fontes de pesquisa do produto">
+        <p className="text-body text-muted-foreground">
+          Os campos são opcionais. A pesquisa começa com qualquer fonte elegível. Uma URL descoberta não preenche destino autorizado nem HopLink.
+        </p>
+        <div className="grid gap-ds-16 lg:grid-cols-2">
+          <div className="flex flex-col gap-ds-4 lg:col-span-2">
+            <div className="flex items-center gap-ds-8">
+              <Label htmlFor="productUrl">Página de vendas</Label>
+              <Badge tone="neutral">{sourceStatus(sources, "SALES_PAGE")}</Badge>
+            </div>
+            <Input id="productUrl" name="productUrl" defaultValue={text.productUrl} placeholder="https://" />
+            <p className="text-caption text-muted-foreground">URL comercial apresentada ao consumidor. Não use a página de pedido.</p>
+          </div>
+          <div className="flex flex-col gap-ds-4 lg:col-span-2">
+            <div className="flex items-center gap-ds-8">
+              <Label htmlFor="affiliateResourceUrl">Página de recursos para afiliados</Label>
+              <Badge tone="neutral">{sourceStatus(sources, "AFFILIATE_RESOURCE")}</Badge>
+            </div>
+            <Input id="affiliateResourceUrl" name="affiliateResourceUrl" defaultValue={text.affiliateResourceUrl ?? ""} placeholder="https://" />
+            <p className="text-caption text-muted-foreground">Materiais e orientações do vendedor. Não comprova alegações de saúde de forma independente.</p>
+          </div>
+          <div className="flex flex-col gap-ds-4">
+            <div className="flex items-center gap-ds-8">
+              <Label htmlFor="authorizedDestinationUrl">Destino autorizado</Label>
+              <Badge tone="neutral">{sourceStatus(sources, "AUTHORIZED_DESTINATION")}</Badge>
+            </div>
+            <Input id="authorizedDestinationUrl" name="authorizedDestinationUrl" defaultValue={text.authorizedDestinationUrl ?? ""} placeholder="https://" />
+            <p className="text-caption text-muted-foreground">Só preencha se a autorização comercial já estiver comprovada.</p>
+          </div>
+          <div className="flex flex-col gap-ds-4">
+            <div className="flex items-center gap-ds-8">
+              <Label htmlFor="trackingHopUrl">HopLink</Label>
+              <Badge tone="neutral">{sourceStatus(sources, "TRACKING_HOPLINK")}</Badge>
+            </div>
+            <Input id="trackingHopUrl" name="trackingHopUrl" defaultValue={text.trackingHopUrl ?? ""} placeholder="https://" />
+            <p className="text-caption text-muted-foreground">Rastreamento do afiliado, se existir. Não é autorização comercial.</p>
+          </div>
+        </div>
+      </WizardSection>
+
       <WizardSection id="conhecimento-produto" title="Conhecimento do produto">
         <Area id="description" name="description" label="Descrição" value={text.description} extracted={extracted.description} />
         <Area id="ingredients" name="ingredients" label="Ingredientes" value={text.ingredients} extracted={extracted.ingredients} hint="Um item por linha." />
@@ -97,9 +145,14 @@ export function ProductFactsForm({
       </WizardSection>
 
       <div className="flex flex-col-reverse gap-ds-12 sm:flex-row sm:items-center sm:justify-between">
-        <Button type="submit" name="intent" value="draft" variant="secondary">
-          Salvar rascunho
-        </Button>
+        <div className="flex flex-wrap gap-ds-12">
+          <Button type="submit" name="intent" value="draft" variant="secondary">
+            Salvar rascunho
+          </Button>
+          <Button type="button" variant="ghost" asChild>
+            <a href="#informacoes-encontradas">Revisar alterações</a>
+          </Button>
+        </div>
         {returnToStrategy ? (
           <Button type="submit" name="intent" value="strategy" className="h-12 px-ds-24 sm:min-w-64">
             Salvar e voltar à estratégia

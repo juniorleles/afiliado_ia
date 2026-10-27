@@ -1,8 +1,10 @@
-import { purchaseCtaAllowed } from "@/lib/design-system/layout";
 import type { ConversionBrief, SectionType } from "@/lib/conversion-strategy/types";
 import type { ProductContract, Statement } from "@/lib/product-contract/types";
 import type { CopyItem, CopyProducer, GroundedText, SalesCopy, SectionCopy } from "@/lib/page-blueprint/types";
 import { SALES_COPY_VERSION } from "@/lib/page-blueprint/types";
+import { howItWorksHeadline, presellCategoryOf, presellCtaAuthorization } from "@/lib/presell-strategy/plan";
+import { dedupeSalesCopy } from "@/lib/page-blueprint/dedupe";
+import { faqEntryAllowed } from "@/lib/presell-copy/faq-select";
 
 const PRODUCER: CopyProducer = "DETERMINISTIC_OFFLINE";
 
@@ -36,11 +38,13 @@ export function buildSalesCopy(contract: ProductContract, brief: ConversionBrief
   used.add(keyOf(headline.text));
 
   let subheadline: GroundedText | undefined;
-  if (contract.identity.productKind && !keyOf(headline.text).includes(keyOf(contract.identity.productKind))) {
-    subheadline = grounded(contract.identity.productKind, [], ["identity.productKind"]);
-    used.add(keyOf(contract.identity.productKind));
+  const kind = contract.identity.productKind?.replace(/\s+/g, " ").trim() ?? "";
+  const genericKind = !kind || /^(natural )?formula$|^product$|^item$/i.test(kind);
+  if (kind && !genericKind && !keyOf(headline.text).includes(keyOf(kind))) {
+    subheadline = grounded(kind, [], ["identity.productKind"]);
+    used.add(keyOf(kind));
   } else {
-    const unusedFeature = (contract.features ?? []).find((item) => take(item.text));
+    const unusedFeature = (contract.features ?? []).find((item) => take(item.text) && item.text.trim().split(/\s+/).length >= 5);
     if (unusedFeature) subheadline = fromStatement(unusedFeature, "features");
   }
 
@@ -55,7 +59,7 @@ export function buildSalesCopy(contract: ProductContract, brief: ConversionBrief
     introduction = grounded(name, [], ["identity.productName"]);
   }
 
-  const hop = purchaseCtaAllowed(contract) && brief.ctaStrategy.action === "AUTHORIZED_HOP";
+  const hop = presellCtaAuthorization(contract).status === "AUTHORIZED" && brief.ctaStrategy.action === "AUTHORIZED_HOP";
   const sections: SectionCopy[] = [];
   const faq: SalesCopy["faq"] = [];
 
@@ -85,7 +89,7 @@ export function buildSalesCopy(contract: ProductContract, brief: ConversionBrief
     ? grounded(contract.cta.label ? contract.cta.label : "See the packages the source listed.", [], ["cta"])
     : caption;
 
-  return {
+  return dedupeSalesCopy({
     copyVersion: SALES_COPY_VERSION,
     producer: PRODUCER,
     headline,
@@ -102,7 +106,7 @@ export function buildSalesCopy(contract: ProductContract, brief: ConversionBrief
     },
     closing,
     faq,
-  };
+  });
 }
 
 function sectionCopy(
@@ -146,6 +150,14 @@ function sectionCopy(
         items.push({ text: fromStatement(feature, `features[${i}]`) });
       }
       break;
+    case "how_it_works":
+      headline = grounded(howItWorksHeadline(presellCategoryOf({ productKind: contract.identity.productKind })), [], ["usage"]);
+      for (const [i, step] of (contract.usage ?? []).entries()) {
+        if (!unused(step.text)) continue;
+        used.add(keyOf(step.text));
+        body.push(fromStatement(step, `usage[${i}]`));
+      }
+      break;
     case "benefits":
       headline = grounded("Seller-stated claims", [], ["benefits"]);
       for (const [i, benefit] of (contract.benefits ?? []).entries()) {
@@ -163,7 +175,11 @@ function sectionCopy(
       }
       break;
     case "specifications":
-      headline = grounded("Details", [], ["specifications"]);
+      headline = grounded(
+        (contract.specifications ?? []).length > 0 ? "Specifications" : (contract.components ?? []).length > 0 ? "Ingredients" : "Details",
+        [],
+        (contract.specifications ?? []).length > 0 ? ["specifications"] : ["components"],
+      );
       for (const [i, spec] of (contract.specifications ?? []).entries()) {
         const line = spec.unit ? `${spec.name}: ${spec.value} ${spec.unit}` : `${spec.name}: ${spec.value}`;
         items.push({ text: grounded(line, spec.evidenceRefs, [`specifications[${i}]`]) });
@@ -188,27 +204,48 @@ function sectionCopy(
       break;
     case "guarantee":
       headline = grounded("Guarantee", contract.guarantee?.evidenceRefs ?? [], ["guarantee"]);
-      if (contract.guarantee) body.push(grounded(contract.guarantee.text, contract.guarantee.evidenceRefs, ["guarantee"]));
+      if (contract.guarantee) {
+        body.push(
+          grounded(`The seller states: ${contract.guarantee.text}`, contract.guarantee.evidenceRefs, ["guarantee"]),
+        );
+      }
       break;
-    case "trust":
-      headline = grounded("Returns, shipping and cautions", [], ["operational"]);
+    case "trust": {
+      const hasReturns = (contract.operational?.returns ?? []).length > 0;
+      const hasShipping = (contract.operational?.shipping ?? []).length > 0;
+      const hasCautions = (contract.cautions ?? []).length > 0;
+      const trustTitle =
+        hasCautions && !hasReturns && !hasShipping
+          ? "Cautions"
+          : (hasReturns || hasShipping) && !hasCautions
+            ? "Returns and shipping"
+            : "Returns, shipping and cautions";
+      headline = grounded(trustTitle, [], ["operational"]);
       (contract.operational?.returns ?? []).forEach((item, i) => {
-        items.push({ text: grounded(item.statement, item.evidenceRefs, [`operational.returns[${i}]`]) });
+        const text = /^the seller states:/i.test(item.statement) ? item.statement : `The seller states: ${item.statement}`;
+        items.push({ text: grounded(text, item.evidenceRefs, [`operational.returns[${i}]`]) });
       });
       (contract.operational?.shipping ?? []).forEach((item, i) => {
-        items.push({ text: grounded(item.statement, item.evidenceRefs, [`operational.shipping[${i}]`]) });
+        const text = /^the seller states:/i.test(item.statement) ? item.statement : `The seller states: ${item.statement}`;
+        items.push({ text: grounded(text, item.evidenceRefs, [`operational.shipping[${i}]`]) });
       });
       (contract.cautions ?? []).forEach((item, i) => {
         items.push({ text: fromStatement(item, `cautions[${i}]`) });
       });
       break;
+    }
     case "faq":
       headline = grounded("Questions the source answered", [], ["faq"]);
       for (const [i, entry] of (contract.faq ?? []).entries()) {
+        if (!faqEntryAllowed(entry.question, entry.answer).ok) continue;
+        const answerKey = keyOf(entry.answer);
+        if (!answerKey || used.has(answerKey)) continue;
+        used.add(answerKey);
+        used.add(keyOf(entry.question));
         const question = grounded(entry.question, entry.evidenceRefs, [`faq[${i}]`]);
         const answer = grounded(entry.answer, entry.evidenceRefs, [`faq[${i}]`]);
-        items.push({ title: question, text: answer });
         faq.push({ question, answer });
+        items.push({ title: question, text: grounded("", [], [`faq[${i}]`]) });
       }
       break;
     case "cta_final":
@@ -231,7 +268,8 @@ function sectionCopy(
       return null;
   }
 
-  if (type !== "hero" && type !== "legal" && body.length === 0 && items.length === 0) return null;
+  if (type === "faq" && faq.length === 0) return null;
+  if (type !== "hero" && type !== "legal" && type !== "faq" && body.length === 0 && items.length === 0) return null;
 
   return {
     section: { sectionType: type, headline, body, items, cta },

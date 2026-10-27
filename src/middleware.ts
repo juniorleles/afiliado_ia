@@ -12,6 +12,7 @@ import { adminAuthBypassed, labRoutesOpenWithoutCredential } from "@/lib/access-
 import { isProduction, configuredOrigin } from "@/lib/env";
 import { applyHeaders, securityHeaders } from "@/lib/security-headers";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { mutationOriginAllowed } from "@/lib/request-origin";
 
 function classifyPath(pathname: string): "PUBLIC" | "ADMIN" | "INTERNAL" | "WEBHOOK" | "STATIC" {
   if (pathname.startsWith("/_next") || pathname === "/favicon.ico") return "STATIC";
@@ -29,23 +30,13 @@ function isHttps(request: NextRequest): boolean {
 }
 
 function originOk(request: NextRequest): boolean {
-  if (request.method === "GET" || request.method === "HEAD" || request.method === "OPTIONS") return true;
-  const origin = request.headers.get("origin");
-  const host = request.nextUrl.host;
-  if (!origin) {
-    const referer = request.headers.get("referer");
-    if (!referer) return request.method !== "POST";
-    try {
-      return new URL(referer).host === host;
-    } catch {
-      return false;
-    }
-  }
-  try {
-    return new URL(origin).host === host;
-  } catch {
-    return false;
-  }
+  return mutationOriginAllowed({
+    method: request.method,
+    origin: request.headers.get("origin"),
+    referer: request.headers.get("referer"),
+    requestHost: request.headers.get("host"),
+    nextHost: request.nextUrl.host,
+  });
 }
 
 async function adminAllowed(request: NextRequest): Promise<boolean> {
