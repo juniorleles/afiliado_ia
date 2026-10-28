@@ -18,6 +18,7 @@ import { applyProductionCandidate } from "@/lib/production-candidate-view";
 import { consumerVisibleText, parsePresellPage } from "@/lib/presell-page";
 import type { ProductFacts } from "@/lib/product-facts";
 import { withResolvedCampaign } from "@/lib/manual-overrides";
+import { premiumPublicationBlock } from "@/lib/presell-quality/global-quality-gate";
 
 function filled(value: string | null | undefined): string {
   return value?.trim() ?? "";
@@ -146,6 +147,10 @@ export function tryPublish(campaign: Campaign, confirmWarnings: boolean): TryPub
   const structural = publicationBlockReason(viewed);
   if (structural) {
     return { ok: false, gate: "BLOCKED", error: structural };
+  }
+  const premium = premiumPublicationBlock(viewed.id);
+  if (premium) {
+    return { ok: false, gate: "BLOCKED", error: premium };
   }
   let gate: PublicationGate;
   try {

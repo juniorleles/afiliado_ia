@@ -25,6 +25,12 @@ export type ThemeTokens = {
   accentSoft: string;
   /** Used on hover for solid accent surfaces. */
   accentHover: string;
+  /** High-contrast commercial CTA. Independent from the institutional accent. */
+  cta: string;
+  ctaInk: string;
+  ctaHover: string;
+  ctaSoft: string;
+  ctaText: string;
   focus: string;
 };
 
@@ -44,6 +50,11 @@ export const THEMES: Record<ThemeId, ThemeTokens> = {
     accentText: "#1c3bb5",
     accentSoft: "#e6ebfd",
     accentHover: "#1c3bb5",
+    cta: "#2447d6",
+    ctaInk: "#ffffff",
+    ctaHover: "#1c3bb5",
+    ctaSoft: "#e6ebfd",
+    ctaText: "#1c3bb5",
     focus: "#1c3bb5",
   },
   forest: {
@@ -61,6 +72,11 @@ export const THEMES: Record<ThemeId, ThemeTokens> = {
     accentText: "#1d5b45",
     accentSoft: "#e0eee7",
     accentHover: "#144232",
+    cta: "#9a3412",
+    ctaInk: "#ffffff",
+    ctaHover: "#7c2d12",
+    ctaSoft: "#ffedd5",
+    ctaText: "#9a3412",
     focus: "#1d5b45",
   },
   ember: {
@@ -78,6 +94,11 @@ export const THEMES: Record<ThemeId, ThemeTokens> = {
     accentText: "#9a2d14",
     accentSoft: "#fbe5de",
     accentHover: "#8f2a12",
+    cta: "#9a2d14",
+    ctaInk: "#ffffff",
+    ctaHover: "#7a240f",
+    ctaSoft: "#fbe5de",
+    ctaText: "#9a2d14",
     focus: "#9a2d14",
   },
   midnight: {
@@ -95,6 +116,11 @@ export const THEMES: Record<ThemeId, ThemeTokens> = {
     accentText: "#9db8ff",
     accentSoft: "#202e57",
     accentHover: "#a3bcff",
+    cta: "#fbbf24",
+    ctaInk: "#0a1124",
+    ctaHover: "#f59e0b",
+    ctaSoft: "#202e57",
+    ctaText: "#fbbf24",
     focus: "#9db8ff",
   },
 };
@@ -147,6 +173,12 @@ export const BREAKPOINTS = { sm: 640, md: 960, lg: 1200 } as const;
 
 export const MIN_TARGET_PX = 44;
 
+export const SHADOW = {
+  sm: "0 1px 2px color-mix(in srgb, var(--ds-ink) 8%, transparent)",
+  md: "0 10px 28px color-mix(in srgb, var(--ds-ink) 10%, transparent)",
+  lg: "0 22px 50px color-mix(in srgb, var(--ds-ink) 14%, transparent)",
+} as const;
+
 function cssVars(entries: Array<[string, string]>): string {
   return entries.map(([key, value]) => `${key}:${value};`).join("");
 }
@@ -161,7 +193,8 @@ export function baseTokenCss(): string {
   const radius = Object.entries(RADIUS).map(([key, value]): [string, string] => [`--ds-radius-${key}`, value]);
   const container = Object.entries(CONTAINER).map(([key, value]): [string, string] => [`--ds-container-${key}`, value]);
   const rhythm = Object.entries(RHYTHM).map(([key, value]): [string, string] => [`--ds-rhythm-${key}`, value]);
-  return `.ds-root{${cssVars([...type, ...space, ...radius, ...container, ...rhythm, ["--ds-target", `${MIN_TARGET_PX}px`]])}}`;
+  const shadow = Object.entries(SHADOW).map(([key, value]): [string, string] => [`--ds-shadow-${key}`, value]);
+  return `.ds-root{${cssVars([...type, ...space, ...radius, ...container, ...rhythm, ...shadow, ["--ds-target", `${MIN_TARGET_PX}px`]])}}`;
 }
 
 export function themeCss(): string {
@@ -179,6 +212,11 @@ export function themeCss(): string {
         ["--ds-accent-text", theme.accentText],
         ["--ds-accent-soft", theme.accentSoft],
         ["--ds-accent-hover", theme.accentHover],
+        ["--ds-cta", theme.cta],
+        ["--ds-cta-ink", theme.ctaInk],
+        ["--ds-cta-hover", theme.ctaHover],
+        ["--ds-cta-soft", theme.ctaSoft],
+        ["--ds-cta-text", theme.ctaText],
         ["--ds-focus", theme.focus],
         ["color-scheme", theme.scheme],
       ];
@@ -227,6 +265,11 @@ export function themeContrastPairs(theme: ThemeTokens): Array<{ name: string; fg
     { name: "accentText on surface", fg: theme.accentText, bg: theme.surface, min: 4.5 },
     { name: "accentText on accentSoft", fg: theme.accentText, bg: theme.accentSoft, min: 4.5 },
     { name: "ink on accentSoft", fg: theme.ink, bg: theme.accentSoft, min: 4.5 },
+    { name: "ctaInk on cta", fg: theme.ctaInk, bg: theme.cta, min: 4.5 },
+    { name: "ctaInk on ctaHover", fg: theme.ctaInk, bg: theme.ctaHover, min: theme.scheme === "dark" ? 3 : 4.5 },
+    { name: "ctaText on bg", fg: theme.ctaText, bg: theme.bg, min: 4.5 },
+    { name: "ctaText on surface", fg: theme.ctaText, bg: theme.surface, min: 4.5 },
+    { name: "ctaText on ctaSoft", fg: theme.ctaText, bg: theme.ctaSoft, min: 4.5 },
     { name: "focus on bg", fg: theme.focus, bg: theme.bg, min: 3 },
     { name: "focus on surface", fg: theme.focus, bg: theme.surface, min: 3 },
   ];

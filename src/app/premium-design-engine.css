@@ -1,0 +1,224 @@
+/* Reusable premium presentation. Isolated lab CSS. Not a product-specific skin. */
+.ds-root[data-ds-engine="premium"] {
+  overflow-x: clip;
+}
+
+.ds-root[data-ds-engine="premium"] .ds-btn--cta,
+.ds-root[data-ds-engine="premium"] .ds-btn--preview {
+  background: var(--ds-cta);
+  color: var(--ds-cta-ink);
+  min-height: 3.15rem;
+  padding: 0.95rem 1.7rem;
+  box-shadow: var(--ds-shadow-md);
+  font-size: 1.0625rem;
+}
+
+.ds-root[data-ds-engine="premium"] .ds-btn--cta:hover {
+  background: var(--ds-cta-hover);
+}
+
+.ds-root[data-ds-engine="premium"] .ds-btn--preview,
+.ds-root[data-ds-engine="premium"] .ds-btn--preview[aria-disabled="true"] {
+  cursor: not-allowed;
+  pointer-events: none;
+  opacity: 1;
+  filter: none;
+}
+
+.ds-root[data-ds-engine="premium"] .premium-cta {
+  display: grid;
+  gap: 0.45rem;
+  justify-items: start;
+}
+
+.ds-root[data-ds-engine="premium"] .premium-cta__caption {
+  max-width: 28rem;
+}
+
+.ds-root[data-ds-engine="premium"] .ds-hero-band {
+  background:
+    radial-gradient(900px 420px at 88% 12%, color-mix(in srgb, var(--ds-accent-soft) 90%, transparent), transparent 62%),
+    linear-gradient(180deg, var(--ds-surface) 0%, var(--ds-bg) 100%);
+  padding-block: clamp(2.75rem, 2rem + 5vw, 6rem);
+}
+
+.ds-root[data-ds-engine="premium"] .v4-hero__copy .ds-display {
+  max-width: 14ch;
+}
+
+.ds-root[data-ds-engine="premium"] .ds-hero__stage {
+  padding: clamp(1rem, 0.6rem + 2vw, 2rem);
+  border-radius: 2rem;
+  background:
+    radial-gradient(circle at 50% 42%, var(--ds-surface) 0%, var(--ds-accent-soft) 78%);
+  box-shadow: var(--ds-shadow-lg);
+}
+
+.ds-root[data-ds-engine="premium"] .ds-hero__frame {
+  aspect-ratio: 1 / 1;
+  border: 0;
+  background: transparent;
+}
+
+.ds-root[data-ds-engine="premium"] .ds-hero__frame img {
+  object-fit: contain;
+}
+
+.ds-root[data-ds-engine="premium"] .premium-icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  display: block;
+}
+
+.ds-root[data-ds-engine="premium"] .premium-grid {
+  display: grid;
+  gap: var(--ds-space-4);
+  grid-template-columns: 1fr;
+}
+
+.ds-root[data-ds-engine="premium"] .premium-card {
+  min-height: 100%;
+  padding: var(--ds-space-5);
+  border: 1px solid var(--ds-line);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-surface);
+  box-shadow: var(--ds-shadow-sm);
+}
+
+.ds-root[data-ds-engine="premium"] .premium-card__icon,
+.ds-root[data-ds-engine="premium"] .premium-guarantee__icon {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-bottom: var(--ds-space-3);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-accent-soft);
+  color: var(--ds-accent-text);
+}
+
+.ds-root[data-ds-engine="premium"] .premium-guarantee {
+  display: grid;
+  gap: var(--ds-space-4);
+  padding: var(--ds-space-6);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-accent);
+  color: var(--ds-accent-ink);
+  box-shadow: var(--ds-shadow-md);
+}
+
+.ds-root[data-ds-engine="premium"] .premium-guarantee .ds-body,
+.ds-root[data-ds-engine="premium"] .premium-guarantee .ds-caption {
+  color: color-mix(in srgb, var(--ds-accent-ink) 88%, transparent);
+}
+
+.ds-root[data-ds-engine="premium"] .premium-guarantee__days {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.ds-root[data-ds-engine="premium"] .premium-guarantee__days strong {
+  font-family: var(--ds-font-display);
+  font-size: clamp(3rem, 2.2rem + 3vw, 4.5rem);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  color: var(--ds-accent-ink);
+}
+
+.ds-root[data-ds-engine="premium"] .premium-guarantee__days span {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ds-root[data-ds-engine="premium"] .premium-faq__item {
+  padding: 0;
+  border: 1px solid var(--ds-line);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface);
+  margin-bottom: var(--ds-space-3);
+  overflow: hidden;
+}
+
+.ds-root[data-ds-engine="premium"] .premium-faq__item summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+  list-style: none;
+  min-height: var(--ds-target);
+}
+
+.ds-root[data-ds-engine="premium"] .premium-faq__item summary::-webkit-details-marker {
+  display: none;
+}
+
+.ds-root[data-ds-engine="premium"] .premium-faq__item .ds-body {
+  padding: 0 1.1rem 1.1rem 3.2rem;
+}
+
+.ds-root[data-ds-engine="premium"] .ds-footer {
+  background: var(--ds-ink);
+  color: var(--ds-bg);
+}
+
+.ds-root[data-ds-engine="premium"] .ds-section--accent .premium-cta .ds-caption {
+  color: color-mix(in srgb, var(--ds-accent-ink) 78%, transparent);
+}
+
+@media (min-width: 640px) {
+  .ds-root[data-ds-engine="premium"] .premium-grid[data-count="2"],
+  .ds-root[data-ds-engine="premium"] .premium-grid[data-count="3"],
+  .ds-root[data-ds-engine="premium"] .premium-grid[data-count="4"] {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 960px) {
+  .ds-root[data-ds-engine="premium"] .ds-hero--split {
+    grid-template-columns: minmax(0, 1.05fr) minmax(18rem, 0.95fr);
+    gap: var(--ds-space-8);
+    align-items: center;
+  }
+
+  .ds-root[data-ds-engine="premium"] .ds-hero--split .ds-hero__media {
+    order: 0;
+  }
+
+  .ds-root[data-ds-engine="premium"] .premium-grid[data-count="3"],
+  .ds-root[data-ds-engine="premium"] .premium-grid[data-count="4"] {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .ds-root[data-ds-engine="premium"] .premium-grid[data-count="3"] {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .ds-root[data-ds-engine="premium"] .premium-guarantee {
+    grid-template-columns: auto auto 1fr;
+    align-items: start;
+  }
+}
+
+@media (max-width: 767px) {
+  .ds-root[data-ds-engine="premium"] .v4-hero__copy .ds-display {
+    max-width: none;
+  }
+
+  .ds-root[data-ds-engine="premium"] .premium-cta,
+  .ds-root[data-ds-engine="premium"] .premium-cta .ds-btn {
+    width: 100%;
+  }
+
+  .ds-root[data-ds-engine="premium"] .ds-hero__stage {
+    max-width: 22rem;
+    margin-inline: auto;
+  }
+
+  .ds-root[data-ds-engine="premium"] .premium-guarantee {
+    grid-template-columns: 1fr;
+  }
+}

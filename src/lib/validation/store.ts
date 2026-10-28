@@ -1,4 +1,5 @@
 import { getDb } from "@/lib/db";
+import { humanReviewAcceptanceBlock } from "@/lib/presell-quality/global-quality-gate";
 import type {
   CrossPageAiReview,
   StructuralDiversityLevel,
@@ -410,6 +411,12 @@ export function updateValidationCandidate(
 }
 
 export function setHumanReview(id: string, state: HumanReviewState, notes = ""): ValidationCandidate | null {
+  const current = getValidationCandidate(id);
+  if (!current) return null;
+  if (state === "ACCEPTED") {
+    const blocked = humanReviewAcceptanceBlock(current.campaignId);
+    if (blocked) return null;
+  }
   return updateValidationCandidate(id, { humanReview: state, humanNotes: notes });
 }
 

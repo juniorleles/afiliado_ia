@@ -55,6 +55,16 @@ export const EXECUTION_54AL_BUDGET = {
   provider: "openai" as const,
 } as const;
 
+export const EXECUTION_54AU_BUDGET = {
+  maxUsd: 0,
+  maxPaidGenerations: 0,
+  maxCampaignEvals: 0,
+  maxCorrectionRounds: 0,
+  reserveUsdPerEvaluation: 0,
+  reserveUsdPerGeneration: 0,
+  provider: "openai" as const,
+} as const;
+
 export const EXECUTION_54AT_BUDGET = {
   maxUsd: 1,
   maxPaidGenerations: 1,

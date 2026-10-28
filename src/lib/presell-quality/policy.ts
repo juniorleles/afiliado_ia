@@ -1,6 +1,11 @@
 import type { AssessmentStatus, HumanReviewEligibility, PresellQualityAssessment } from "@/lib/presell-quality/types";
+import { canEnterHumanReviewQueue, type GlobalPresellQualityGate } from "@/lib/presell-quality/global-quality-gate";
 
-export function humanReviewEligibilityOf(status: AssessmentStatus): HumanReviewEligibility {
+export function humanReviewEligibilityOf(
+  status: AssessmentStatus,
+  gate?: Pick<GlobalPresellQualityGate, "status"> | null,
+): HumanReviewEligibility {
+  if (gate) return canEnterHumanReviewQueue(gate) ? "ELIGIBLE" : "NOT_ELIGIBLE";
   return status === "QUALITY_PASSED" ? "ELIGIBLE" : "NOT_ELIGIBLE";
 }
 

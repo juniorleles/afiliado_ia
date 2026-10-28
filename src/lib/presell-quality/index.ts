@@ -14,7 +14,7 @@ export type { MultimodalPresellEvaluator } from "@/lib/presell-quality/multimoda
 export type { PresellEvaluationInput } from "@/lib/presell-quality/input";
 export { QUALITY_VIEWPORTS } from "@/lib/presell-quality/capture";
 export { OPENAI_VISION_PROVIDER_ID, OPENAI_VISION_MODEL, openaiVisionProviderStatus, createOpenAiVisionClient } from "@/lib/presell-quality/openai-provider";
-export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, EXECUTION_54AI_BUDGET, EXECUTION_54AJ_BUDGET, EXECUTION_54AK_BUDGET, EXECUTION_54AL_BUDGET, EXECUTION_54AT_BUDGET, budgetAllowsCall } from "@/lib/presell-quality/budget";
+export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, EXECUTION_54AI_BUDGET, EXECUTION_54AJ_BUDGET, EXECUTION_54AK_BUDGET, EXECUTION_54AL_BUDGET, EXECUTION_54AT_BUDGET, EXECUTION_54AU_BUDGET, budgetAllowsCall } from "@/lib/presell-quality/budget";
 export {
   EXECUTION_54AT_ID,
   emptyExecutionBudgetLedger,
@@ -29,6 +29,44 @@ export { buildContentManifest } from "@/lib/presell-quality/content-manifest";
 export { evaluateContentSafety, disableCommercialCta, hydrateFaqSection } from "@/lib/presell-quality/content-safety";
 export { selectApprovedPackshot, botanicalAssetIds } from "@/lib/presell-quality/approved-packshot";
 export { compareAgainstBaseline } from "@/lib/presell-quality/baseline-comparison";
+export {
+  PREMIUM_ENGINE_ID,
+  PREMIUM_ENGINE_VERSION,
+  PREMIUM_CTA_LABEL,
+  PREMIUM_DISPLAY_THEME,
+  MAX_DESIGN_ITERATIONS,
+  VISUAL_SCORE_TARGET,
+  QUALITY_SCORE_TARGET,
+  PAID_AI_BUDGET_USD,
+  VISUAL_DIMENSIONS,
+  VISUAL_DIMENSION_WEIGHTS,
+  weightedVisualScore,
+  visualWeightsSumToOne,
+} from "@/lib/presell-quality/premium-design";
+export { premiumSlotsFromModel, daysFromText } from "@/lib/presell-quality/premium-slots";
+export { evaluateVisualGate, criticalVisualDefects, paidAiBlockedFor54au } from "@/lib/presell-quality/visual-gate";
+export {
+  PREMIUM_PRESELL_DESIGN_STANDARD_ID,
+  PREMIUM_REFERENCE_RELATIVE_PATH,
+  PREMIUM_REFERENCE_EVALUATOR_PATH,
+  loadPremiumPresellDesignStandard,
+  persistPremiumDesignStandardRecord,
+  readPremiumReferenceBytes,
+} from "@/lib/presell-quality/premium-standard";
+export {
+  GLOBAL_PRESELL_QUALITY_GATE_ID,
+  GLOBAL_PRESELL_QUALITY_STATES,
+  resolveGlobalPresellQualityGate,
+  canEnterHumanReviewQueue,
+  canApproveEditorialFinal,
+  canPromoteApprovedVersion,
+  requestPresellHumanReview,
+  premiumPublicationBlock,
+  humanReviewAcceptanceBlock,
+  approvedVersionPromotionBlock,
+  writeGlobalPresellQualityGate,
+} from "@/lib/presell-quality/global-quality-gate";
+export { planDesignImprovements } from "@/lib/presell-quality/design-improve";
 export {
   classifyAssessmentValidity,
   aggregateValidAssessments,

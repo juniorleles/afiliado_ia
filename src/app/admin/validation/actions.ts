@@ -14,11 +14,13 @@ import { inspectValidationCandidate } from "@/lib/validation/inspect";
 import { generateCandidatesForProduct } from "@/lib/validation/pipeline";
 import {
   createValidationRun,
+  getValidationCandidate,
   getValidationRun,
   listValidationCandidates,
   setHumanReview,
   updateValidationRun,
 } from "@/lib/validation/store";
+import { humanReviewAcceptanceBlock } from "@/lib/presell-quality/global-quality-gate";
 import { summarizeValidationRun } from "@/lib/validation/summary";
 import { structuralDiversityOf } from "@/lib/validation/diversity";
 import type { HumanReviewState, StructureFingerprint, ValidationProduct } from "@/lib/validation/types";
@@ -166,6 +168,12 @@ export async function humanReviewAction(
   notes: string,
 ): Promise<LabActionResult> {
   await requireAdmin();
+  const current = getValidationCandidate(candidateId);
+  if (!current) return { ok: false, error: "Candidate not found." };
+  if (state === "ACCEPTED") {
+    const blocked = humanReviewAcceptanceBlock(current.campaignId);
+    if (blocked) return { ok: false, error: blocked };
+  }
   const updated = setHumanReview(candidateId, state, notes);
   if (!updated) return { ok: false, error: "Candidate not found." };
   return { ok: true, id: updated.id };

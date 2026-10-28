@@ -1,0 +1,36 @@
+{
+  "id": "PREMIUM_PRESELL_DESIGN_STANDARD_V1",
+  "version": "1",
+  "relativePath": "design-references/premium-presell-reference.png",
+  "absolutePath": "design-references/premium-presell-reference.png",
+  "registered": true,
+  "hash": "21cd6030b11127a59d531417bac5613d0ae3d64f2a1bc19e33d2b926049a9938",
+  "byteLength": 1891624,
+  "dimensions": {
+    "width": 1024,
+    "height": 1536
+  },
+  "mediaType": "image/png",
+  "visualTraits": [
+    "Split commercial hero with a dominant product packshot",
+    "Serif display headline and readable supporting lead",
+    "High-contrast orange primary CTA",
+    "Icon-led informational chips and cards",
+    "Numbered usage steps when usage facts exist",
+    "Visual ingredient or feature row when those facts exist",
+    "Highlighted seller-stated guarantee band when a guarantee exists",
+    "Logistics checklist when shipping or returns facts exist",
+    "FAQ accordion when source questions exist",
+    "Complete footer with legal links and disclosure",
+    "Responsive stacked mobile packing"
+  ],
+  "forbiddenCommercialCopy": [
+    "Fictional testimonials and star ratings",
+    "Unverified FDA or GMP seals",
+    "Invented discounts, prices, or free shipping",
+    "Medical or efficacy promises not in the Product Contract"
+  ],
+  "evaluatorPath": "/admin/lab/design-references/premium-presell-reference",
+  "accessibleToEvaluator": true,
+  "reason": null
+}

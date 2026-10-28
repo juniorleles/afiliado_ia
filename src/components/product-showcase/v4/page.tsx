@@ -13,6 +13,15 @@ import {
   v4HeroMode,
 } from "@/lib/product-showcase/v4/presentation";
 import { DsAutoGrid, DsContainer, DsKicker, DsSection } from "@/components/design-system/primitives";
+import {
+  EvidenceChips,
+  FulfillmentCardGrid,
+  GuaranteeBand,
+  IngredientCardGrid,
+  PremiumCta,
+  PremiumFaq,
+} from "@/components/design-system/premium-blocks";
+import { premiumSlotsFromModel } from "@/lib/presell-quality/premium-slots";
 
 function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");
@@ -103,8 +112,9 @@ function Hero({ model }: { model: V4Model }) {
             {distinctText(subheadline, headline, name, kind) ? <p className="ds-lead">{subheadline}</p> : null}
             {distinctText(value, headline, subheadline, name) ? <p className="ds-lead">{value}</p> : null}
             {distinctText(introduction, headline, subheadline, value, name) ? <p className="ds-body">{introduction}</p> : null}
+            <EvidenceChips items={premiumSlotsFromModel(model).evidenceChips} />
             <div className="ds-hero__actions">
-              {model.hopSlot === "hero" ? <Hop model={model} slot="hero" /> : null}
+              {model.hopSlot === "hero" ? <Hop model={model} slot="hero" /> : <PremiumCta slot="hero" />}
               {model.hopSlot === "offers" ? (
                 <a className="ds-btn ds-btn--ghost" href="#offers" data-v4-cta="inpage">
                   See packages
@@ -221,13 +231,7 @@ function SpecSection({ section }: { section: BlueprintSection }) {
           </article>
         ))
       )}
-      {notes.length ? (
-        <ul className="v4-ingredient-stack">
-          {notes.map((note) => (
-            <li key={`${section.sectionId}-${note}`}>{note}</li>
-          ))}
-        </ul>
-      ) : null}
+      {notes.length ? <IngredientCardGrid items={notes.map((note) => ({ name: note, detail: null }))} /> : null}
     </div>
   );
 }
@@ -268,51 +272,43 @@ function OfferSection({ model, section }: { model: V4Model; section: BlueprintSe
 }
 
 function FaqSection({ section, model }: { section: BlueprintSection; model: V4Model }) {
-  const entries = (model.copy.faq.length
-    ? model.copy.faq.map((item) => ({ title: item.question.text, body: item.answer.text }))
-    : section.items.map((item) => ({
-        title: item.title?.text ?? item.text.text,
-        body: item.title ? item.text.text : "",
-      }))
-  ).filter((item) => item.title.trim() && item.body.trim());
-  return (
-    <div className="ds-faq">
-      {entries.map((item, index) => (
-        <details className="ds-faq__item" key={`${section.sectionId}-${index}`}>
-          <summary>{item.title}</summary>
-          <p className="ds-body">{item.body}</p>
-        </details>
-      ))}
-    </div>
-  );
+  const slots = premiumSlotsFromModel(model);
+  if (slots.faq.length) return <PremiumFaq items={slots.faq} />;
+  const entries = section.items
+    .map((item) => ({
+      question: item.title?.text ?? item.text.text,
+      answer: item.title ? item.text.text : "",
+    }))
+    .filter((item) => item.question.trim() && item.answer.trim());
+  return <PremiumFaq items={entries} />;
 }
 
-function TrustSection({ section }: { section: BlueprintSection }) {
+function TrustSection({ section, model }: { section: BlueprintSection; model: V4Model }) {
+  const slots = premiumSlotsFromModel(model);
   const items = section.items.length ? section.items : section.body.map((item) => ({ text: item }));
+  const covered = slots.fulfillment.map((item) => item.body.toLowerCase()).join("\n");
+  const leftover = items
+    .map((item) => publicItemText(item.text.text))
+    .filter((text) => {
+      const value = text.trim();
+      return value.length > 0 && !covered.includes(value.toLowerCase());
+    });
   return (
-    <ul className="ds-list">
-      {items.map((item, index) => (
-        <li key={`${section.sectionId}-${index}`}>{publicItemText(item.text.text)}</li>
-      ))}
-    </ul>
+    <>
+      <FulfillmentCardGrid items={slots.fulfillment} />
+      {leftover.length ? (
+        <ul className="ds-list">
+          {leftover.map((text) => (
+            <li key={text}>{text}</li>
+          ))}
+        </ul>
+      ) : null}
+    </>
   );
 }
 
-function GuaranteeSection({ section, attributed }: { section: BlueprintSection; attributed?: boolean }) {
-  return (
-    <div className="ds-guarantee">
-      {attributed ? (
-        <p className="ds-caption" data-v4-attribution="seller">
-          Seller-stated. Not independently verified.
-        </p>
-      ) : null}
-      {section.body.map((item, index) => (
-        <p className="ds-body" key={`${section.sectionId}-${index}`}>
-          {publicItemText(item.text)}
-        </p>
-      ))}
-    </div>
-  );
+function GuaranteeSection({ model }: { model: V4Model; section: BlueprintSection; attributed?: boolean }) {
+  return <GuaranteeBand view={premiumSlotsFromModel(model).guarantee} />;
 }
 
 function DemoSection({ model, section }: { model: V4Model; section: BlueprintSection }) {
@@ -375,6 +371,7 @@ export function V4Page({ model }: { model: V4Model }) {
       data-hero-mode={heroMode}
       data-v4-gallery-state={gallery.render ? "visible" : "suppressed"}
       data-quality-fixes={patch?.applied.join(" ") || undefined}
+      data-premium-engine="1"
     >
       {order.map((section) => {
         if (section.sectionType === "hero") {
@@ -429,9 +426,9 @@ export function V4Page({ model }: { model: V4Model }) {
           ) : section.sectionType === "how_it_works" ? (
             <FeatureSection section={section} numbered />
           ) : section.sectionType === "trust" ? (
-            <TrustSection section={section} />
+            <TrustSection section={section} model={model} />
           ) : section.sectionType === "guarantee" ? (
-            <GuaranteeSection section={section} attributed={Boolean(patch?.sellerAttribution)} />
+            <GuaranteeSection model={model} section={section} attributed={Boolean(patch?.sellerAttribution)} />
           ) : section.sectionType === "demonstration" ? (
             <DemoSection model={model} section={section} />
           ) : (
@@ -460,6 +457,7 @@ export function V4Page({ model }: { model: V4Model }) {
               <div data-v4-section={section.sectionType} data-v4-purpose={section.commercialPurpose}>
                 <h2 className="ds-h2">{publicSectionTitle(section.sectionType, section.headline.text, patch?.titles)}</h2>
                 {inner}
+                {section.sectionType === "guarantee" && model.hopSlot === "none" ? <PremiumCta slot="mid" /> : null}
               </div>
             </DsContainer>
           </DsSection>

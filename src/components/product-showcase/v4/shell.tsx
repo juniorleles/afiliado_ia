@@ -5,14 +5,17 @@ import { THEMES } from "@/lib/design-system/tokens";
 import { DsTokenStyle } from "@/components/design-system/primitives";
 import { V4Page } from "@/components/product-showcase/v4/page";
 import type { V4Model } from "@/lib/product-showcase/v4/model";
+import { PREMIUM_DISPLAY_THEME } from "@/lib/presell-quality/premium-design";
 import "@/app/design-system-lab.css";
 import "@/app/renderer-v4-lab.css";
+import "@/app/premium-design-engine.css";
 
 export function V4Shell({ model }: { model: V4Model }) {
   return (
     <div
       className="ds-root"
-      data-ds-theme={model.theme}
+      data-ds-theme={PREMIUM_DISPLAY_THEME}
+      data-ds-engine="premium"
       data-ds-composition={model.composition}
       data-ds-density={model.density}
       data-ds-sticky={model.sticky ? "on" : "off"}
@@ -29,7 +32,7 @@ export function V4Shell({ model }: { model: V4Model }) {
           <span>Lab · Renderer V4 · not published</span>
           <span>{model.scenarioKey}</span>
           <span>{COMPOSITIONS[model.composition].name}</span>
-          <span>{THEMES[model.theme].label}</span>
+          <span>{THEMES[PREMIUM_DISPLAY_THEME].label}</span>
           <span>{model.blueprint.conversionGoal}</span>
         </div>
         <Link href="/admin/lab/renderer-v4">All V4 scenarios</Link>

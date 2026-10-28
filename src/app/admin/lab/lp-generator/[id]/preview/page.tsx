@@ -9,8 +9,11 @@ import { DsTokenStyle } from "@/components/design-system/primitives";
 import { V4Page } from "@/components/product-showcase/v4/page";
 import { applySandboxToModel } from "@/lib/sandbox/cta";
 import { applyQualityPatch, readQualityPatch } from "@/lib/presell-quality/patch";
+import { disableCommercialCta } from "@/lib/presell-quality/content-safety";
+import { PREMIUM_DISPLAY_THEME } from "@/lib/presell-quality/premium-design";
 import "@/app/design-system-lab.css";
 import "@/app/renderer-v4-lab.css";
+import "@/app/premium-design-engine.css";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -28,13 +31,15 @@ export default async function LpGenerationPreview({ params }: { params: Promise<
   if (!record || !stored) notFound();
   const patch = readQualityPatch(id);
   const patched = patch ? applyQualityPatch(stored, patch) : stored;
-  const model = record.sandbox?.enabled
+  const sandboxed = record.sandbox?.enabled
     ? applySandboxToModel(patched, { href: record.sandbox.ctaPath })
     : patched;
+  const model = disableCommercialCta(sandboxed);
   return (
     <div
       className="ds-root"
-      data-ds-theme={model.theme}
+      data-ds-theme={PREMIUM_DISPLAY_THEME}
+      data-ds-engine="premium"
       data-ds-composition={model.composition}
       data-ds-density={model.density}
       data-ds-sticky={model.sticky ? "on" : "off"}
@@ -52,7 +57,7 @@ export default async function LpGenerationPreview({ params }: { params: Promise<
           <span>{record.sandbox?.enabled ? "Lab · SANDBOX · not published" : "Lab · LP gerada · not published"}</span>
           <span>{record.status}</span>
           <span>{COMPOSITIONS[model.composition].name}</span>
-          <span>{THEMES[model.theme].label}</span>
+          <span>{THEMES[PREMIUM_DISPLAY_THEME].label}</span>
           <span>{model.blueprint.conversionGoal}</span>
         </div>
         <Link href={`/admin/lab/lp-generator/${record.id}`}>Detalhes da geração</Link>

@@ -5,6 +5,7 @@ import { assessmentFromScores, unevaluatedAssessment } from "@/lib/presell-quali
 import { evaluationFingerprint, screenshotHashesOf } from "@/lib/presell-quality/fingerprint";
 import type { PresellEvaluationInput } from "@/lib/presell-quality/input";
 import { screenshotAssociationError, ModelPayloadError, normalizeModelPayload } from "@/lib/presell-quality/normalize";
+import { readPremiumReferenceBytes } from "@/lib/presell-quality/premium-standard";
 import {
   assessmentIsCurrent,
   findCachedQualityAssessment,
@@ -144,7 +145,8 @@ export function createMultimodalPresellEvaluator(deps: MultimodalEvaluatorDeps =
       const client =
         deps.client ??
         (preferOpenAi ? createOpenAiVisionClient({ env }) : createAnthropicVisionClient({ env }));
-      const prompt = buildMultimodalEvaluatorPrompt(input);
+      const officialReference = readPremiumReferenceBytes();
+      const prompt = buildMultimodalEvaluatorPrompt(input, { officialReferenceAttached: Boolean(officialReference) });
       let completion: { text: string; inputTokens: number; outputTokens: number };
       try {
         const desktop = readImage(input.screenshots.desktop!.path, reader);
@@ -155,6 +157,9 @@ export function createMultimodalPresellEvaluator(deps: MultimodalEvaluatorDeps =
           images: [
             { ...desktop, label: "desktop-1440x900" },
             { ...mobile, label: "mobile-390x844" },
+            ...(officialReference
+              ? [{ mediaType: "image/png" as const, base64: officialReference.toString("base64"), label: "official-premium-presell-reference" }]
+              : []),
           ],
         });
       } catch (err) {

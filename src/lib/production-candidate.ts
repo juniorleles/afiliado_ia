@@ -1,6 +1,7 @@
 import type { Campaign } from "@/lib/campaigns";
 import { getCampaignById } from "@/lib/campaigns";
 import { getDb } from "@/lib/db";
+import { approvedVersionPromotionBlock } from "@/lib/presell-quality/global-quality-gate";
 
 export {
   applyProductionCandidate,
@@ -21,6 +22,8 @@ export function saveProductionCandidateSnapshot(
   if (existing.publicationStatus !== "draft") {
     throw new Error("Production candidate snapshot is written only while publicationStatus is draft.");
   }
+  const premium = approvedVersionPromotionBlock(id);
+  if (premium) throw new Error(premium);
   const result = getDb()
     .prepare(
       `UPDATE campaigns
