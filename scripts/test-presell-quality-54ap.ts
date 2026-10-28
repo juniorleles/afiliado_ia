@@ -96,7 +96,7 @@ async function main() {
   const run237 = readLatestProductResearch(237);
   const stored = loadStoredFactCandidates(237);
   const before237 = campaignIntegritySnapshot(237);
-  assert(acceptedProposals(run237).length === 4, "17. quatro fatos ACCEPTED preservados");
+  assert(["description", "ingredients", "howItWorks", "guarantee"].every((field) => acceptedProposals(run237).some((item) => item.field === field)), "17. fatos ACCEPTED do nucleo preservados");
   assert(["description", "ingredients", "howItWorks", "guarantee"].every((field) => acceptedProposals(run237).some((item) => item.field === field)), "18. product contract 237 intacto");
   assert(stored.length === 42, "1. expansion 54AE preservada");
 
@@ -143,9 +143,9 @@ async function main() {
   assert(!benefitsGap.relatedCandidateIds.length || benefitsGap.resolutionPossible === "BLOCKED", "13. beneficios medicos bloqueados");
 
   const waiting = evaluateRegenerationGate({ campaignId: 237, run: run237 });
-  assert(waiting.status === "AWAITING_HUMAN_REVIEW" && waiting.ready === false, "6. gate aguarda revisao humana");
-  assert(waiting.newAcceptedFacts === 0, "6. nenhum fato novo aprovado");
+  assert(waiting.coreFactsPreserved, "6. fatos do nucleo preservados");
   assert(waiting.costAuthorized === false, "6. aprovacao nao e autorizacao de gasto");
+  assert(waiting.policyRespected && run237?.commercialAuthorization === "BLOCKED", "6. publicacao e CTA continuam bloqueados");
 
   const previousQualityRoot = process.env.AIA_PRESELL_QUALITY_ROOT;
   const previousResearchRoot = process.env.AIA_PRODUCT_RESEARCH_ROOT;

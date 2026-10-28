@@ -19,6 +19,7 @@ import { evaluateRegenerationGate } from "@/lib/presell-quality/regeneration-gat
 import { buildOperationalReviewCard } from "@/lib/presell-quality/operational-theme";
 import { readPrimaryPageResearch } from "@/lib/presell-quality/primary-page-research";
 import { readPrimaryAffiliatePage } from "@/lib/campaign-sources/primary-page";
+import { applyPrimarySourceAutoApproval, policyApprovedCandidateIds } from "@/lib/presell-quality/primary-source-auto-approval";
 
 export type EvidenceReviewWorkspace = {
   campaignId: number;
@@ -40,11 +41,14 @@ export type EvidenceReviewWorkspace = {
   regenerationGate: ReturnType<typeof evaluateRegenerationGate>;
   operationalCards: ReturnType<typeof buildOperationalReviewCard>[];
   primaryPage: ReturnType<typeof readPrimaryPageResearch>;
+  primaryHost: string | null;
+  productName: string | null;
   commercialAuthorization: "BLOCKED";
   publicationReadiness: "BLOCKED";
+  primaryAutoApproved: string[];
 };
 
-export function loadEvidenceReviewWorkspace(campaignId: number): EvidenceReviewWorkspace {
+export function loadEvidenceReviewWorkspace(campaignId: number, options?: { applyPrimaryAutoApproval?: boolean }): EvidenceReviewWorkspace {
   const run = readLatestProductResearch(campaignId);
   const stored = loadStoredFactCandidates(campaignId);
   const ledger = loadOrReconcileLedger(campaignId);
@@ -83,7 +87,8 @@ export function loadEvidenceReviewWorkspace(campaignId: number): EvidenceReviewW
     readCommercialGraph(campaignId),
   ));
   const rejectedIds = new Set(readEvidenceAudit(campaignId).filter((item) => item.decision === "REJECT").map((item) => item.candidateId));
-  const queue = prepareReviewQueue({
+  const policyApprovedIds = policyApprovedCandidateIds(readEvidenceAudit(campaignId));
+  let queue = prepareReviewQueue({
     campaignId,
     candidates: ledger.candidates,
     run,
@@ -91,7 +96,41 @@ export function loadEvidenceReviewWorkspace(campaignId: number): EvidenceReviewW
     relations: graph.relations,
     rejectedIds,
     primaryAffiliateHosts: primaryHost ? [primaryHost] : [],
+    faqs: primaryPage?.inventory?.faqs ?? [],
+    policyApprovedIds,
   });
+  let currentRun = run;
+  let currentLedger = ledger;
+  let primaryAutoApproved = [...policyApprovedIds];
+  if (options?.applyPrimaryAutoApproval !== false) {
+    const applied = applyPrimarySourceAutoApproval({
+      campaignId,
+      run: currentRun,
+      ledger: currentLedger,
+      queue,
+      identities,
+      relations: graph.relations,
+      faqs: primaryPage?.inventory?.faqs ?? [],
+      registeredUrl: readPrimaryAffiliatePage(campaignId)?.publicUrl ?? null,
+      registeredHost: primaryHost ?? null,
+    });
+    if (applied.changed) {
+      currentRun = applied.run;
+      currentLedger = applied.ledger;
+      primaryAutoApproved = [...policyApprovedCandidateIds(readEvidenceAudit(campaignId))];
+      queue = prepareReviewQueue({
+        campaignId,
+        candidates: currentLedger.candidates,
+        run: currentRun,
+        identities,
+        relations: graph.relations,
+        rejectedIds,
+        primaryAffiliateHosts: primaryHost ? [primaryHost] : [],
+        faqs: primaryPage?.inventory?.faqs ?? [],
+        policyApprovedIds: new Set(primaryAutoApproved),
+      });
+    }
+  }
   const inventory = buildEvidenceInventory({
     campaignId,
     run,
@@ -104,25 +143,32 @@ export function loadEvidenceReviewWorkspace(campaignId: number): EvidenceReviewW
   });
   return {
     campaignId,
-    run,
-    ledger,
+    run: currentRun,
+    ledger: currentLedger,
     queue,
     summary: reviewSummary(queue),
-    acceptedCount: accepted.length,
+    acceptedCount: acceptedProposals(currentRun).length,
     identities,
     graph,
-    identityPanel: sourceIdentityPanel({ graph, identities }),
+    identityPanel: sourceIdentityPanel({
+      graph,
+      identities,
+      primaryAffiliateHosts: primaryHost ? [primaryHost] : [],
+    }),
     verifiedSellerRelationships: graph.relations.filter((item) => item.scope === "SELLER" && item.state === "VERIFIED").length,
     verifiedManufacturerRelationships: graph.relations.filter((item) => item.scope === "MANUFACTURER" && item.state === "VERIFIED").length,
     partiallySupportedRelationships: graph.relations.filter((item) => item.state === "PARTIALLY_SUPPORTED").length,
     unresolvedRelationships: graph.relations.filter((item) => item.state === "UNRESOLVED").length,
     gaps,
     lastReview: readEvidenceAudit(campaignId).at(-1) ?? null,
-    regenerationRequired: ledger.regenerationRequired,
-    regenerationGate: evaluateRegenerationGate({ campaignId, run }),
+    regenerationRequired: currentLedger.regenerationRequired,
+    regenerationGate: evaluateRegenerationGate({ campaignId, run: currentRun }),
     operationalCards: queue.map(buildOperationalReviewCard),
     primaryPage,
+    primaryHost: primaryHost ?? null,
+    productName: campaign?.name ?? run?.productName ?? null,
     commercialAuthorization: "BLOCKED" as const,
     publicationReadiness: "BLOCKED" as const,
+    primaryAutoApproved,
   };
 }

@@ -38,7 +38,7 @@ export type TriagedFact = {
 };
 
 const UNCERTAIN_HOST = /vercel\.app|colibrim\.ai/i;
-const EFFICACY = /\bfat[\s-]?burn|\bboosts? your energy\b|\bproven\b|\bcure\b|\btreat\b|\bprevent\b|\bperfect blood sugar\b|\bclinical\b/i;
+const EFFICACY = /\bfat[\s-]?burn|\bboosts? your energy\b|\bproven\b|\bcure\b|\btreat\b|\bprevent\b|\bperfect blood sugar\b|\bclinical\b|\bwhat kind of results\b|\bhow long will it take to see results\b|\bstart feeling a difference\b|\bbest results come\b|\bexperience the results\b/i;
 const UI_NOISE = /select headline|affiliate terms|by promoting our products/i;
 const INGREDIENT_TOKEN = /^(coleus|african mango|maca|gymnema|guarana|ginseng|eleuthero)$/i;
 
@@ -50,9 +50,17 @@ function hostOf(url: string): string {
   }
 }
 
-function excerptSupports(text: string, excerpt: string): boolean {
-  const needle = text.slice(0, 48).toLowerCase();
-  return Boolean(excerpt) && excerpt.toLowerCase().includes(needle.slice(0, 24));
+export function excerptSupportsCandidate(text: string, excerpt: string): boolean {
+  const value = text.replace(/\s+/g, " ").trim().toLowerCase();
+  const stored = excerpt.replace(/\s+/g, " ").trim().toLowerCase();
+  if (!value || !stored) return false;
+  if (stored.includes(value.slice(0, 24)) || value.includes(stored.slice(0, 24))) return true;
+  const window = Math.min(24, stored.length);
+  if (window < 12) return value.includes(stored);
+  for (let index = 0; index <= stored.length - window; index += 12) {
+    if (value.includes(stored.slice(index, index + window))) return true;
+  }
+  return false;
 }
 
 function keyOf(text: string): string {
@@ -67,11 +75,11 @@ export function triageFactCandidate(input: {
   primaryAffiliateHosts?: string[];
 }): TriagedFact {
   const text = input.candidate.text.replace(/\s+/g, " ").trim();
-  const excerpt = input.candidate.excerpt || text;
+  const excerpt: string = input.candidate.excerpt ? input.candidate.excerpt.replace(/\s+/g, " ").trim() : text;
   const sourceUrl = sanitizeSharedUrl(input.candidate.sourceUrl || "");
   const host = hostOf(input.candidate.sourceUrl || "");
   const notes: string[] = [];
-  const supports = excerptSupports(text, excerpt);
+  const supports = excerptSupportsCandidate(text, excerpt);
   const seen = input.seenKeys ?? new Set<string>();
   const key = keyOf(text);
   const acceptedMatch = input.acceptedTexts.some((item) => keyOf(item) === key || keyOf(item).includes(key) && key.length > 24);
@@ -83,7 +91,9 @@ export function triageFactCandidate(input: {
 
   let triageClass: TriageClass = "INSUFFICIENT_EVIDENCE";
   if (input.candidate.duplicateOf || acceptedMatch || seen.has(key)) triageClass = "DUPLICATE";
-  else if (input.candidate.blockReason && /conflict/i.test(input.candidate.blockReason)) triageClass = "CONTRADICTED";
+  else if (input.candidate.blockReason && /conflict/i.test(input.candidate.blockReason) && !/accepted fact/i.test(input.candidate.blockReason)) {
+    triageClass = "CONTRADICTED";
+  }
   else if (UI_NOISE.test(text) || INGREDIENT_TOKEN.test(text) || text.length < 8) {
     triageClass = "INSUFFICIENT_EVIDENCE";
     notes.push("Fragment or UI chrome is not a product fact.");
@@ -118,7 +128,7 @@ export function triageFactCandidate(input: {
     text,
     sourceUrl,
     excerpt: excerpt.slice(0, 280),
-    sourceClass: input.candidate.sourceClass,
+    sourceClass: input.candidate.sourceClass || "",
     excerptSupportsCandidate: supports,
     triageClass,
     nextState,

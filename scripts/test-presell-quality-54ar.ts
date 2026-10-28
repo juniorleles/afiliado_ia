@@ -227,7 +227,7 @@ async function main() {
 
   const after237 = campaignIntegritySnapshot(237);
   assert(JSON.stringify(before.acceptedFacts) === JSON.stringify(after237.acceptedFacts), "19. preservacao dos fatos aprovados");
-  assert(before.acceptedFacts.filter((item) => item.status === "ACCEPTED").length === 4, "19. quatro fatos ACCEPTED");
+  assert(["description", "ingredients", "howItWorks", "guarantee"].every((field) => before.acceptedFacts.some((item) => item.field === field && item.status === "ACCEPTED")), "19. fatos ACCEPTED do nucleo preservados");
   void accepted;
 
   console.log(`PASS test-presell-quality-54ar.ts (${passed} OK)`);

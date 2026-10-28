@@ -91,7 +91,7 @@ async function main() {
   const stored = loadStoredFactCandidates(237);
   const run237 = readLatestProductResearch(237);
   assert(stored.length === 42, "1. carregamento de evidencias");
-  assert(acceptedProposals(run237).length === 4, "17. quatro fatos ACCEPTED preservados");
+  assert(["description", "ingredients", "howItWorks", "guarantee"].every((field) => acceptedProposals(run237).some((item) => item.field === field)), "17. fatos ACCEPTED do nucleo preservados");
   const before237 = campaignIntegritySnapshot(237);
 
   const extracts = extractOperationalFactsFromDocuments({

@@ -53,7 +53,7 @@ export function classifyOperationalThemes(text: string, field = ""): Operational
   if (/\brefund|money[- ]back|original (method of )?payment|credit card\b/i.test(lower)) found.add("REFUND");
   if (/\b(ship|shipping|usps|carrier|fulfillment|process(ing)? time|order processing|customs)\b/i.test(lower)) found.add("SHIPPING");
   if (/\b(deliver|delivery|transit|destination countr)\b/i.test(lower)) found.add("DELIVERY");
-  if (/\b(cancel|not responsible|cannot be held liable|24 hours)\b/i.test(lower)) found.add("COMMERCIAL_TERMS");
+  if (/\b(cancel|not responsible|cannot be held liable|24 hours|one[- ]time payment|ssl)\b/i.test(lower)) found.add("COMMERCIAL_TERMS");
   if (/\b(under the tongue|dropper|how to (use|take)|hold for)\b/i.test(lower)) found.add("USAGE");
   if (field === "ingredients" || /\b(ingredient|proprietary blend)\b/i.test(lower)) found.add("INGREDIENTS");
   if (field === "description") found.add("DESCRIPTION");

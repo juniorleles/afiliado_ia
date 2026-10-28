@@ -11,10 +11,14 @@ import type { SourceIdentityRecord } from "@/lib/presell-quality/source-identity
 import type { CommercialRelation } from "@/lib/presell-quality/commercial-graph";
 import { snapshotProductContract } from "@/lib/presell-quality/regeneration-gate";
 import { buildReviewPresentation, presentationMatchesApproval } from "@/lib/presell-quality/review-presentation";
+import { PRIMARY_SOURCE_AUTO_APPROVAL, PRIMARY_SOURCE_POLICY, PRIMARY_SOURCE_POLICY_VERSION } from "@/lib/presell-quality/primary-source-policy";
+import { publicLandingUrl } from "@/lib/campaign-sources/primary-page";
 
 export type EvidenceDecision = "ACCEPT" | "REJECT" | "REQUEST_NEW_EVIDENCE" | "KEEP_PENDING" | "MARK_DUPLICATE";
 
 const PROTECTED_FIELDS = new Set(["description", "ingredients", "howItWorks", "guarantee"]);
+
+export type EvidenceAuditActor = "HUMAN" | typeof PRIMARY_SOURCE_POLICY;
 
 export type EvidenceAuditEntry = {
   at: string;
@@ -22,10 +26,15 @@ export type EvidenceAuditEntry = {
   candidateId: string;
   version: number;
   decision: EvidenceDecision;
-  actor: "HUMAN";
+  actor: EvidenceAuditActor;
   eligible: boolean;
   resultingState: string;
   notes: string[];
+  approvalOrigin?: EvidenceAuditActor;
+  policyName?: typeof PRIMARY_SOURCE_AUTO_APPROVAL;
+  policyVersion?: string;
+  evidenceId?: string;
+  sourceUrl?: string;
 };
 
 export type EvidenceDecisionResult = {
@@ -96,9 +105,13 @@ export function decideEvidenceCandidate(input: {
   expectedVersion: number;
   rejectedIds?: Set<string>;
   officialHosts?: string[];
+  primaryAffiliateHosts?: string[];
+  faqs?: Array<{ question: string; answer: string | null }>;
   confirmOverwrite?: boolean;
   presentationVersion?: string;
+  actor?: EvidenceAuditActor;
 }): EvidenceDecisionResult {
+  const actor = input.actor ?? "HUMAN";
   const prepared = prepareReviewCandidate({
     candidate: input.candidate,
     run: input.run,
@@ -106,6 +119,13 @@ export function decideEvidenceCandidate(input: {
     relations: input.relations,
     rejectedIds: input.rejectedIds,
     officialHosts: input.officialHosts,
+    primaryAffiliateHosts: input.primaryAffiliateHosts,
+    faqs: input.faqs,
+    policyApprovedIds: new Set(
+      readEvidenceAudit(input.campaignId)
+        .filter((item) => item.actor === PRIMARY_SOURCE_POLICY && item.decision === "ACCEPT")
+        .map((item) => item.candidateId),
+    ),
   });
   const auditBase = {
     at: new Date().toISOString(),
@@ -113,8 +133,13 @@ export function decideEvidenceCandidate(input: {
     candidateId: input.candidate.candidateId,
     version: input.candidate.version,
     decision: input.decision,
-    actor: "HUMAN" as const,
+    actor,
     eligible: prepared.eligible,
+    approvalOrigin: actor,
+    policyName: actor === PRIMARY_SOURCE_POLICY ? PRIMARY_SOURCE_AUTO_APPROVAL : undefined,
+    policyVersion: actor === PRIMARY_SOURCE_POLICY ? PRIMARY_SOURCE_POLICY_VERSION : undefined,
+    evidenceId: input.candidate.evidenceReference,
+    sourceUrl: publicLandingUrl(input.candidate.sourceUrl || ""),
   };
 
   if (input.expectedVersion !== input.candidate.version) {
@@ -145,7 +170,8 @@ export function decideEvidenceCandidate(input: {
       originalExcerpt: input.candidate.originalExcerpt,
       sourceHost: input.candidate.sourceHost,
       sourceUrl: input.candidate.sourceUrl,
-      field: input.candidate.field,
+      field: prepared.field,
+      primaryAffiliate: prepared.primaryAffiliate,
     });
     if (presented.translationSafe) {
       const previewCheck = presentationMatchesApproval({
@@ -176,7 +202,7 @@ export function decideEvidenceCandidate(input: {
         return { ok: false, reason: "ALREADY_ACCEPTED", prepared, run: input.run, contractChanged: false, regenerationRequired: false, audit };
       }
       const merged = current ? `${current}\n\n${addition}` : addition;
-      const next = writeProductResearchRun({
+      const staged = writeProductResearchRun({
         ...input.run,
         proposals: input.run.proposals.map((item) => item.field === "faq"
           ? {
@@ -184,13 +210,38 @@ export function decideEvidenceCandidate(input: {
             currentValue: merged,
             suggestedValue: merged,
             evidenceIds: [...new Set([...item.evidenceIds, input.candidate.evidenceReference])],
-            notes: [...item.notes, `Appended seller-stated candidate ${input.candidate.candidateId}.`],
+            evidenceIncomplete: false,
+            notes: [
+              ...item.notes,
+              actor === PRIMARY_SOURCE_POLICY
+                ? `Auto-approved by ${PRIMARY_SOURCE_POLICY} v${PRIMARY_SOURCE_POLICY_VERSION}. Appended seller-stated candidate ${input.candidate.candidateId}.`
+                : `Appended seller-stated candidate ${input.candidate.candidateId}.`,
+            ],
           }
           : item),
       });
+      const next = decideProductResearchFields({
+        campaignId: input.campaignId,
+        runId: staged.runId,
+        fields: ["faq"],
+        action: "ACCEPT",
+        confirmOverwrite: true,
+      });
+      if (next.proposals.find((item) => item.field === "faq")?.status !== "ACCEPTED") {
+        const audit = appendEvidenceAudit({ ...auditBase, resultingState: prepared.state, notes: ["CONTRACT_ACCEPT_SKIPPED"] });
+        return { ok: false, reason: "CONTRACT_ACCEPT_SKIPPED", prepared, run: next, contractChanged: false, regenerationRequired: false, audit };
+      }
       snapshotProductContract({ campaignId: input.campaignId, run: next, reason: `after-append:${input.candidate.candidateId}` });
       writeCandidateLedger({ ...input.ledger, regenerationRequired: true });
-      const audit = appendEvidenceAudit({ ...auditBase, resultingState: "ACCEPTED", notes: ["Appended seller-stated operational FAQ. Core facts were not overwritten."] });
+      const audit = appendEvidenceAudit({
+        ...auditBase,
+        resultingState: "ACCEPTED",
+        notes: [
+          actor === PRIMARY_SOURCE_POLICY
+            ? `Auto-approved by ${PRIMARY_SOURCE_POLICY} v${PRIMARY_SOURCE_POLICY_VERSION}. Appended seller-stated operational FAQ. Core facts were not overwritten.`
+            : "Appended seller-stated operational FAQ. Core facts were not overwritten.",
+        ],
+      });
       return { ok: true, reason: "ACCEPTED", prepared, run: next, contractChanged: true, regenerationRequired: true, audit };
     }
     const promoted = proposalFromCandidate(input.candidate, prepared.contractField, persistText);
@@ -204,9 +255,21 @@ export function decideEvidenceCandidate(input: {
       action: "ACCEPT",
       confirmOverwrite: input.confirmOverwrite,
     });
+    if (next.proposals.find((item) => item.field === prepared.contractField)?.status !== "ACCEPTED") {
+      const audit = appendEvidenceAudit({ ...auditBase, resultingState: prepared.state, notes: ["CONTRACT_ACCEPT_SKIPPED"] });
+      return { ok: false, reason: "CONTRACT_ACCEPT_SKIPPED", prepared, run: next, contractChanged: false, regenerationRequired: false, audit };
+    }
     snapshotProductContract({ campaignId: input.campaignId, run: next, reason: `after-accept:${input.candidate.candidateId}` });
     writeCandidateLedger({ ...input.ledger, regenerationRequired: true });
-    const audit = appendEvidenceAudit({ ...auditBase, resultingState: "ACCEPTED", notes: ["Accepted as seller-stated via existing field review."] });
+    const audit = appendEvidenceAudit({
+      ...auditBase,
+      resultingState: "ACCEPTED",
+      notes: [
+        actor === PRIMARY_SOURCE_POLICY
+          ? `Auto-approved by ${PRIMARY_SOURCE_POLICY} v${PRIMARY_SOURCE_POLICY_VERSION}. Accepted as seller-stated via existing field review.`
+          : "Accepted as seller-stated via existing field review.",
+      ],
+    });
     return { ok: true, reason: "ACCEPTED", prepared, run: next, contractChanged: true, regenerationRequired: true, audit };
   }
 

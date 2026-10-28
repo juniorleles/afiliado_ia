@@ -217,6 +217,7 @@ export function ProductReviewWorkspace({
             unresolvedRelationships={evidence?.unresolvedRelationships ?? 0}
             regenerationGate={evidence?.regenerationGate ?? null}
             primaryPage={evidence?.primaryPage ?? null}
+            productName={productName}
             busy={busy}
             onDecide={decideCandidate}
             onConfirmIdentity={confirmIdentity}

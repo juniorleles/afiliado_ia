@@ -142,8 +142,8 @@ async function main() {
   const run237 = readLatestProductResearch(237);
   const stored = loadStoredFactCandidates(237);
   const before237 = campaignIntegritySnapshot(237);
-  assert(acceptedProposals(run237).length === 4, "21. product contract 237 intacto");
-  assert(evaluateRegenerationGate({ campaignId: 237, run: run237 }).status === "AWAITING_HUMAN_REVIEW", "22. regeneration gate preservado");
+  assert(["description", "ingredients", "howItWorks", "guarantee"].every((field) => acceptedProposals(run237).some((item) => item.field === field)), "21. product contract 237 nucleo intacto");
+  assert(evaluateRegenerationGate({ campaignId: 237, run: run237 }).costAuthorized === false, "22. regeneration gate nao autoriza gasto");
   assert(stored.length === 42, "expansion 54AE preservada");
 
   const previousQualityRoot = process.env.AIA_PRESELL_QUALITY_ROOT;

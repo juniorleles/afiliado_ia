@@ -54,6 +54,7 @@ export function EvidenceReviewStep({
   unresolvedRelationships,
   regenerationGate,
   primaryPage,
+  productName,
   busy,
   onDecide,
   onConfirmIdentity,
@@ -72,6 +73,7 @@ export function EvidenceReviewStep({
   unresolvedRelationships: number;
   regenerationGate?: RegenerationGateView | null;
   primaryPage?: PrimaryPageResearchResult | null;
+  productName?: string | null;
   busy: boolean;
   onDecide: (candidateId: string, version: number, decision: "ACCEPT" | "REJECT" | "REQUEST_NEW_EVIDENCE" | "KEEP_PENDING", presentationVersion?: string) => void;
   onConfirmIdentity: (host: string, scope: "SELLER" | "AFFILIATE") => void;
@@ -88,10 +90,16 @@ export function EvidenceReviewStep({
       sourceHost: item.sourceHost,
       sourceUrl: item.sourceUrl,
       field: item.field,
+      primaryAffiliate: item.primaryAffiliate,
+      productName: productName ?? undefined,
     }),
-  })), [queue]);
-  const readyCards = cards.filter((row) => row.item.state === "READY_FOR_REVIEW");
-  const checkingCards = cards.filter((row) => row.item.state !== "READY_FOR_REVIEW");
+  })), [queue, productName]);
+  const primaryReady = cards.filter((row) => row.item.primaryAffiliate && row.item.state === "READY_FOR_REVIEW");
+  const primaryAutoApproved = cards.filter((row) => row.item.primaryAffiliate && row.item.approvalOrigin === "PRIMARY_SOURCE_POLICY");
+  const primaryBlocked = cards.filter((row) => row.item.primaryAffiliate && row.item.state !== "READY_FOR_REVIEW" && row.item.approvalOrigin !== "PRIMARY_SOURCE_POLICY");
+  const readyCards = cards.filter((row) => row.item.state === "READY_FOR_REVIEW" && !row.item.primaryAffiliate);
+  const checkingCards = cards.filter((row) => row.item.state !== "READY_FOR_REVIEW" && !row.item.primaryAffiliate && row.item.approvalOrigin !== "PRIMARY_SOURCE_POLICY");
+  const domainPrompt = identityPanel.some((row) => row.state === "CONTRADICTED") && identityPanel.some((row) => row.primaryAffiliate);
   const groups: ReviewGroupId[] = ["shipping", "returns", "refund", "other"];
   const [openGroup, setOpenGroup] = useState<string>("shipping");
 
@@ -120,21 +128,122 @@ export function EvidenceReviewStep({
           <div className="mt-ds-16 grid gap-ds-12 md:grid-cols-2">
             <p className="text-body">{primaryPage.inventory?.facts.length ?? 0} {REVIEW_COPY.primaryFound}</p>
             <p className="text-body">{primaryPage.inventory?.faqs.filter((item) => item.answer).length ?? 0} {REVIEW_COPY.primaryFaqs}</p>
-            <p className="text-body">{primaryPage.newCandidates.filter((item) => item.risk === "OPERATIONAL" && item.usable).length} {REVIEW_COPY.primaryApprovable}</p>
-            <p className="text-body">{primaryPage.highRiskBlocked} {REVIEW_COPY.primaryBlocked}</p>
+            <p className="text-body" data-primary-auto-approved-count>{primaryAutoApproved.length} {REVIEW_COPY.primaryAutoApproved}</p>
+            <p className="text-body" data-primary-ready-count>{primaryReady.length} {REVIEW_COPY.primaryApprovable}</p>
+            <p className="text-body">{primaryBlocked.length} {REVIEW_COPY.primaryBlocked}</p>
           </div>
-          {(primaryPage.inventory?.faqs.length ?? 0) > 0 ? (
-            <div className="mt-ds-16 flex flex-col gap-ds-12">
-              {primaryPage.inventory?.faqs.slice(0, 8).map((faq) => (
-                <article key={faq.question} className="rounded-ds-md border border-border p-ds-12">
-                  <p className="text-label">{faq.question}</p>
-                  <p className="mt-ds-8 text-body">{faq.answer || "A resposta desta pergunta não estava acessível."}</p>
+          {primaryAutoApproved.length ? (
+            <div className="mt-ds-16 flex flex-col gap-ds-16" data-primary-auto-approved>
+              {primaryAutoApproved.map(({ item, presented }) => (
+                <article key={item.candidateId} className="rounded-ds-md border border-border p-ds-16" data-candidate-id={item.candidateId} data-review-state={item.state} data-approval-origin="PRIMARY_SOURCE_POLICY" data-ready="false">
+                  <div className="flex flex-wrap items-start justify-between gap-ds-8">
+                    <h3 className="text-label">{presented.title}</h3>
+                    <Badge tone="success">{REVIEW_COPY.autoApprovedTitle}</Badge>
+                  </div>
+                  <p className="mt-ds-16 text-caption text-muted-foreground">{REVIEW_COPY.found}</p>
+                  <p className="mt-ds-8 text-body">{presented.found}</p>
+                  <p className="mt-ds-16 text-caption text-muted-foreground">{REVIEW_COPY.source}</p>
+                  <p className="mt-ds-8 text-body">{presented.source}</p>
+                  <p className="mt-ds-16 text-caption text-muted-foreground">{REVIEW_COPY.meaning}</p>
+                  {presented.attention.map((line) => <p key={line} className="mt-ds-8 text-body">{line}</p>)}
+                  <p className="mt-ds-16 text-caption text-muted-foreground">{REVIEW_COPY.preview}</p>
+                  <p className="mt-ds-8 text-body" data-preview-text>{presented.preview}</p>
+                  <Accordion type="single" collapsible className="mt-ds-16">
+                    <AccordionItem value="tech">
+                      <AccordionTrigger>{REVIEW_COPY.technical}</AccordionTrigger>
+                      <AccordionContent>
+                        <p>Candidate ID: {item.candidateId}</p>
+                        <p>Evidence ID: {item.evidenceReference}</p>
+                        <p>Origem da aprovação: PRIMARY_SOURCE_POLICY</p>
+                        <p>Versão da política: 1</p>
+                        <p className="break-all">URL: {item.sourceUrl || "—"}</p>
+                        <p>Texto original: {item.originalExcerpt}</p>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
                 </article>
               ))}
             </div>
           ) : null}
-          {(primaryPage.inventory?.missing.length ?? 0) > 0 ? (
-            <p className="mt-ds-12 text-caption text-muted-foreground">{REVIEW_COPY.primaryMissing}: {primaryPage.inventory?.missing.join(" ")}</p>
+          {domainPrompt ? (
+            <article className="mt-ds-16 rounded-ds-md border border-warning p-ds-12" data-domain-confirmation>
+              <h3 className="text-label">{REVIEW_COPY.domainConfirmTitle}</h3>
+              <p className="mt-ds-8 text-body">{REVIEW_COPY.domainConfirmHelp}</p>
+            </article>
+          ) : null}
+          {primaryReady.length ? (
+            <div className="mt-ds-16 flex flex-col gap-ds-16" data-primary-eligible>
+              {primaryReady.map(({ item, presented }) => (
+                <article key={item.candidateId} className="rounded-ds-md border border-primary p-ds-16" data-candidate-id={item.candidateId} data-review-state={item.state} data-ready="true" data-preview-version={presented.previewVersion}>
+                  <div className="flex flex-wrap items-start justify-between gap-ds-8">
+                    <h3 className="text-label">{presented.title}</h3>
+                    <Badge tone={toneFor(item.state)}>{reviewStateLabel(item.state, item.approvalOrigin)}</Badge>
+                  </div>
+                  <p className="mt-ds-16 text-caption text-muted-foreground">{REVIEW_COPY.found}</p>
+                  <p className="mt-ds-8 text-body">{presented.found}</p>
+                  <p className="mt-ds-16 text-caption text-muted-foreground">{REVIEW_COPY.source}</p>
+                  <p className="mt-ds-8 text-body">{presented.source}</p>
+                  <p className="mt-ds-16 text-caption text-muted-foreground">{REVIEW_COPY.meaning}</p>
+                  {presented.attention.map((line) => <p key={line} className="mt-ds-8 text-body">{line}</p>)}
+                  <p className="mt-ds-16 text-caption text-muted-foreground">{REVIEW_COPY.preview}</p>
+                  <p className="mt-ds-8 text-body" data-preview-text>{presented.preview}</p>
+                  <p className="mt-ds-16 text-label">{REVIEW_COPY.question}</p>
+                  <div className="mt-ds-12 flex flex-wrap gap-ds-8">
+                    {item.availableActions.includes("ACCEPT_ELIGIBLE_FACT") && presented.translationSafe ? (
+                      <Button type="button" size="sm" disabled={busy || !item.eligible} onClick={() => onDecide(item.candidateId, item.version, "ACCEPT", presented.previewVersion)}>
+                        {REVIEW_ACTION_LABEL.ACCEPT}
+                      </Button>
+                    ) : null}
+                    {item.availableActions.includes("REJECT_CANDIDATE") ? (
+                      <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => onDecide(item.candidateId, item.version, "REJECT")}>
+                        {REVIEW_ACTION_LABEL.REJECT}
+                      </Button>
+                    ) : null}
+                    {item.availableActions.includes("REQUEST_NEW_EVIDENCE") ? (
+                      <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => onDecide(item.candidateId, item.version, "REQUEST_NEW_EVIDENCE")}>
+                        {REVIEW_ACTION_LABEL.REQUEST_NEW_EVIDENCE}
+                      </Button>
+                    ) : null}
+                    {item.availableActions.includes("KEEP_PENDING") ? (
+                      <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => onDecide(item.candidateId, item.version, "KEEP_PENDING")}>
+                        {REVIEW_ACTION_LABEL.KEEP_PENDING}
+                      </Button>
+                    ) : null}
+                  </div>
+                  <Accordion type="single" collapsible className="mt-ds-16">
+                    <AccordionItem value="tech">
+                      <AccordionTrigger>{REVIEW_COPY.technical}</AccordionTrigger>
+                      <AccordionContent>
+                        <p>Candidate ID: {item.candidateId}</p>
+                        <p>Evidence ID: {item.evidenceReference}</p>
+                        <p className="break-all">URL: {item.sourceUrl || "—"}</p>
+                        <p>Texto original: {item.originalExcerpt}</p>
+                        <p>Tipo de fonte: {item.sourceClass}</p>
+                        <p>Estado de identidade: {item.sourceIdentity} ({item.sourceRole})</p>
+                        <p>Risco: {item.riskClass}</p>
+                        <p>Versão: {item.version}</p>
+                        <p>Prévia versionada: {presented.previewVersion}</p>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </article>
+              ))}
+            </div>
+          ) : null}
+          {primaryBlocked.length ? (
+            <div className="mt-ds-24" data-primary-blocked>
+              <h3 className="text-label">{REVIEW_COPY.blockedTitle}</h3>
+              <p className="mt-ds-8 text-caption text-muted-foreground">{REVIEW_COPY.blockedHelp}</p>
+              <div className="mt-ds-16 flex flex-col gap-ds-12">
+                {primaryBlocked.map(({ item, presented }) => (
+                  <article key={item.candidateId} className="rounded-ds-md border border-border p-ds-12" data-candidate-id={item.candidateId} data-review-state={item.state} data-ready="false">
+                    <h4 className="text-label">{presented.title}</h4>
+                    <p className="mt-ds-8 text-body">{item.blockerPt || presented.found}</p>
+                    <p className="mt-ds-8 text-caption text-muted-foreground">{presented.source}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
           ) : null}
         </section>
       ) : null}
@@ -161,7 +270,7 @@ export function EvidenceReviewStep({
                       <article key={item.candidateId} className="rounded-ds-md border border-primary p-ds-16" data-candidate-id={item.candidateId} data-review-state={item.state} data-ready={item.eligible ? "true" : "false"} data-theme={presented.theme} data-preview-version={presented.previewVersion}>
                         <div className="flex flex-wrap items-start justify-between gap-ds-8">
                           <h3 className="text-label">{presented.title}</h3>
-                          <Badge tone={toneFor(item.state)}>{reviewStateLabel(item.state)}</Badge>
+                          <Badge tone={toneFor(item.state)}>{reviewStateLabel(item.state, item.approvalOrigin)}</Badge>
                         </div>
                         <p className="mt-ds-16 text-caption text-muted-foreground">{REVIEW_COPY.found}</p>
                         <p className="mt-ds-8 text-body">{presented.found}</p>
@@ -239,7 +348,7 @@ export function EvidenceReviewStep({
                   <article key={item.candidateId} className="rounded-ds-md border border-border p-ds-16" data-candidate-id={item.candidateId} data-review-state={item.state} data-ready="false">
                     <div className="flex flex-wrap items-center justify-between gap-ds-8">
                       <h3 className="text-label">{presented.title}</h3>
-                      <Badge tone={toneFor(item.state)}>{reviewStateLabel(item.state)}</Badge>
+                      <Badge tone={toneFor(item.state)}>{reviewStateLabel(item.state, item.approvalOrigin)}</Badge>
                     </div>
                     <p className="mt-ds-8 text-body">{presented.found}</p>
                     <p className="mt-ds-8 text-caption">{item.blocker}</p>

@@ -47,7 +47,20 @@ export {
 export { prepareReviewQueue, prepareReviewCandidate, reviewSummary } from "@/lib/presell-quality/review-prepare";
 export { decideEvidenceCandidate, evidenceReviewAuthGate } from "@/lib/presell-quality/review-decide";
 export { loadEvidenceReviewWorkspace } from "@/lib/presell-quality/review-workspace";
+export {
+  PRIMARY_SOURCE_AUTO_APPROVAL,
+  PRIMARY_SOURCE_POLICY,
+  PRIMARY_SOURCE_POLICY_VERSION,
+  applyPrimarySourceAutoApproval,
+  evaluatePrimarySourceAutoApproval,
+  policyApprovedCandidateIds,
+} from "@/lib/presell-quality/primary-source-auto-approval";
 export { processPrimaryAffiliatePage, readPrimaryPageResearch } from "@/lib/presell-quality/primary-page-research";
+export {
+  classifyPrimaryFaq,
+  diagnosePrimaryCandidate,
+  domainConfirmationNeeded,
+} from "@/lib/presell-quality/primary-evidence-triage";
 export { mapContentGapsToCandidates } from "@/lib/presell-quality/content-gap-map";
 export { evaluateRegenerationGate, snapshotProductContract, REGENERATION_GATE_READY, REGENERATION_GATE_WAITING } from "@/lib/presell-quality/regeneration-gate";
 export { classifyOperationalThemes, candidateSupportsGap, buildOperationalReviewCard, primaryOperationalTheme } from "@/lib/presell-quality/operational-theme";

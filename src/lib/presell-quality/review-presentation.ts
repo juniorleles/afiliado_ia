@@ -195,9 +195,53 @@ const TEMPLATES: Template[] = [
     attention: ["Esse prazo foi informado só para os Estados Unidos. Não generalizamos para outros países."],
     preview: () => "Segundo o vendedor, o envio para os Estados Unidos é gratuito e costuma levar de 5 a 7 dias úteis.",
   },
+  {
+    id: "droppers-under-tongue",
+    test: (text) => /two full droppers/i.test(text) && /under your tongue/i.test(text) && /30 seconds/i.test(text),
+    title: "Como utilizar o produto",
+    found: () => "O vendedor informa o uso de dois conta-gotas completos debaixo da língua, de manhã, antes do café da manhã, mantendo por 30 segundos. Se o gosto for forte, os dois conta-gotas podem ser dissolvidos em um copo d'água.",
+    attention: [
+      "Isso é uma instrução de uso declarada pelo vendedor, não uma comprovação de resultado.",
+      "A frase promocional sobre resultados não entra na prévia.",
+    ],
+    preview: () => "Segundo o vendedor, o produto deve ser usado com dois conta-gotas completos debaixo da língua de manhã, antes do café da manhã, mantendo por 30 segundos antes de engolir. Se o gosto for forte, os dois conta-gotas podem ser dissolvidos em um copo d'água.",
+  },
+  {
+    id: "ship-24h-5-10",
+    test: (text) => /24 working hours/i.test(text) && /5 to 10 days/i.test(text) && /domestic orders/i.test(text),
+    title: "Prazo estimado de entrega",
+    found: () => "O vendedor informa que tenta enviar o pedido em até 24 horas úteis e que, em média, a encomenda chega entre 5 e 10 dias para pedidos domésticos, com transportadora como FedEx ou UPS.",
+    attention: [
+      "O prazo de 5 a 10 dias vale para pedidos domésticos, nas condições informadas pelo vendedor.",
+      "Isso não é uma garantia de entrega.",
+    ],
+    preview: () => "Segundo a página comercial, a entrega é estimada entre 5 e 10 dias, nas condições informadas pelo vendedor. O envio é tentado em até 24 horas úteis, com transportadora como FedEx ou UPS.",
+  },
+  {
+    id: "one-time-payment-ssl",
+    test: (text) => /one time payment/i.test(text) && /ssl/i.test(text),
+    title: "Cobrança em pagamento único",
+    found: () => "O vendedor informa que a compra nesta página pede um pagamento único, sem outras cobranças futuras, e que o site usa SSL para proteger os dados.",
+    attention: [
+      "Isso é uma declaração comercial do vendedor sobre a cobrança nesta página.",
+      "Não confirma o fabricante e não autoriza o botão comercial da Pre-sell.",
+    ],
+    preview: () => "Segundo o vendedor, a compra nesta página pede um pagamento único, sem outras cobranças futuras. O site declara usar SSL para proteger as informações.",
+  },
+  {
+    id: "guarantee-60-minus-shipping",
+    test: (text) => /60 full days/i.test(text) && /minus shipping/i.test(text) && /empty bottles/i.test(text) && /48 hours/i.test(text),
+    title: "Garantia de 60 dias, com condições de devolução",
+    found: () => "O vendedor informa garantia de reembolso de 100% em 60 dias. É preciso devolver o produto, inclusive frascos vazios, e o valor volta em até 48 horas após o retorno. Frete e taxas de manuseio não entram no reembolso.",
+    attention: [
+      "O reembolso não inclui frete e taxas de manuseio.",
+      "O prazo de 48 horas conta após o produto devolvido chegar.",
+    ],
+    preview: () => "Segundo o vendedor, há garantia de reembolso de 100% em 60 dias. O produto, inclusive frascos vazios, deve ser devolvido, e o valor volta em até 48 horas após o retorno, sem incluir frete e taxas de manuseio.",
+  },
 ];
 
-const STRENGTHENING = /\b(garantimos a entrega|chega em|entrega garantida|sem falhas|100%)\b/i;
+const EXTRA_STRENGTH = /\b(garantimos a entrega|chega em|entrega garantida|sem falhas)\b/i;
 
 export function extractComparableNumbers(text: string): string[] {
   return [...new Set([...text.matchAll(/\d+/g)].map((item) => item[0]))].sort();
@@ -219,8 +263,13 @@ export function previewVersionOf(input: { candidateId: string; version: number; 
 
 export function validateSafeTranslation(original: string, preview: string): { safe: boolean; reason: string | null } {
   if (!preview.trim()) return { safe: false, reason: "A prévia está vazia." };
-  if (!/^segundo o vendedor/i.test(preview)) return { safe: false, reason: "A prévia precisa atribuir a informação ao vendedor." };
-  if (STRENGTHENING.test(preview)) return { safe: false, reason: "A prévia fortalece a afirmação além da fonte." };
+  if (!/^segundo (o vendedor|a página comercial)/i.test(preview)) return { safe: false, reason: "A prévia precisa atribuir a informação ao vendedor." };
+  if (EXTRA_STRENGTH.test(preview) && !EXTRA_STRENGTH.test(original)) {
+    return { safe: false, reason: "A prévia fortalece a afirmação além da fonte." };
+  }
+  if (/\b100%\b/i.test(preview) && !/\b100%\b/i.test(original)) {
+    return { safe: false, reason: "A prévia fortalece a afirmação além da fonte." };
+  }
   const originalNumbers = extractComparableNumbers(original);
   const previewNumbers = extractComparableNumbers(preview);
   if (originalNumbers.join(",") !== previewNumbers.join(",")) {
@@ -235,7 +284,17 @@ export function validateSafeTranslation(original: string, preview: string): { sa
   return { safe: true, reason: null };
 }
 
-export function sourceLineOf(input: { sourceHost: string; sourceUrl: string }): string {
+export function sourceLineOf(input: {
+  sourceHost: string;
+  sourceUrl: string;
+  primaryAffiliate?: boolean;
+  productName?: string;
+}): string {
+  if (input.primaryAffiliate) {
+    return input.productName
+      ? `Página comercial do ${input.productName}.`
+      : "Página comercial informada pelo usuário.";
+  }
   const path = (() => {
     try {
       return new URL(input.sourceUrl).pathname.toLowerCase();
@@ -257,8 +316,12 @@ export function buildReviewPresentation(input: {
   sourceHost: string;
   sourceUrl: string;
   field?: string;
+  primaryAffiliate?: boolean;
+  productName?: string;
 }): ReviewPresentation {
-  const original = input.originalExcerpt || input.extractedValue;
+  const original = (input.extractedValue && input.extractedValue.length >= (input.originalExcerpt || "").length
+    ? input.extractedValue
+    : input.originalExcerpt || input.extractedValue).replace(/\s+/g, " ").trim();
   const theme = primaryOperationalTheme(original, input.field ?? "faq");
   const template = TEMPLATES.find((item) => item.test(original));
   if (!template) {

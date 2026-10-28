@@ -158,6 +158,8 @@ export async function decideEvidenceCandidateAction(input: {
     decision: input.decision,
     expectedVersion: input.expectedVersion,
     officialHosts: workspace.identities.filter((item) => item.role === "MANUFACTURER").map((item) => item.host),
+    primaryAffiliateHosts: workspace.primaryHost ? [workspace.primaryHost] : [],
+    faqs: workspace.primaryPage?.inventory?.faqs ?? [],
     confirmOverwrite: input.confirmOverwrite,
     presentationVersion: input.presentationVersion,
   });

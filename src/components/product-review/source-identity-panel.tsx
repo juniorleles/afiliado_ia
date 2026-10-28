@@ -47,6 +47,12 @@ export function SourceIdentityPanel({
         <p className="text-body">Sites ainda sem confirmação: {unresolvedRelationships}</p>
       </div>
       {rows.length === 0 ? <p className="text-body text-muted-foreground">Nenhum site mapeado.</p> : null}
+      {rows.some((row) => row.state === "CONTRADICTED") && rows.some((row) => row.primaryAffiliate) ? (
+        <article className="rounded-ds-md border border-warning p-ds-16" data-domain-confirmation>
+          <h3 className="text-label">{REVIEW_COPY.domainConfirmTitle}</h3>
+          <p className="mt-ds-8 text-body">{REVIEW_COPY.domainConfirmHelp}</p>
+        </article>
+      ) : null}
       {rows.map((row) => {
         const friendly = friendlyIdentity(row);
         const canConfirm = row.availableActions.includes("CONFIRM_SELLER") || row.availableActions.includes("CONFIRM_AFFILIATE");

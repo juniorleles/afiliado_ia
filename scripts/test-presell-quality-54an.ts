@@ -121,7 +121,7 @@ async function main() {
   const realRun = readLatestProductResearch(237);
   const accepted237 = acceptedProposals(realRun);
   assert(stored.length === 42, "candidatos 237 carregados");
-  assert(accepted237.length === 4, "18. quatro fatos ACCEPTED preservados na campanha real");
+  assert(["description", "ingredients", "howItWorks", "guarantee"].every((field) => accepted237.some((item) => item.field === field)), "18. fatos ACCEPTED do nucleo preservados na campanha real");
   const before237 = campaignIntegritySnapshot(237);
   const realLedger = reconcileStoredCandidates({ campaignId: 237, candidates: stored });
   const acceptedHosts = [...new Set(accepted237.map((item) => {
@@ -196,7 +196,7 @@ async function main() {
     source(isolated.id, "TRACKING_HOPLINK", "https://hop.clickbank.net/"),
   ]);
   const fixtures: FactCandidate[] = [
-    candidate({ field: "warnings", text: "Do not exceed the labeled serving." }),
+    candidate({ field: "warnings", text: "Please allow 1-2 business days processing time for your order to be shipped. During holidays orders can experience delays to be processed." }),
     candidate({ field: "benefits", text: "Clinically proven to treat fatigue.", usable: false, blockReason: "Medical or health claim is not restated as a product fact." }),
     candidate({ field: "description", text: "Novalis Core is a documented mineral capsule." }),
     candidate({ field: "manufacturer", text: "Made by an unnamed laboratory.", sourceUrl: "https://example.test/novalis" }),

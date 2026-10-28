@@ -38,7 +38,7 @@ export const REVIEW_IDENTITY_STATE_LABEL: Record<string, string> = {
 
 export const REVIEW_COPY = {
   summaryTitle: "Informações do produto",
-  summaryHelp: "Analise as informações abaixo e escolha quais deseja utilizar na sua página. O sistema não adicionará novas informações sem sua aprovação.",
+  summaryHelp: "Informações operacionais da página comercial principal podem ser aprovadas automaticamente. As demais informações continuam exigindo a sua decisão.",
   needsDecision: "Precisa da sua decisão agora",
   stillChecking: "Informações que o sistema ainda está verificando",
   found: "O que encontramos?",
@@ -64,7 +64,9 @@ export const REVIEW_COPY = {
   confirmSeller: "Confirmar site de venda",
   confirmAffiliate: "Confirmar material de afiliado",
   primaryTitle: "Informações encontradas na página principal",
-  primaryHelp: "Estas informações vieram da página comercial que você informou. Nada entra na Pre-sell sem a sua aprovação.",
+  primaryHelp: "Informações operacionais elegíveis desta página comercial são aprovadas automaticamente. Alegações de saúde e conteúdo promocional continuam bloqueados.",
+  primaryAutoApproved: "aprovadas automaticamente",
+  autoApprovedTitle: "Aprovado automaticamente — página principal",
   primaryFound: "informações encontradas",
   primaryFaqs: "perguntas e respostas capturadas",
   primaryCommercial: "informações comerciais",
@@ -72,14 +74,20 @@ export const REVIEW_COPY = {
   primaryProof: "precisam de comprovação adicional",
   primaryMissing: "não encontradas nesta página",
   primaryBlocked: "bloqueadas por segurança",
+  meaning: "O que isso significa?",
+  blockedTitle: "Informações que ainda não podem ser utilizadas",
+  blockedHelp: "Estas informações foram encontradas, mas ainda não podem ser aprovadas para a Pre-sell.",
+  domainConfirmTitle: "Precisamos confirmar se estes dois sites pertencem ao mesmo vendedor.",
+  domainConfirmHelp: "Confirmar um domínio não valida automaticamente o outro. A decisão humana anterior foi preservada.",
 } as const;
 
-export function reviewStateLabel(state: string): string {
+export function reviewStateLabel(state: string, approvalOrigin?: string | null): string {
+  if (approvalOrigin === "PRIMARY_SOURCE_POLICY") return "Aprovado automaticamente — página principal";
   return REVIEW_STATE_LABEL[state] ?? "Em análise";
 }
 
 export function reviewGroupOf(theme: string): ReviewGroupId {
-  if (theme === "SHIPPING" || theme === "DELIVERY" || theme === "COMMERCIAL_TERMS") return "shipping";
+  if (theme === "SHIPPING" || theme === "DELIVERY") return "shipping";
   if (theme === "RETURNS") return "returns";
   if (theme === "REFUND") return "refund";
   return "other";
@@ -90,7 +98,14 @@ export function friendlyIdentity(input: {
   identityFound: string;
   relationToProduct: string;
   state: string;
+  primaryAffiliate?: boolean;
 }): { title: string; explanation: string } {
+  if (input.primaryAffiliate) {
+    return {
+      title: "Página comercial informada pelo usuário",
+      explanation: "Esta é a página que você registrou como origem do conteúdo. Isso não confirma o fabricante e não prova, sozinho, que outro site pertença ao mesmo vendedor.",
+    };
+  }
   const relation = `${input.identityFound} ${input.relationToProduct}`.toUpperCase();
   if (/LOOKALIKE|CLONE|VERCEL|SEMELHANTE/.test(relation) || /CLONE/.test(input.identityFound.toUpperCase())) {
     return {
@@ -108,6 +123,12 @@ export function friendlyIdentity(input: {
     return {
       title: "Link de rastreamento de afiliado",
       explanation: "Este endereço só registra o clique do anúncio. Ele não é a página do produto e não deve ser usado como fonte.",
+    };
+  }
+  if (input.state === "CONTRADICTED") {
+    return {
+      title: "Há informações conflitantes sobre este site",
+      explanation: "Precisamos confirmar se estes dois sites pertencem ao mesmo vendedor. A decisão humana anterior foi preservada e não é revertida automaticamente.",
     };
   }
   if (/VENDA|SELLER|AFILIAD/.test(relation) && input.state === "PARTIALLY_SUPPORTED") {

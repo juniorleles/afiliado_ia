@@ -4,6 +4,7 @@ import { sanitizeSharedUrl } from "@/lib/campaign-sources/classify";
 import { classifyUrlRoles } from "@/lib/campaign-sources/roles";
 import { relatedHostEvidence } from "@/lib/campaign-sources/related-hosts";
 import { readPrimaryAffiliatePage } from "@/lib/campaign-sources/primary-page";
+import { isPrimaryAffiliateHost, primarySellerReviewAllowed } from "@/lib/presell-quality/primary-evidence-triage";
 import { readCampaignSources } from "@/lib/campaign-sources/store";
 import { acceptedProposals } from "@/lib/product-research/approved-facts";
 import type { ProductResearchRun } from "@/lib/product-research/types";
@@ -128,12 +129,21 @@ export function sellerReviewAllowed(input: {
   host: string;
   relations: CommercialRelation[];
   identityRole?: string | null;
+  primaryAffiliateHosts?: string[];
 }): { allowed: boolean; reason: string } {
   const host = input.host.toLowerCase();
   if (!host) return { allowed: false, reason: "Host is missing." };
   if (input.identityRole === "CLONE" || CLONE_HOST.test(host)) {
     return { allowed: false, reason: "Lookalike or hosted-clone hosts are not seller identity." };
   }
+  const primaryGate = primarySellerReviewAllowed({
+    field: input.field,
+    host,
+    relations: input.relations,
+    identityRole: input.identityRole,
+    primaryAffiliateHosts: input.primaryAffiliateHosts,
+  });
+  if (primaryGate) return primaryGate;
   const hostRelations = input.relations.filter((item) => item.to === `website:${host}` || item.from === `website:${host}`);
   if (hostRelations.some((item) => item.type === "CHECKOUT_FOR" || item.type === "TRACKS_VIA") && !hostRelations.some((item) => item.type === "SELLS" || item.type === "PROMOTES_AS_AFFILIATE")) {
     return { allowed: false, reason: "Checkout or tracking hosts are not seller-information sources." };
@@ -469,10 +479,16 @@ export type SourceIdentityPanelRow = {
   pending: string[];
   confirmedScopes: RelationScope[];
   relationIds: string[];
+  primaryAffiliate: boolean;
   availableActions: Array<"CONFIRM_SELLER" | "CONFIRM_AFFILIATE" | "REJECT_RELATION" | "REQUEST_MORE_EVIDENCE" | "KEEP_PENDING">;
 };
 
-function identityLabel(role: SourceIdentityRecord["role"] | undefined, relations: CommercialRelation[]): string {
+function identityLabel(
+  role: SourceIdentityRecord["role"] | undefined,
+  relations: CommercialRelation[],
+  primaryAffiliate: boolean,
+): string {
+  if (primaryAffiliate) return "Página comercial informada pelo usuário";
   if (role === "MANUFACTURER") return "Fabricante confirmado";
   if (relations.some((item) => item.type === "TRACKS_VIA")) return "Rede ou hop de afiliado";
   if (relations.some((item) => item.type === "CHECKOUT_FOR")) return "Operador de checkout";
@@ -488,12 +504,14 @@ function identityLabel(role: SourceIdentityRecord["role"] | undefined, relations
 export function sourceIdentityPanel(input: {
   graph: CommercialGraph;
   identities: SourceIdentityRecord[];
+  primaryAffiliateHosts?: string[];
 }): SourceIdentityPanelRow[] {
   const byHost = new Map(input.identities.map((item) => [item.host, item]));
   const hosts = [...new Set(input.graph.entities.map((item) => item.host).filter((item): item is string => Boolean(item)))];
   return hosts.map((host) => {
     const relations = input.graph.relations.filter((item) => item.to === `website:${host}` || item.from === `website:${host}`);
     const identity = byHost.get(host);
+    const primaryAffiliate = isPrimaryAffiliateHost(host, input.primaryAffiliateHosts);
     const confirmedScopes = [...new Set(relations.filter((item) => item.confirmedByHuman).map((item) => item.scope))];
     const pending: string[] = [];
     if (!relations.some((item) => item.scope === "SELLER" && (item.state === "PARTIALLY_SUPPORTED" || item.state === "VERIFIED" || item.confirmedByHuman))) {
@@ -505,21 +523,32 @@ export function sourceIdentityPanel(input: {
     if (relations.some((item) => item.type === "RELATED_BY_TOKEN")) {
       pending.push("Semelhança de domínio não prova propriedade comum.");
     }
-    const cloneOrCheckout = identity?.role === "CLONE" || relations.some((item) => item.type === "CHECKOUT_FOR" || item.type === "TRACKS_VIA");
+    if (primaryAffiliate) {
+      pending.push("A página informada pelo usuário é origem conhecida do conteúdo capturado. Isso não confirma o fabricante.");
+    }
+    if (relations.some((item) => item.state === "CONTRADICTED")) {
+      pending.push("Há uma decisão humana anterior sobre este site. Ela não é revertida automaticamente.");
+    }
+    const cloneOrCheckout = identity?.role === "CLONE" || (!primaryAffiliate && relations.some((item) => item.type === "CHECKOUT_FOR" || item.type === "TRACKS_VIA"));
     const actions: SourceIdentityPanelRow["availableActions"] = ["REQUEST_MORE_EVIDENCE", "KEEP_PENDING"];
     if (!cloneOrCheckout && relations.some((item) => item.scope === "SELLER")) actions.unshift("CONFIRM_SELLER");
-    if (!cloneOrCheckout && relations.some((item) => item.scope === "AFFILIATE")) actions.unshift("CONFIRM_AFFILIATE");
+    if ((!cloneOrCheckout || primaryAffiliate) && relations.some((item) => item.scope === "AFFILIATE")) actions.unshift("CONFIRM_AFFILIATE");
     if (relations.some((item) => item.id)) actions.push("REJECT_RELATION");
+    const contradicted = relations.some((item) => item.state === "CONTRADICTED");
     return {
       host,
-      identityFound: identityLabel(identity?.role, relations),
+      identityFound: identityLabel(identity?.role, relations, primaryAffiliate),
       relationToProduct: relations.map((item) => `${item.type} (${item.scope}, ${item.state})`).join(" · ") || "Nenhuma relação documentada",
-      evidence: relations.flatMap((item) => item.evidence),
+      evidence: relations.flatMap((item) => item.evidence).map((item) => ({
+        ...item,
+        url: (item.url || "").replace(/\?.*$/, ""),
+      })),
       confidence: relations.some((item) => item.confidence === "HIGH") ? "HIGH" : relations.some((item) => item.confidence === "MEDIUM") ? "MEDIUM" : "LOW",
-      state: identity?.state ?? (relations.some((item) => item.state === "PARTIALLY_SUPPORTED") ? "PARTIALLY_SUPPORTED" : "UNRESOLVED"),
+      state: contradicted ? "CONTRADICTED" : identity?.state ?? (relations.some((item) => item.state === "PARTIALLY_SUPPORTED") ? "PARTIALLY_SUPPORTED" : "UNRESOLVED"),
       pending,
       confirmedScopes,
       relationIds: relations.map((item) => item.id),
+      primaryAffiliate,
       availableActions: [...new Set(actions)],
     };
   });
