@@ -77,6 +77,7 @@ export function createOpenAiVisionClient(options?: {
   fetchImpl?: typeof fetch;
   callCounter?: { count: number };
   model?: string;
+  jsonObject?: boolean;
 }): MultimodalVisionClient {
   const env = options?.env ?? process.env;
   const model = options?.model || envLookup("AIA_OPENAI_VISION_MODEL", env) || OPENAI_VISION_MODEL;
@@ -106,12 +107,14 @@ export function createOpenAiVisionClient(options?: {
         input: [{ role: "user", content }],
         max_output_tokens: 4096,
         text: {
-          format: {
-            type: "json_schema",
-            name: "presell_quality",
-            schema: MULTIMODAL_QUALITY_JSON_SCHEMA,
-            strict: true,
-          },
+          format: options?.jsonObject
+            ? { type: "json_object" }
+            : {
+                type: "json_schema",
+                name: "presell_quality",
+                schema: MULTIMODAL_QUALITY_JSON_SCHEMA,
+                strict: true,
+              },
         },
       };
 

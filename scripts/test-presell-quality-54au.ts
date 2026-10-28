@@ -215,7 +215,7 @@ assert(!canPromoteApprovedVersion(campaign237), "gate. approved-version promotio
 assert(requestPresellHumanReview(campaign237).ok === false, "gate. backend refuses human review");
 assert(humanReviewEligibilityOf("QUALITY_PASSED", campaign237) === "NOT_ELIGIBLE", "gate. QUALITY_PASSED alone does not unlock review");
 assert(campaign237.publicationUnlocked === false, "gate. publication stays locked");
-writeGlobalPresellQualityGate(campaign237);
+writeGlobalPresellQualityGate({ ...campaign237, generationId: "lp-54au-gate-fixture" });
 
 const unavailable = resolveGlobalPresellQualityGate({
   campaignId: 237,

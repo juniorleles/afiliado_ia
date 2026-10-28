@@ -3,12 +3,14 @@ import {
   PREMIUM_CTA_CAPTION,
   PREMIUM_CTA_LABEL,
 } from "@/lib/presell-quality/premium-design";
-import type {
-  FaqView,
-  FulfillmentCardModel,
-  GuaranteeView,
-  IngredientCardModel,
-  PremiumIconName,
+import {
+  compactFact,
+  type EvidenceChip,
+  type FaqView,
+  type FulfillmentCardModel,
+  type GuaranteeView,
+  type IngredientCardModel,
+  type PremiumIconName,
 } from "@/lib/presell-quality/premium-slots";
 
 function cx(...parts: Array<string | false | null | undefined>): string {
@@ -105,7 +107,7 @@ export function IngredientCardGrid({ items }: { items: IngredientCardModel[] }) 
 export function FulfillmentCardGrid({ items }: { items: FulfillmentCardModel[] }) {
   if (!items.length) return null;
   return (
-    <div className="premium-grid" data-premium="fulfillment" data-count={String(Math.min(items.length, 3))}>
+    <div className="premium-grid" data-premium="fulfillment" data-count={String(items.length)}>
       {items.map((item) => (
         <article className="premium-card" key={`${item.kind}-${item.body.slice(0, 24)}`} data-premium-card={item.kind.toLowerCase()}>
           <span className="premium-card__icon">
@@ -113,9 +115,43 @@ export function FulfillmentCardGrid({ items }: { items: FulfillmentCardModel[] }
           </span>
           <p className="ds-kicker">{item.title}</p>
           <p className="ds-body">{item.body}</p>
+          {item.note ? <p className="ds-caption">{item.note}</p> : null}
         </article>
       ))}
     </div>
+  );
+}
+
+export function HeroLogisticsRail({ items }: { items: FulfillmentCardModel[] }) {
+  if (!items.length) return null;
+  return (
+    <aside className="premium-hero-rail" data-premium="hero-rail">
+      {items.slice(0, 4).map((item) => (
+        <div className="premium-hero-rail__item" key={item.kind}>
+          <span className="premium-hero-rail__icon">
+            <PremiumIcon name={item.icon} />
+          </span>
+          <span className="premium-hero-rail__copy">
+            <span className="premium-hero-rail__title">{item.title}</span>
+            <span className="premium-hero-rail__fact">{compactFact(item.body, 48, item.kind) || item.title}</span>
+          </span>
+        </div>
+      ))}
+    </aside>
+  );
+}
+
+export function UsageSteps({ items }: { items: string[] }) {
+  if (!items.length) return null;
+  return (
+    <ol className="premium-steps" data-premium="usage">
+      {items.map((item, index) => (
+        <li className="premium-steps__item" key={item}>
+          <span className="premium-steps__n">{String(index + 1).padStart(2, "0")}</span>
+          <p className="ds-body">{item}</p>
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -134,7 +170,7 @@ export function GuaranteeBand({ view }: { view: GuaranteeView }) {
       ) : null}
       <div className="premium-guarantee__copy">
         <p className="ds-caption" data-v4-attribution="seller">
-          Seller-stated. Not independently verified.
+          Seller-stated.
         </p>
         {view.statements.map((line) => (
           <p className="ds-body" key={line}>
@@ -163,12 +199,15 @@ export function PremiumFaq({ items }: { items: FaqView[] }) {
   );
 }
 
-export function EvidenceChips({ items }: { items: string[] }) {
+export function EvidenceChips({ items }: { items: EvidenceChip[] }) {
   if (!items.length) return null;
   return (
-    <ul className="ds-hero-chips" data-premium="chips">
+    <ul className="premium-hero-chips" data-premium="chips">
       {items.map((item) => (
-        <li key={item}>{item}</li>
+        <li key={item.label}>
+          <PremiumIcon name={item.icon} />
+          <span>{item.label}</span>
+        </li>
       ))}
     </ul>
   );

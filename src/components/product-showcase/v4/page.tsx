@@ -17,11 +17,13 @@ import {
   EvidenceChips,
   FulfillmentCardGrid,
   GuaranteeBand,
+  HeroLogisticsRail,
   IngredientCardGrid,
   PremiumCta,
   PremiumFaq,
+  UsageSteps,
 } from "@/components/design-system/premium-blocks";
-import { premiumSlotsFromModel } from "@/lib/presell-quality/premium-slots";
+import { presentVisitorCopy, premiumSlotsFromModel } from "@/lib/presell-quality/premium-slots";
 
 function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");
@@ -111,7 +113,9 @@ function Hero({ model }: { model: V4Model }) {
             <h1 className="ds-display">{distinctText(headline, name) ? headline : name}</h1>
             {distinctText(subheadline, headline, name, kind) ? <p className="ds-lead">{subheadline}</p> : null}
             {distinctText(value, headline, subheadline, name) ? <p className="ds-lead">{value}</p> : null}
-            {distinctText(introduction, headline, subheadline, value, name) ? <p className="ds-body">{introduction}</p> : null}
+            {distinctText(introduction, headline, subheadline, value, name) ? (
+              <p className="ds-body">{presentVisitorCopy(introduction)}</p>
+            ) : null}
             <EvidenceChips items={premiumSlotsFromModel(model).evidenceChips} />
             <div className="ds-hero__actions">
               {model.hopSlot === "hero" ? <Hop model={model} slot="hero" /> : <PremiumCta slot="hero" />}
@@ -129,6 +133,7 @@ function Hero({ model }: { model: V4Model }) {
                   <img src={image.src} alt={image.alt} width={1200} height={1200} data-v4-image="commercial" decoding="async" />
                 </div>
               </div>
+              <HeroLogisticsRail items={premiumSlotsFromModel(model).fulfillment} />
             </div>
           ) : null}
           {editorial ? (
@@ -424,7 +429,11 @@ export function V4Page({ model }: { model: V4Model }) {
           ) : section.sectionType === "faq" ? (
             <FaqSection model={model} section={section} />
           ) : section.sectionType === "how_it_works" ? (
-            <FeatureSection section={section} numbered />
+            premiumSlotsFromModel(model).usage.length ? (
+              <UsageSteps items={premiumSlotsFromModel(model).usage} />
+            ) : (
+              <FeatureSection section={section} numbered />
+            )
           ) : section.sectionType === "trust" ? (
             <TrustSection section={section} model={model} />
           ) : section.sectionType === "guarantee" ? (

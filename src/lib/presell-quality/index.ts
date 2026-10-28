@@ -14,9 +14,11 @@ export type { MultimodalPresellEvaluator } from "@/lib/presell-quality/multimoda
 export type { PresellEvaluationInput } from "@/lib/presell-quality/input";
 export { QUALITY_VIEWPORTS } from "@/lib/presell-quality/capture";
 export { OPENAI_VISION_PROVIDER_ID, OPENAI_VISION_MODEL, openaiVisionProviderStatus, createOpenAiVisionClient } from "@/lib/presell-quality/openai-provider";
-export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, EXECUTION_54AI_BUDGET, EXECUTION_54AJ_BUDGET, EXECUTION_54AK_BUDGET, EXECUTION_54AL_BUDGET, EXECUTION_54AT_BUDGET, EXECUTION_54AU_BUDGET, budgetAllowsCall } from "@/lib/presell-quality/budget";
+export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, EXECUTION_54AI_BUDGET, EXECUTION_54AJ_BUDGET, EXECUTION_54AK_BUDGET, EXECUTION_54AL_BUDGET, EXECUTION_54AT_BUDGET, EXECUTION_54AU_BUDGET, EXECUTION_54AW_BUDGET, budgetAllowsCall } from "@/lib/presell-quality/budget";
 export {
   EXECUTION_54AT_ID,
+  EXECUTION_54AW_ID,
+  EXECUTION_54AW_BUDGET as EXECUTION_54AW_LEDGER_BUDGET,
   emptyExecutionBudgetLedger,
   budgetAllowsPaidCall,
   reservePaidCall,
@@ -43,8 +45,9 @@ export {
   weightedVisualScore,
   visualWeightsSumToOne,
 } from "@/lib/presell-quality/premium-design";
-export { premiumSlotsFromModel, daysFromText } from "@/lib/presell-quality/premium-slots";
+export { premiumSlotsFromModel, daysFromText, presentVisitorCopy, joinSplitSteps, splitUsageSentences, compactFact } from "@/lib/presell-quality/premium-slots";
 export { evaluateVisualGate, criticalVisualDefects, paidAiBlockedFor54au } from "@/lib/presell-quality/visual-gate";
+export { parseVisualEvaluationPayload, visualComparisonPrompt, problemsAreActionable } from "@/lib/presell-quality/visual-eval";
 export {
   PREMIUM_PRESELL_DESIGN_STANDARD_ID,
   PREMIUM_REFERENCE_RELATIVE_PATH,

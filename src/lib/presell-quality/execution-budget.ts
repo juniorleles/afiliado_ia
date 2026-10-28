@@ -25,6 +25,20 @@ export const EXECUTION_54AT_BUDGET = {
   visionModel: OPENAI_VISION_MODEL,
 } as const;
 
+export const EXECUTION_54AW_ID = "execution-54aw";
+export const EXECUTION_54AW_BUDGET = {
+  maxUsd: 1,
+  maxPaidGenerations: 0,
+  maxEvaluations: 10,
+  maxCorrectionRounds: 0,
+  maxApiAttempts: 10,
+  reserveUsdPerEvaluation: 0.15,
+  reserveUsdPerGeneration: 0,
+  provider: "openai" as const,
+  textModel: OPENAI_TEXT_MODEL,
+  visionModel: OPENAI_VISION_MODEL,
+} as const;
+
 export type ExecutionBudgetCallKind = "GENERATION" | "EVALUATION" | "OTHER";
 export type ExecutionBudgetStatus =
   | "OPEN"
@@ -108,15 +122,24 @@ export function estimateVisionCallUsd(inputTokens: number, outputTokens: number)
   return usd(estimateOpenAiVisionUsd(inputTokens, outputTokens));
 }
 
-export function reserveForKind(kind: ExecutionBudgetCallKind): number {
-  if (kind === "EVALUATION") return EXECUTION_54AT_BUDGET.reserveUsdPerEvaluation;
-  if (kind === "GENERATION") return EXECUTION_54AT_BUDGET.reserveUsdPerGeneration;
-  return EXECUTION_54AT_BUDGET.reserveUsdPerEvaluation;
+export type ExecutionBudgetCaps = {
+  maxEvaluations: number;
+  maxPaidGenerations: number;
+  maxApiAttempts: number;
+  reserveUsdPerEvaluation: number;
+  reserveUsdPerGeneration: number;
+};
+
+export function reserveForKind(kind: ExecutionBudgetCallKind, caps: ExecutionBudgetCaps = EXECUTION_54AT_BUDGET): number {
+  if (kind === "EVALUATION") return caps.reserveUsdPerEvaluation;
+  if (kind === "GENERATION") return caps.reserveUsdPerGeneration;
+  return caps.reserveUsdPerEvaluation;
 }
 
 export function budgetAllowsPaidCall(
   ledger: ExecutionBudgetLedger,
   input: { kind: ExecutionBudgetCallKind; reserveUsd?: number; estimatedUsd?: number } = { kind: "EVALUATION" },
+  caps: ExecutionBudgetCaps = EXECUTION_54AT_BUDGET,
 ): { allowed: boolean; reason: string } {
   if (ledger.autoRetryCount !== 0) {
     return { allowed: false, reason: "Automatic paid retries are forbidden." };
@@ -130,16 +153,16 @@ export function budgetAllowsPaidCall(
   if (ledger.status === "RESERVED" || ledger.status === "CONSUMING") {
     return { allowed: false, reason: "A reserved paid call is already in flight." };
   }
-  if (ledger.paidCallCount >= EXECUTION_54AT_BUDGET.maxApiAttempts) {
-    return { allowed: false, reason: `Paid attempt cap ${EXECUTION_54AT_BUDGET.maxApiAttempts} reached.` };
+  if (ledger.paidCallCount >= caps.maxApiAttempts) {
+    return { allowed: false, reason: `Paid attempt cap ${caps.maxApiAttempts} reached.` };
   }
-  if (input.kind === "EVALUATION" && ledger.evaluationCount >= EXECUTION_54AT_BUDGET.maxEvaluations) {
-    return { allowed: false, reason: `Evaluation cap ${EXECUTION_54AT_BUDGET.maxEvaluations} reached.` };
+  if (input.kind === "EVALUATION" && ledger.evaluationCount >= caps.maxEvaluations) {
+    return { allowed: false, reason: `Evaluation cap ${caps.maxEvaluations} reached.` };
   }
-  if (input.kind === "GENERATION" && ledger.generationCount >= EXECUTION_54AT_BUDGET.maxPaidGenerations) {
-    return { allowed: false, reason: `Paid generation cap ${EXECUTION_54AT_BUDGET.maxPaidGenerations} reached.` };
+  if (input.kind === "GENERATION" && ledger.generationCount >= caps.maxPaidGenerations) {
+    return { allowed: false, reason: `Paid generation cap ${caps.maxPaidGenerations} reached.` };
   }
-  const reserveUsd = usd(input.reserveUsd ?? Math.max(input.estimatedUsd ?? 0, reserveForKind(input.kind)));
+  const reserveUsd = usd(input.reserveUsd ?? Math.max(input.estimatedUsd ?? 0, reserveForKind(input.kind, caps)));
   if (ledger.spentUsd + ledger.reservedUsd + reserveUsd > ledger.maxUsd + 1e-9) {
     return { allowed: false, reason: `Budget $${ledger.maxUsd.toFixed(2)} would be exceeded.` };
   }
@@ -154,9 +177,11 @@ export function reservePaidCall(
     estimatedUsd?: number;
     reserveUsd?: number;
     now?: string;
+    caps?: ExecutionBudgetCaps;
   },
 ): { ok: true; ledger: ExecutionBudgetLedger } | { ok: false; ledger: ExecutionBudgetLedger; reason: string } {
-  const gate = budgetAllowsPaidCall(ledger, input);
+  const caps = input.caps ?? EXECUTION_54AT_BUDGET;
+  const gate = budgetAllowsPaidCall(ledger, input, caps);
   if (!gate.allowed) {
     const blocked: ExecutionBudgetLedger = {
       ...ledger,
@@ -166,7 +191,7 @@ export function reservePaidCall(
     };
     return { ok: false, ledger: blocked, reason: gate.reason };
   }
-  const reservedUsd = usd(input.reserveUsd ?? Math.max(input.estimatedUsd ?? 0, reserveForKind(input.kind)));
+  const reservedUsd = usd(input.reserveUsd ?? Math.max(input.estimatedUsd ?? 0, reserveForKind(input.kind, caps)));
   const call: ExecutionBudgetCall = {
     at: input.now ?? new Date().toISOString(),
     kind: input.kind,
