@@ -15,6 +15,14 @@ export const VISITOR_CAPTURE_VIEWPORTS = {
 export const VISITOR_CAPTURE_DEVICE_SCALE_FACTOR = 1;
 export const VISITOR_PAGE_SELECTOR = "[data-v4='page']";
 export const ADMIN_CHROME_SELECTOR = ".ds-labbar, .ds-topbar, [href*='/admin/lab/lp-generator/']";
+export type VisitorCaptureNaming = "visitor" | "official";
+
+export function visitorCaptureFilenames(viewport: string, naming: VisitorCaptureNaming = "visitor"): { fold: string; full: string } {
+  if (naming === "official") {
+    return { fold: `${viewport}-first-fold.png`, full: `${viewport}-full.png` };
+  }
+  return { fold: `${viewport}-visitor-fold.png`, full: `${viewport}-visitor.png` };
+}
 
 export type VisitorCaptureInspect = {
   width: number;
@@ -84,6 +92,8 @@ export async function captureVisitorVisuals(input: {
   outDir: string;
   sourceCommit?: string | null;
   baseUrl?: string;
+  naming?: VisitorCaptureNaming;
+  manifestName?: string;
 }): Promise<VisitorCaptureManifest> {
   const notes: string[] = [];
   const shots: VisitorCaptureShot[] = [];
@@ -112,6 +122,7 @@ export async function captureVisitorVisuals(input: {
         const img = document.querySelector("[data-v4-image='commercial']") as HTMLImageElement | null;
         return !img || (img.complete && img.naturalWidth > 0);
       }, { timeout: 15_000 }).catch(() => undefined);
+      await page.evaluate(() => (document as Document & { fonts?: { ready: Promise<unknown> } }).fonts?.ready ?? Promise.resolve());
       const report = await page.evaluate((adminSelector) => {
         const root = document.querySelector("[data-v4='page']");
         const heroImg = document.querySelector("[data-v4-image='commercial']") as HTMLImageElement | null;
@@ -136,8 +147,9 @@ export async function captureVisitorVisuals(input: {
         checkoutRequest,
         ...report,
       };
-      const foldPath = path.join(input.outDir, `${viewport.name}-visitor-fold.png`);
-      const fullPath = path.join(input.outDir, `${viewport.name}-visitor.png`);
+      const names = visitorCaptureFilenames(viewport.name, input.naming ?? "visitor");
+      const foldPath = path.join(input.outDir, names.fold);
+      const fullPath = path.join(input.outDir, names.full);
       await page.screenshot({ path: foldPath, fullPage: false });
       await page.screenshot({ path: fullPath, fullPage: true });
       shots.push({
@@ -181,7 +193,8 @@ export async function captureVisitorVisuals(input: {
     ok: shots.length >= 6 && Object.values(inspect).every((item) => item.rendered && !item.adminChromePresent && !item.overflowX),
     notes,
   };
-  writeFileSync(path.join(input.outDir, "capture-protocol.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  const manifestName = input.manifestName ?? (input.naming === "official" ? "capture-manifest.json" : "capture-protocol.json");
+  writeFileSync(path.join(input.outDir, manifestName), `${JSON.stringify(manifest, null, 2)}\n`);
   return manifest;
 }
 
