@@ -50,7 +50,7 @@ export function shouldRenderSection(input: {
 }): boolean {
   const section = input.blueprint.sections.find((item) => item.sectionType === input.type);
   if (!section || section.renderEligibility !== "ELIGIBLE") return false;
-  if (input.type !== "hero" && input.type !== "legal" && section.body.length === 0 && section.items.length === 0) {
+  if (input.type !== "hero" && input.type !== "legal" && input.type !== "faq" && section.body.length === 0 && section.items.length === 0) {
     return false;
   }
   if (input.type === "cta_final" && input.hopSlot !== "none") return false;

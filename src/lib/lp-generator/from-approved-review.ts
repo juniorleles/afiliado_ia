@@ -3,7 +3,8 @@ import { readCampaignBrief } from "@/lib/campaign-brief";
 import { readCampaignSources } from "@/lib/campaign-sources/store";
 import { currentSalesUrl } from "@/lib/campaign-sources/present";
 import { readLatestProductResearch, readProductResearchRun } from "@/lib/product-research/store";
-import { acceptedProposals, approvedContentStatus, productFactsFromAcceptedReview } from "@/lib/product-research/approved-facts";
+import { acceptedProposals, approvedContentStatus } from "@/lib/product-research/approved-facts";
+import { enrichApprovedFactsForGeneration } from "@/lib/presell-quality/approved-generation-facts";
 import { selectReviewMedia } from "@/lib/product-research/media-contract";
 import { readSandboxPresellPointer, writeSandboxPresellPointer, type SandboxPresellPointer } from "@/lib/product-research/sandbox-presell";
 import { runGeneration } from "@/lib/lp-generator/run";
@@ -121,7 +122,7 @@ export async function runApprovedReviewGeneration(input: {
       errors: ["A current sales page URL is required to persist the generation record."],
     });
   }
-  const facts = productFactsFromAcceptedReview({ run, productName, sourceUrl: salesUrl });
+  const facts = enrichApprovedFactsForGeneration({ run, productName, sourceUrl: salesUrl }).facts;
   const record = await runGeneration(
     {
       productName,

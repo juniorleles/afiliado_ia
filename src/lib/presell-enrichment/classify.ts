@@ -46,7 +46,14 @@ export function classifyEvidence(input: {
     };
   }
   if (isPromotionalOrCta(text) && input.field !== "WARRANTY_OR_GUARANTEE") {
-    return { verification: "PROHIBITED", restriction: "BLOCKED", notes: ["promotional or CTA copy is not restated as a fact"] };
+    const operationalFaq =
+      input.field === "FAQ" &&
+      isOperationalFulfillmentCopy(text) &&
+      !/\b(buy now|add to cart|click here|clicking here|order now)\b/i.test(text);
+    if (!operationalFaq) {
+      return { verification: "PROHIBITED", restriction: "BLOCKED", notes: ["promotional or CTA copy is not restated as a fact"] };
+    }
+    notes.push("Seller-stated billing or fulfillment FAQ is not treated as a checkout CTA.");
   }
   if (DOCTOR_ENDORSEMENT.test(text) || HEALTH_OUTCOME.test(text) || (HEALTH_NOUN.test(text) && /\b(address|target|support|help|endorsed)\b/i.test(text))) {
     return { verification: "PROHIBITED", restriction: "BLOCKED", notes: ["health or endorsement language is not restated as a fact"] };

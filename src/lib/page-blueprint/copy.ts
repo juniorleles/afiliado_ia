@@ -245,7 +245,7 @@ function sectionCopy(
         const question = grounded(entry.question, entry.evidenceRefs, [`faq[${i}]`]);
         const answer = grounded(entry.answer, entry.evidenceRefs, [`faq[${i}]`]);
         faq.push({ question, answer });
-        items.push({ title: question, text: grounded("", [], [`faq[${i}]`]) });
+        items.push({ title: question, text: answer });
       }
       break;
     case "cta_final":

@@ -14,7 +14,21 @@ export type { MultimodalPresellEvaluator } from "@/lib/presell-quality/multimoda
 export type { PresellEvaluationInput } from "@/lib/presell-quality/input";
 export { QUALITY_VIEWPORTS } from "@/lib/presell-quality/capture";
 export { OPENAI_VISION_PROVIDER_ID, OPENAI_VISION_MODEL, openaiVisionProviderStatus, createOpenAiVisionClient } from "@/lib/presell-quality/openai-provider";
-export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, EXECUTION_54AI_BUDGET, EXECUTION_54AJ_BUDGET, EXECUTION_54AK_BUDGET, EXECUTION_54AL_BUDGET, budgetAllowsCall } from "@/lib/presell-quality/budget";
+export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, EXECUTION_54AI_BUDGET, EXECUTION_54AJ_BUDGET, EXECUTION_54AK_BUDGET, EXECUTION_54AL_BUDGET, EXECUTION_54AT_BUDGET, budgetAllowsCall } from "@/lib/presell-quality/budget";
+export {
+  EXECUTION_54AT_ID,
+  emptyExecutionBudgetLedger,
+  budgetAllowsPaidCall,
+  reservePaidCall,
+  consumePaidCall,
+  consumeReservedAsUnverified,
+} from "@/lib/presell-quality/execution-budget";
+export { enrichApprovedFactsForGeneration, SSL_PLATFORM_QUALIFIER } from "@/lib/presell-quality/approved-generation-facts";
+export { validatePersistedProductContract } from "@/lib/presell-quality/contract-integrity";
+export { buildContentManifest } from "@/lib/presell-quality/content-manifest";
+export { evaluateContentSafety, disableCommercialCta, hydrateFaqSection } from "@/lib/presell-quality/content-safety";
+export { selectApprovedPackshot, botanicalAssetIds } from "@/lib/presell-quality/approved-packshot";
+export { compareAgainstBaseline } from "@/lib/presell-quality/baseline-comparison";
 export {
   classifyAssessmentValidity,
   aggregateValidAssessments,

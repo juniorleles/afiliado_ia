@@ -1,4 +1,4 @@
-import { isPromotionalOrCta } from "@/lib/import-heuristics";
+import { isOperationalFulfillmentCopy, isPromotionalOrCta } from "@/lib/import-heuristics";
 import { isIncompleteFragment } from "@/lib/lp-generator/structure";
 import { statementAllowed } from "@/lib/product-contract/claims";
 import { classifyEvidence } from "@/lib/presell-enrichment/classify";
@@ -6,6 +6,7 @@ import { neutralizeEditorialText } from "@/lib/editorial-neutrality/neutralize";
 
 const CHECKOUT =
   /\b(click the button|secure order|checkout page|order checkout|add to cart|buy now|shipping .{0,40}doorstep|one-time payment|recurring shipments|charges to your card|clicking here|click here)\b/i;
+const HARD_CHECKOUT_CTA = /\b(click the button|click here|clicking here|buy now|add to cart|order now|checkout page|order checkout)\b/i;
 const TRANSFORMATION =
   /\b(transform(?:s|ed|ing)? (?:your |my |our )?(lives?|gums?|teeth|body)|life[- ]changing|changed my life|toxin cleanse|clears your entire body|results well into|enjoy results)\b/i;
 const REGULATORY_INVENTION = /\bfda[- ]?(accredited|approved|certified)\b/i;
@@ -22,7 +23,9 @@ export function faqEntryAllowed(question: string, answer: string): { ok: true } 
   const a = answer.replace(/\s+/g, " ").trim();
   if (!q || !a) return { ok: false, reason: "empty question or answer" };
   if (isIncompleteFragment(a) || a.length < 24) return { ok: false, reason: "answer is incomplete" };
-  if (isPromotionalOrCta(q) || isPromotionalOrCta(a) || CHECKOUT.test(q) || CHECKOUT.test(a)) {
+  const billingOrFulfillment = isOperationalFulfillmentCopy(q) || isOperationalFulfillmentCopy(a);
+  const hardCta = HARD_CHECKOUT_CTA.test(q) || HARD_CHECKOUT_CTA.test(a);
+  if ((isPromotionalOrCta(q) || isPromotionalOrCta(a) || CHECKOUT.test(q) || CHECKOUT.test(a)) && (hardCta || !billingOrFulfillment)) {
     return { ok: false, reason: "checkout or promotional close" };
   }
   if (TRANSFORMATION.test(q) || TRANSFORMATION.test(a)) return { ok: false, reason: "transformation promise" };

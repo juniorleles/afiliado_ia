@@ -1,5 +1,5 @@
 import { isHealthEfficacyStatement } from "@/lib/ingredient-context";
-import { isPromotionalOrCta } from "@/lib/import-heuristics";
+import { isOperationalFulfillmentCopy, isPromotionalOrCta } from "@/lib/import-heuristics";
 import { operationalExclusionReason } from "@/lib/operational-evidence";
 import { statementFindings } from "@/lib/product-contract/claims";
 import type { NeutralityClass, NeutralityRole } from "@/lib/editorial-neutrality/types";
@@ -45,8 +45,15 @@ export function classifyEditorialText(input: {
   if (COMMERCIAL_PRESSURE.test(text) || operationalExclusionReason(text) === "IMPLIED_FREE_SHIPPING") {
     return { classification: "COMMERCIAL_PRESSURE", reasons: ["thanks, urgency, or implied free shipping is promotional"] };
   }
-  if (PROMO_AMPLIFIER.test(text) || (isPromotionalOrCta(text) && role !== "GUARANTEE")) {
+  const fulfillmentFaq =
+    (role === "FAQ" || role === "OPERATIONAL") &&
+    isOperationalFulfillmentCopy(text) &&
+    !/\b(buy now|add to cart|click here|clicking here|order now)\b/i.test(text);
+  if (PROMO_AMPLIFIER.test(text) || (isPromotionalOrCta(text) && role !== "GUARANTEE" && !fulfillmentFaq)) {
     return { classification: "PROMOTIONAL_LANGUAGE", reasons: ["promotional amplifier or CTA language"] };
+  }
+  if (fulfillmentFaq) {
+    return { classification: "SELLER_STATED_FACT", reasons: ["seller-stated billing or fulfillment term"] };
   }
   if (findings.some((item) => item.category === "SUPERLATIVE" || item.category === "ABSOLUTE_PROMISE" || item.category === "RESULT_PROMISE")) {
     return { classification: "PROMOTIONAL_LANGUAGE", reasons: findings.map((item) => item.rule) };
