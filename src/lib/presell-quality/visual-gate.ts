@@ -99,6 +99,10 @@ export function paidAiBlockedFor54au(): boolean {
   return PAID_AI_BUDGET_USD <= 0;
 }
 
+export function paidAiBlockedFor54ax(): boolean {
+  return true;
+}
+
 export function markupHasForbiddenChrome(markup: string): boolean {
   return FORBIDDEN_REFERENCE_CHROME.test(markup);
 }

@@ -14,11 +14,13 @@ export type { MultimodalPresellEvaluator } from "@/lib/presell-quality/multimoda
 export type { PresellEvaluationInput } from "@/lib/presell-quality/input";
 export { QUALITY_VIEWPORTS } from "@/lib/presell-quality/capture";
 export { OPENAI_VISION_PROVIDER_ID, OPENAI_VISION_MODEL, openaiVisionProviderStatus, createOpenAiVisionClient } from "@/lib/presell-quality/openai-provider";
-export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, EXECUTION_54AI_BUDGET, EXECUTION_54AJ_BUDGET, EXECUTION_54AK_BUDGET, EXECUTION_54AL_BUDGET, EXECUTION_54AT_BUDGET, EXECUTION_54AU_BUDGET, EXECUTION_54AW_BUDGET, budgetAllowsCall } from "@/lib/presell-quality/budget";
+export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, EXECUTION_54AI_BUDGET, EXECUTION_54AJ_BUDGET, EXECUTION_54AK_BUDGET, EXECUTION_54AL_BUDGET, EXECUTION_54AT_BUDGET, EXECUTION_54AU_BUDGET, EXECUTION_54AW_BUDGET, EXECUTION_54AX_BUDGET, budgetAllowsCall } from "@/lib/presell-quality/budget";
 export {
   EXECUTION_54AT_ID,
   EXECUTION_54AW_ID,
+  EXECUTION_54AX_ID,
   EXECUTION_54AW_BUDGET as EXECUTION_54AW_LEDGER_BUDGET,
+  EXECUTION_54AX_BUDGET as EXECUTION_54AX_LEDGER_BUDGET,
   emptyExecutionBudgetLedger,
   budgetAllowsPaidCall,
   reservePaidCall,
@@ -42,11 +44,49 @@ export {
   PAID_AI_BUDGET_USD,
   VISUAL_DIMENSIONS,
   VISUAL_DIMENSION_WEIGHTS,
+  FORBIDDEN_REFERENCE_CHROME,
   weightedVisualScore,
   visualWeightsSumToOne,
 } from "@/lib/presell-quality/premium-design";
 export { premiumSlotsFromModel, daysFromText, presentVisitorCopy, joinSplitSteps, splitUsageSentences, compactFact } from "@/lib/presell-quality/premium-slots";
-export { evaluateVisualGate, criticalVisualDefects, paidAiBlockedFor54au } from "@/lib/presell-quality/visual-gate";
+export { evaluateVisualGate, criticalVisualDefects, paidAiBlockedFor54au, paidAiBlockedFor54ax } from "@/lib/presell-quality/visual-gate";
+export {
+  PREMIUM_VISUAL_EVALUATION_V2,
+  VISUAL_EVAL_PROMPT_VERSION_V2,
+  visualRubricV2Record,
+  visualComparisonPromptV2,
+  VISUAL_EVAL_V2_NON_PENALTIES,
+  VISUAL_EVAL_V2_PENALTIES,
+} from "@/lib/presell-quality/visual-eval-v2";
+export {
+  VISITOR_VISUAL_CAPTURE,
+  LAB_PREVIEW_CAPTURE,
+  evaluationIdentityOf,
+  compareEvaluationIdentities,
+  stabilityFromIndependentPair,
+  methodologyThresholdsFrozen,
+} from "@/lib/presell-quality/evaluation-comparability";
+export {
+  PRESELL_BEST_CANDIDATE_SELECTOR,
+  selectBestCandidate,
+  candidateStateOf,
+  readBestCandidate,
+  writeBestCandidate,
+} from "@/lib/presell-quality/best-candidate";
+export {
+  DESIGN_CHECKPOINT_FILES,
+  createDesignCheckpoint,
+  restoreDesignCheckpoint,
+  checkpointDiffers,
+} from "@/lib/presell-quality/design-checkpoint";
+export {
+  visitorCapturePreviewPath,
+  adminChromePresentInHtml,
+  visitorCaptureDefects,
+  VISITOR_CAPTURE_VIEWPORTS,
+  VISITOR_CAPTURE_DEVICE_SCALE_FACTOR,
+} from "@/lib/presell-quality/visitor-capture";
+export { historicalEvaluationRows, historicalComparabilityMatrix } from "@/lib/presell-quality/historical-audit";
 export { parseVisualEvaluationPayload, visualComparisonPrompt, problemsAreActionable } from "@/lib/presell-quality/visual-eval";
 export {
   PREMIUM_PRESELL_DESIGN_STANDARD_ID,

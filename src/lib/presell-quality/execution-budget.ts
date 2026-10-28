@@ -25,6 +25,20 @@ export const EXECUTION_54AT_BUDGET = {
   visionModel: OPENAI_VISION_MODEL,
 } as const;
 
+export const EXECUTION_54AX_ID = "execution-54ax";
+export const EXECUTION_54AX_BUDGET = {
+  maxUsd: 0,
+  maxPaidGenerations: 0,
+  maxEvaluations: 0,
+  maxCorrectionRounds: 0,
+  maxApiAttempts: 0,
+  reserveUsdPerEvaluation: 0,
+  reserveUsdPerGeneration: 0,
+  provider: "openai" as const,
+  textModel: OPENAI_TEXT_MODEL,
+  visionModel: OPENAI_VISION_MODEL,
+} as const;
+
 export const EXECUTION_54AW_ID = "execution-54aw";
 export const EXECUTION_54AW_BUDGET = {
   maxUsd: 1,
