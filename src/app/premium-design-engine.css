@@ -16,10 +16,12 @@
 .ds-root[data-ds-engine="premium"] .ds-btn--preview {
   background: var(--ds-cta);
   color: var(--ds-cta-ink);
-  min-height: 3.6rem;
-  padding: 1.05rem 2.1rem;
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--ds-cta) 38%, transparent);
-  font-size: 1.2rem;
+  min-height: 4rem;
+  padding: 1.15rem 2.35rem;
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--ds-cta) 28%, transparent),
+    0 14px 32px color-mix(in srgb, var(--ds-cta) 42%, transparent);
+  font-size: 1.28rem;
   font-weight: 800;
   letter-spacing: 0.01em;
   border-radius: 999px;
@@ -49,17 +51,31 @@
 
 .ds-root[data-ds-engine="premium"] .ds-hero-band {
   background:
-    radial-gradient(900px 420px at 88% 12%, color-mix(in srgb, var(--ds-accent-soft) 90%, transparent), transparent 62%),
+    radial-gradient(920px 460px at 86% 8%, color-mix(in srgb, var(--ds-accent-soft) 92%, transparent), transparent 64%),
     linear-gradient(180deg, var(--ds-surface) 0%, var(--ds-bg) 100%);
-  padding-block: clamp(1.2rem, 0.8rem + 3vw, 3.25rem);
+  padding-block: clamp(0.9rem, 0.55rem + 2.2vw, 2.4rem);
+}
+
+.ds-root[data-ds-engine="premium"] .v4-hero__copy {
+  display: grid;
+  gap: 0.85rem;
+  align-content: center;
 }
 
 .ds-root[data-ds-engine="premium"] .v4-hero__copy .ds-display {
-  max-width: 16ch;
+  max-width: 14ch;
+  color: var(--ds-ink);
 }
 
 .ds-root[data-ds-engine="premium"] .v4-hero__copy .ds-body {
-  max-width: 38rem;
+  max-width: 34rem;
+  color: var(--ds-ink);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+}
+
+.ds-root[data-ds-engine="premium"] .ds-hero__actions {
+  margin-top: 0.35rem;
 }
 
 .ds-root[data-ds-engine="premium"] .ds-hero__media {
@@ -68,10 +84,10 @@
 }
 
 .ds-root[data-ds-engine="premium"] .ds-hero__stage {
-  padding: clamp(0.7rem, 0.4rem + 1.6vw, 1.5rem);
-  border-radius: 1.75rem;
+  padding: clamp(0.35rem, 0.15rem + 1vw, 0.9rem);
+  border-radius: 1.85rem;
   background:
-    radial-gradient(circle at 50% 42%, var(--ds-surface) 0%, var(--ds-accent-soft) 78%);
+    radial-gradient(circle at 50% 38%, var(--ds-surface) 0%, color-mix(in srgb, var(--ds-accent-soft) 82%, var(--ds-surface)) 72%);
   box-shadow: var(--ds-shadow-lg);
 }
 
@@ -83,6 +99,7 @@
 
 .ds-root[data-ds-engine="premium"] .ds-hero__frame img {
   object-fit: contain;
+  transform: scale(1.08);
 }
 
 .ds-root[data-ds-engine="premium"] .premium-hero-chips {
@@ -175,10 +192,10 @@
 .ds-root[data-ds-engine="premium"] .premium-card {
   min-height: 100%;
   padding: var(--ds-space-5);
-  border: 1px solid var(--ds-line);
+  border: 1px solid color-mix(in srgb, var(--ds-line) 78%, var(--ds-accent-soft));
   border-radius: var(--ds-radius-lg);
   background: var(--ds-surface);
-  box-shadow: var(--ds-shadow-sm);
+  box-shadow: var(--ds-shadow-md);
 }
 
 .ds-root[data-ds-engine="premium"] .premium-card__icon,
@@ -195,6 +212,15 @@
 
 .ds-root[data-ds-engine="premium"] .premium-card .ds-h3 {
   font-size: 1.15rem;
+  color: var(--ds-ink);
+}
+
+.ds-root[data-ds-engine="premium"] .premium-card .ds-kicker {
+  color: var(--ds-accent-text);
+}
+
+.ds-root[data-ds-engine="premium"] .premium-card .ds-body {
+  color: var(--ds-ink);
 }
 
 .ds-root[data-ds-engine="premium"] .premium-card[data-premium-card="ingredient"] {
@@ -335,19 +361,41 @@
   }
 }
 
+@media (min-width: 768px) {
+  .ds-root[data-ds-engine="premium"] .premium-steps__item {
+    min-height: 100%;
+  }
+}
+
 @media (min-width: 960px) {
   .ds-root[data-ds-engine="premium"] .ds-hero--split {
-    grid-template-columns: minmax(0, 0.78fr) minmax(24rem, 1.22fr);
-    gap: var(--ds-space-7);
-    align-items: start;
+    grid-template-columns: minmax(0, 0.68fr) minmax(26rem, 1.32fr);
+    grid-template-areas:
+      "copy pack"
+      "rail pack";
+    gap: var(--ds-space-5) var(--ds-space-7);
+    align-items: center;
+  }
+
+  .ds-root[data-ds-engine="premium"] .ds-hero--split .v4-hero__copy {
+    grid-area: copy;
+  }
+
+  .ds-root[data-ds-engine="premium"] .ds-hero--split .ds-hero__media {
+    display: contents;
+    order: 0;
+  }
+
+  .ds-root[data-ds-engine="premium"] .ds-hero--split .ds-hero__stage {
+    grid-area: pack;
+  }
+
+  .ds-root[data-ds-engine="premium"] .ds-hero--split .premium-hero-rail {
+    grid-area: rail;
   }
 
   .ds-root[data-ds-engine="premium"] .premium-hero-chips {
     display: none;
-  }
-
-  .ds-root[data-ds-engine="premium"] .ds-hero--split .ds-hero__media {
-    order: 0;
   }
 
   .ds-root[data-ds-engine="premium"] .premium-grid[data-count="3"] {
@@ -373,13 +421,23 @@
   }
 }
 
-@media (min-width: 768px) {
-  .ds-root[data-ds-engine="premium"] .premium-hero-chips {
+@media (max-width: 959px) {
+  .ds-root[data-ds-engine="premium"] .premium-hero-rail {
     display: none;
+  }
+
+  .ds-root[data-ds-engine="premium"] .premium-hero-chips {
+    display: flex;
   }
 }
 
 @media (max-width: 767px) {
+  .ds-root[data-ds-engine="premium"] .v4-hero__copy {
+    justify-items: stretch;
+    text-align: left;
+    gap: 0.7rem;
+  }
+
   .ds-root[data-ds-engine="premium"] .v4-hero__copy .ds-display {
     max-width: none;
   }
@@ -390,12 +448,16 @@
   }
 
   .ds-root[data-ds-engine="premium"] .ds-hero__stage {
-    max-width: 15.5rem;
+    max-width: 17.25rem;
     margin-inline: auto;
   }
 
-  .ds-root[data-ds-engine="premium"] .premium-hero-rail {
-    display: none;
+  .ds-root[data-ds-engine="premium"] .premium-hero-chips {
+    justify-content: flex-start;
+  }
+
+  .ds-root[data-ds-engine="premium"] .premium-card {
+    padding: var(--ds-space-4);
   }
 
   .ds-root[data-ds-engine="premium"] .premium-guarantee {

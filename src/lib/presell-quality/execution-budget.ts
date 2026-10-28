@@ -39,6 +39,21 @@ export const EXECUTION_54AX_BUDGET = {
   visionModel: OPENAI_VISION_MODEL,
 } as const;
 
+export const EXECUTION_54AZ_ID = "execution-54az";
+export const EXECUTION_54AZ_MAX_AI_COST_USD = 0.5;
+export const EXECUTION_54AZ_BUDGET = {
+  maxUsd: EXECUTION_54AZ_MAX_AI_COST_USD,
+  maxPaidGenerations: 0,
+  maxEvaluations: 4,
+  maxCorrectionRounds: 0,
+  maxApiAttempts: 4,
+  reserveUsdPerEvaluation: 0.12,
+  reserveUsdPerGeneration: 0,
+  provider: "openai" as const,
+  textModel: OPENAI_TEXT_MODEL,
+  visionModel: OPENAI_VISION_MODEL,
+} as const;
+
 export const EXECUTION_54AY_ID = "execution-54ay";
 export const EXECUTION_54AY_MAX_AI_COST_USD = 0.5;
 export const EXECUTION_54AY_BUDGET = {

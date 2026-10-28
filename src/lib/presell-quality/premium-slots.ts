@@ -229,7 +229,8 @@ export function fulfillmentCardsFrom(model: V4Model): FulfillmentCardModel[] {
     if (!preferred?.length) return [];
     const joined = preferred.join(" ");
     const ssl = /\bssl\b/i.test(joined) ? `The seller says the page uses SSL. ${SSL_PLATFORM_QUALIFIER}` : null;
-    const body = firstSentences(joined.replace(/\bThe seller says the page uses SSL\..*$/i, "").trim() || joined, kind === "PAYMENT" ? 1 : 2);
+    const cleaned = joined.replace(/\bThe seller says the page uses SSL\..*$/i, "").trim() || joined;
+    const body = firstSentences(cleaned, kind === "PAYMENT" || kind === "RETURNS" ? 1 : 2);
     return [
       {
         kind,

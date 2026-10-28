@@ -14,15 +14,17 @@ export type { MultimodalPresellEvaluator } from "@/lib/presell-quality/multimoda
 export type { PresellEvaluationInput } from "@/lib/presell-quality/input";
 export { QUALITY_VIEWPORTS } from "@/lib/presell-quality/capture";
 export { OPENAI_VISION_PROVIDER_ID, OPENAI_VISION_MODEL, openaiVisionProviderStatus, createOpenAiVisionClient } from "@/lib/presell-quality/openai-provider";
-export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, EXECUTION_54AI_BUDGET, EXECUTION_54AJ_BUDGET, EXECUTION_54AK_BUDGET, EXECUTION_54AL_BUDGET, EXECUTION_54AT_BUDGET, EXECUTION_54AU_BUDGET, EXECUTION_54AW_BUDGET, EXECUTION_54AX_BUDGET, EXECUTION_54AY_BUDGET, EXECUTION_54AY_MAX_AI_COST_USD, budgetAllowsCall } from "@/lib/presell-quality/budget";
+export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, EXECUTION_54AI_BUDGET, EXECUTION_54AJ_BUDGET, EXECUTION_54AK_BUDGET, EXECUTION_54AL_BUDGET, EXECUTION_54AT_BUDGET, EXECUTION_54AU_BUDGET, EXECUTION_54AW_BUDGET, EXECUTION_54AX_BUDGET, EXECUTION_54AY_BUDGET, EXECUTION_54AY_MAX_AI_COST_USD, EXECUTION_54AZ_BUDGET, EXECUTION_54AZ_MAX_AI_COST_USD, budgetAllowsCall } from "@/lib/presell-quality/budget";
 export {
   EXECUTION_54AT_ID,
   EXECUTION_54AW_ID,
   EXECUTION_54AX_ID,
   EXECUTION_54AY_ID,
+  EXECUTION_54AZ_ID,
   EXECUTION_54AW_BUDGET as EXECUTION_54AW_LEDGER_BUDGET,
   EXECUTION_54AX_BUDGET as EXECUTION_54AX_LEDGER_BUDGET,
   EXECUTION_54AY_BUDGET as EXECUTION_54AY_LEDGER_BUDGET,
+  EXECUTION_54AZ_BUDGET as EXECUTION_54AZ_LEDGER_BUDGET,
   emptyExecutionBudgetLedger,
   budgetAllowsPaidCall,
   reservePaidCall,
@@ -99,6 +101,7 @@ export {
   EXECUTION_54AY_GENERATION_ID,
   FORBIDDEN_BACKLOG_CHROME,
 } from "@/lib/presell-quality/official-v2";
+export { EXECUTION_54AZ_PLAN, EXECUTION_54AZ_BASELINE } from "@/lib/presell-quality/design-recovery";
 export { historicalEvaluationRows, historicalComparabilityMatrix } from "@/lib/presell-quality/historical-audit";
 export { parseVisualEvaluationPayload, visualComparisonPrompt, problemsAreActionable } from "@/lib/presell-quality/visual-eval";
 export {
