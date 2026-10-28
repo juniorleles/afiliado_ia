@@ -115,10 +115,10 @@ export function ProductReviewWorkspace({
     });
   }
 
-  function decideCandidate(candidateId: string, expectedVersion: number, decision: "ACCEPT" | "REJECT" | "REQUEST_NEW_EVIDENCE" | "KEEP_PENDING") {
+  function decideCandidate(candidateId: string, expectedVersion: number, decision: "ACCEPT" | "REJECT" | "REQUEST_NEW_EVIDENCE" | "KEEP_PENDING", presentationVersion?: string) {
     startTransition(async () => {
       try {
-        const result = await decideEvidenceCandidateAction({ campaignId, candidateId, expectedVersion, decision });
+        const result = await decideEvidenceCandidateAction({ campaignId, candidateId, expectedVersion, decision, presentationVersion });
         if (!result.ok) setError(result.reason);
         if (result.run) setRun(result.run);
         setEvidence(await readEvidenceReviewAction({ campaignId }));

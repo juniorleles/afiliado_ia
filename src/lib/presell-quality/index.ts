@@ -50,6 +50,8 @@ export { loadEvidenceReviewWorkspace } from "@/lib/presell-quality/review-worksp
 export { mapContentGapsToCandidates } from "@/lib/presell-quality/content-gap-map";
 export { evaluateRegenerationGate, snapshotProductContract, REGENERATION_GATE_READY, REGENERATION_GATE_WAITING } from "@/lib/presell-quality/regeneration-gate";
 export { classifyOperationalThemes, candidateSupportsGap, buildOperationalReviewCard, primaryOperationalTheme } from "@/lib/presell-quality/operational-theme";
+export { buildReviewPresentation, presentationMatchesApproval, validateSafeTranslation } from "@/lib/presell-quality/review-presentation";
+export { REVIEW_COPY, REVIEW_ACTION_LABEL, reviewStateLabel, reviewGroupOf, friendlyIdentity } from "@/lib/presell-quality/review-labels";
 export { auditApprovedCopy } from "@/lib/presell-quality/copy-audit";
 export { validateCopyRewrite, onlySafeRewrites, extractComparableNumbers } from "@/lib/presell-quality/copy-validate";
 export { proposeDeterministicRewrites, splitUsageSteps } from "@/lib/presell-quality/copy-rewrite";

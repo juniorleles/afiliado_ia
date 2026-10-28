@@ -257,7 +257,7 @@ async function main() {
   });
   assert(append.ok, "5. segundo FAQ operacional e anexado");
   const faq = acceptedProposals(append.run).find((item) => item.field === "faq")!;
-  assert(/24 hours/i.test(faq.currentValue) && /working days/i.test(faq.currentValue), "5. consolidacao acumula textos");
+  assert(/24 horas/i.test(faq.currentValue) && /5 a 7 dias úteis/i.test(faq.currentValue), "5. consolidacao acumula textos");
   assert(acceptedProposals(append.run).find((item) => item.field === "description")?.currentValue === "Novalis Core is a documented mineral capsule.", "5. descricao nao foi sobrescrita");
 
   const readyGate = evaluateRegenerationGate({ campaignId: isolated.id, run: append.run });
@@ -267,7 +267,7 @@ async function main() {
   assert(evidenceReviewAuthGate({ required: true, sessionValid: false }).allowed === false, "16. autenticacao");
   assert(readFileSync(path.join(process.cwd(), "src/app/admin/[id]/fatos/research-actions.ts"), "utf8").includes("requireAdmin()"), "16. acao exige admin");
   const ui = readFileSync(path.join(process.cwd(), "src/components/product-review/evidence-review-step.tsx"), "utf8");
-  assert(ui.includes("data-operational-review") && ui.includes("Aprovar fato elegível") && ui.includes("Manter pendente"), "15. interface operacional");
+  assert(ui.includes("data-operational-review") && ui.includes("data-ready") && ui.includes("REVIEW_ACTION_LABEL.ACCEPT"), "15. interface operacional");
   assert(ui.includes("AWAITING_HUMAN_REVIEW") && !ui.includes("onClick={() => onDecide(item.candidateId, item.version, \"ACCEPT\")}") || ui.includes("disabled={busy || !item.eligible}"), "15. aprovacao so para elegiveis");
   assert(run.publicationReadiness === "BLOCKED", "19. publicacao bloqueada");
   assert(run.commercialAuthorization === "BLOCKED", "20. CTA comercial bloqueado");

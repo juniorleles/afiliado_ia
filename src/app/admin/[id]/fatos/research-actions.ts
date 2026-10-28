@@ -140,6 +140,7 @@ export async function decideEvidenceCandidateAction(input: {
   expectedVersion: number;
   decision: "ACCEPT" | "REJECT" | "REQUEST_NEW_EVIDENCE" | "KEEP_PENDING" | "MARK_DUPLICATE";
   confirmOverwrite?: boolean;
+  presentationVersion?: string;
 }) {
   await requireAdmin();
   const campaignId = campaignOf(input.campaignId);
@@ -158,6 +159,7 @@ export async function decideEvidenceCandidateAction(input: {
     expectedVersion: input.expectedVersion,
     officialHosts: workspace.identities.filter((item) => item.role === "MANUFACTURER").map((item) => item.host),
     confirmOverwrite: input.confirmOverwrite,
+    presentationVersion: input.presentationVersion,
   });
 }
 

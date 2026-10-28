@@ -1,37 +1,26 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { SourceIdentityPanel } from "@/components/product-review/source-identity-panel";
 import type { PreparedReviewCandidate } from "@/lib/presell-quality/review-prepare";
 import type { SourceIdentityPanelRow } from "@/lib/presell-quality/commercial-graph";
-import { buildOperationalReviewCard } from "@/lib/presell-quality/operational-theme";
+import { buildReviewPresentation } from "@/lib/presell-quality/review-presentation";
+import {
+  REVIEW_ACTION_LABEL,
+  REVIEW_COPY,
+  REVIEW_GATE_LABEL,
+  REVIEW_GROUP_LABEL,
+  reviewGroupOf,
+  reviewStateLabel,
+  type ReviewGroupId,
+} from "@/lib/presell-quality/review-labels";
 
 type RegenerationGateView = {
   ready: boolean;
   status: "APPROVED_FACTS_READY_FOR_REGENERATION" | "AWAITING_HUMAN_REVIEW";
-};
-
-const STATE_LABEL: Record<string, string> = {
-  READY_FOR_REVIEW: "Pronto para revisão",
-  SOURCE_IDENTITY_UNRESOLVED: "Identidade da fonte pendente",
-  INSUFFICIENT_EVIDENCE: "Evidência insuficiente",
-  HIGH_RISK_CLAIM: "Alegação de alto risco",
-  DUPLICATE: "Duplicado",
-  ALREADY_ACCEPTED: "Já aprovado",
-  REJECTED: "Rejeitado",
-};
-
-const THEME_LABEL: Record<string, string> = {
-  SHIPPING: "Envio",
-  DELIVERY: "Entrega",
-  RETURNS: "Devolução",
-  REFUND: "Reembolso",
-  COMMERCIAL_TERMS: "Condições comerciais",
-  QUANTITY: "Quantidade",
-  PRODUCT_FORMAT: "Formato",
-  SELLER_CONTACT: "Contato",
-  OTHER: "Outro assunto operacional",
 };
 
 function toneFor(state: string): "success" | "warning" | "review" | "danger" | "info" | "neutral" {
@@ -40,6 +29,15 @@ function toneFor(state: string): "success" | "warning" | "review" | "danger" | "
   if (state === "HIGH_RISK_CLAIM" || state === "REJECTED") return "danger";
   if (state === "SOURCE_IDENTITY_UNRESOLVED") return "warning";
   return "neutral";
+}
+
+function groupCounts(items: PreparedReviewCandidate[]) {
+  return {
+    awaiting: items.filter((item) => item.state === "READY_FOR_REVIEW").length,
+    approved: items.filter((item) => item.state === "ALREADY_ACCEPTED").length,
+    rejected: items.filter((item) => item.state === "REJECTED").length,
+    pending: items.filter((item) => item.state !== "READY_FOR_REVIEW" && item.state !== "ALREADY_ACCEPTED" && item.state !== "REJECTED").length,
+  };
 }
 
 export function EvidenceReviewStep({
@@ -72,41 +70,175 @@ export function EvidenceReviewStep({
   unresolvedRelationships: number;
   regenerationGate?: RegenerationGateView | null;
   busy: boolean;
-  onDecide: (candidateId: string, version: number, decision: "ACCEPT" | "REJECT" | "REQUEST_NEW_EVIDENCE" | "KEEP_PENDING") => void;
+  onDecide: (candidateId: string, version: number, decision: "ACCEPT" | "REJECT" | "REQUEST_NEW_EVIDENCE" | "KEEP_PENDING", presentationVersion?: string) => void;
   onConfirmIdentity: (host: string, scope: "SELLER" | "AFFILIATE") => void;
   onRejectRelation: (relationId: string) => void;
   onRequestEvidence: (host: string) => void;
 }) {
-  const cards = [...queue].sort((left, right) => Number(right.eligible) - Number(left.eligible)).map((item) => ({
+  const cards = useMemo(() => queue.map((item) => ({
     item,
-    card: buildOperationalReviewCard(item),
-  }));
-  const clusterCount = cards.reduce<Record<string, number>>((acc, row) => {
-    acc[row.card.clusterKey] = (acc[row.card.clusterKey] ?? 0) + 1;
-    return acc;
-  }, {});
+    presented: buildReviewPresentation({
+      candidateId: item.candidateId,
+      version: item.version,
+      extractedValue: item.extractedValue,
+      originalExcerpt: item.originalExcerpt,
+      sourceHost: item.sourceHost,
+      sourceUrl: item.sourceUrl,
+      field: item.field,
+    }),
+  })), [queue]);
+  const readyCards = cards.filter((row) => row.item.state === "READY_FOR_REVIEW");
+  const checkingCards = cards.filter((row) => row.item.state !== "READY_FOR_REVIEW");
+  const groups: ReviewGroupId[] = ["shipping", "returns", "refund", "other"];
+  const [openGroup, setOpenGroup] = useState<string>("shipping");
 
   return (
-    <div id="etapa-evidencias" className="flex flex-col gap-ds-24" data-evidence-review data-operational-review>
-      <section className="grid gap-ds-12 md:grid-cols-3">
-        <p className="text-body">Candidatos: {summary.total}</p>
-        <p className="text-body">Fatos aprovados: {acceptedCount}</p>
-        <p className="text-body">Desbloqueados para revisão: {summary.readyForReview}</p>
-        <p className="text-body">Ainda pendentes de identidade: {summary.identityUnresolved}</p>
-        <p className="text-body">Exigem evidência adicional: {summary.insufficientEvidence}</p>
-        <p className="text-body">Alegações de alto risco: {summary.highRisk}</p>
-        <p className="text-body">Lacunas com ação humana: {gapsReady}</p>
-        <p className="text-caption text-muted-foreground md:col-span-3">Última revisão: {lastReviewAt || "Nenhuma"}</p>
-      </section>
-      <section className="rounded-ds-md border border-border p-ds-16" data-regeneration-gate={regenerationGate?.status ?? "AWAITING_HUMAN_REVIEW"}>
-        <p className="text-label">Regeneração da Pre-sell</p>
-        <p className="mt-ds-8 text-body">{regenerationGate?.status ?? "AWAITING_HUMAN_REVIEW"}</p>
-        <p className="mt-ds-8 text-caption text-muted-foreground">
-          {regenerationGate?.ready
-            ? "Novos fatos aprovados estão prontos para um plano de geração. Aprovação de fatos não autoriza gasto com IA."
-            : "Nenhum fato operacional novo foi aprovado por um administrador. A página não será regenerada nesta execução."}
+    <div id="etapa-evidencias" className="flex flex-col gap-ds-24" data-evidence-review data-operational-review data-friendly-review>
+      <section className="rounded-ds-md border border-border p-ds-16" data-review-summary>
+        <h2 className="text-label">{REVIEW_COPY.summaryTitle}</h2>
+        <p className="mt-ds-8 text-body">{REVIEW_COPY.summaryHelp}</p>
+        <div className="mt-ds-16 grid gap-ds-12 md:grid-cols-2">
+          <p className="text-body">{acceptedCount} {REVIEW_COPY.approved}</p>
+          <p className="text-body" data-ready-highlight>{summary.readyForReview} {REVIEW_COPY.waitingNow}</p>
+          <p className="text-body">{summary.insufficientEvidence} {REVIEW_COPY.extraProof}</p>
+          <p className="text-body">{summary.highRisk} {REVIEW_COPY.blocked}</p>
+        </div>
+        <p className="mt-ds-12 text-caption text-muted-foreground">Última análise: {lastReviewAt || "Nenhuma"}</p>
+        <p className="mt-ds-8 text-caption text-muted-foreground" data-regeneration-gate={regenerationGate?.status ?? "AWAITING_HUMAN_REVIEW"}>
+          {REVIEW_GATE_LABEL[regenerationGate?.status ?? "AWAITING_HUMAN_REVIEW"]}
         </p>
+        <p className="sr-only">Lacunas com ação humana: {gapsReady}</p>
       </section>
+
+      <section>
+        <h2 className="text-label">{REVIEW_COPY.needsDecision}</h2>
+        <p className="mt-ds-8 text-caption text-muted-foreground">Só estas informações podem ser aprovadas agora.</p>
+        <Accordion type="single" collapsible value={openGroup} onValueChange={setOpenGroup} className="mt-ds-16">
+          {groups.map((group) => {
+            const items = readyCards.filter((row) => reviewGroupOf(row.presented.theme) === group);
+            if (!items.length && group === "other") return null;
+            const counts = groupCounts(items.map((row) => row.item));
+            return (
+              <AccordionItem key={group} value={group} data-review-group={group}>
+                <AccordionTrigger>
+                  {REVIEW_GROUP_LABEL[group]} · {items.length} {REVIEW_COPY.awaitingCount.toLowerCase()}
+                </AccordionTrigger>
+                <AccordionContent>
+                  <p className="text-caption">
+                    {REVIEW_COPY.awaitingCount}: {counts.awaiting} · {REVIEW_COPY.approvedCount}: {counts.approved} · {REVIEW_COPY.rejectedCount}: {counts.rejected} · {REVIEW_COPY.pendingCount}: {counts.pending}
+                  </p>
+                  <div className="mt-ds-16 flex flex-col gap-ds-16">
+                    {items.map(({ item, presented }) => (
+                      <article key={item.candidateId} className="rounded-ds-md border border-primary p-ds-16" data-candidate-id={item.candidateId} data-review-state={item.state} data-ready={item.eligible ? "true" : "false"} data-theme={presented.theme} data-preview-version={presented.previewVersion}>
+                        <div className="flex flex-wrap items-start justify-between gap-ds-8">
+                          <h3 className="text-label">{presented.title}</h3>
+                          <Badge tone={toneFor(item.state)}>{reviewStateLabel(item.state)}</Badge>
+                        </div>
+                        <p className="mt-ds-16 text-caption text-muted-foreground">{REVIEW_COPY.found}</p>
+                        <p className="mt-ds-8 text-body">{presented.found}</p>
+                        <p className="mt-ds-16 text-caption text-muted-foreground">{REVIEW_COPY.source}</p>
+                        <p className="mt-ds-8 text-body">{presented.source}</p>
+                        <p className="mt-ds-16 text-caption text-muted-foreground">{REVIEW_COPY.attention}</p>
+                        {presented.attention.map((line) => <p key={line} className="mt-ds-8 text-body">{line}</p>)}
+                        <p className="mt-ds-16 text-caption text-muted-foreground">{REVIEW_COPY.preview}</p>
+                        {presented.translationSafe ? (
+                          <p className="mt-ds-8 text-body" data-preview-text>{presented.preview}</p>
+                        ) : (
+                          <p className="mt-ds-8 text-body" data-unsafe-translation>{REVIEW_COPY.unsafe}</p>
+                        )}
+                        <p className="mt-ds-16 text-label">{REVIEW_COPY.question}</p>
+                        <div className="mt-ds-12 flex flex-wrap gap-ds-8">
+                          {item.availableActions.includes("ACCEPT_ELIGIBLE_FACT") && presented.translationSafe ? (
+                            <Button type="button" size="sm" disabled={busy || !item.eligible} onClick={() => onDecide(item.candidateId, item.version, "ACCEPT", presented.previewVersion)}>
+                              {REVIEW_ACTION_LABEL.ACCEPT}
+                            </Button>
+                          ) : null}
+                          {item.availableActions.includes("REJECT_CANDIDATE") ? (
+                            <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => onDecide(item.candidateId, item.version, "REJECT")}>
+                              {REVIEW_ACTION_LABEL.REJECT}
+                            </Button>
+                          ) : null}
+                          {item.availableActions.includes("REQUEST_NEW_EVIDENCE") ? (
+                            <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => onDecide(item.candidateId, item.version, "REQUEST_NEW_EVIDENCE")}>
+                              {REVIEW_ACTION_LABEL.REQUEST_NEW_EVIDENCE}
+                            </Button>
+                          ) : null}
+                          {item.availableActions.includes("KEEP_PENDING") ? (
+                            <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => onDecide(item.candidateId, item.version, "KEEP_PENDING")}>
+                              {REVIEW_ACTION_LABEL.KEEP_PENDING}
+                            </Button>
+                          ) : null}
+                        </div>
+                        <Accordion type="single" collapsible className="mt-ds-16">
+                          <AccordionItem value="tech">
+                            <AccordionTrigger>{REVIEW_COPY.technical}</AccordionTrigger>
+                            <AccordionContent>
+                              <p>Candidate ID: {item.candidateId}</p>
+                              <p>Evidence ID: {item.evidenceReference}</p>
+                              <p className="break-all">URL: {item.sourceUrl || "—"}</p>
+                              <p>Texto original: {item.originalExcerpt}</p>
+                              <p>Tipo de fonte: {item.sourceClass}</p>
+                              <p>Estado de identidade: {item.sourceIdentity} ({item.sourceRole})</p>
+                              <p>Risco: {item.riskClass}</p>
+                              <p>Condições: {presented.attention.join(" ")}</p>
+                              <p>Versão: {item.version}</p>
+                              <p>Prévia versionada: {presented.previewVersion}</p>
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
+                      </article>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
+        </Accordion>
+      </section>
+
+      <section>
+        <h2 className="text-label">{REVIEW_COPY.stillChecking}</h2>
+        <p className="mt-ds-8 text-caption text-muted-foreground">
+          Estas {checkingCards.length} informações ainda não pedem uma decisão agora. O sistema continua verificando a origem ou bloqueou o conteúdo por segurança.
+        </p>
+        <Accordion type="single" collapsible className="mt-ds-16">
+          <AccordionItem value="checking">
+            <AccordionTrigger>Ver informações em verificação ({checkingCards.length})</AccordionTrigger>
+            <AccordionContent>
+              <div className="flex flex-col gap-ds-12">
+                {checkingCards.map(({ item, presented }) => (
+                  <article key={item.candidateId} className="rounded-ds-md border border-border p-ds-16" data-candidate-id={item.candidateId} data-review-state={item.state} data-ready="false">
+                    <div className="flex flex-wrap items-center justify-between gap-ds-8">
+                      <h3 className="text-label">{presented.title}</h3>
+                      <Badge tone={toneFor(item.state)}>{reviewStateLabel(item.state)}</Badge>
+                    </div>
+                    <p className="mt-ds-8 text-body">{presented.found}</p>
+                    <p className="mt-ds-8 text-caption">{item.blocker}</p>
+                    <div className="mt-ds-12 flex flex-wrap gap-ds-8">
+                      {item.availableActions.includes("REJECT_CANDIDATE") ? (
+                        <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => onDecide(item.candidateId, item.version, "REJECT")}>
+                          {REVIEW_ACTION_LABEL.REJECT}
+                        </Button>
+                      ) : null}
+                      {item.availableActions.includes("REQUEST_NEW_EVIDENCE") ? (
+                        <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => onDecide(item.candidateId, item.version, "REQUEST_NEW_EVIDENCE")}>
+                          {REVIEW_ACTION_LABEL.REQUEST_NEW_EVIDENCE}
+                        </Button>
+                      ) : null}
+                      {item.availableActions.includes("KEEP_PENDING") ? (
+                        <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => onDecide(item.candidateId, item.version, "KEEP_PENDING")}>
+                          {REVIEW_ACTION_LABEL.KEEP_PENDING}
+                        </Button>
+                      ) : null}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </section>
+
       <SourceIdentityPanel
         rows={identityPanel}
         verifiedSellerRelationships={verifiedSellerRelationships}
@@ -118,51 +250,6 @@ export function EvidenceReviewStep({
         onReject={onRejectRelation}
         onRequestEvidence={onRequestEvidence}
       />
-      <section className="flex flex-col gap-ds-16">
-        {queue.length === 0 ? <p className="text-body text-muted-foreground">Nenhum candidato armazenado para esta campanha.</p> : null}
-        {summary.readyForReview > 0 ? <p className="text-label" data-ready-highlight>Candidatos prontos para revisão: {summary.readyForReview}</p> : null}
-        {cards.map(({ item, card }) => (
-          <article key={item.candidateId} className={`rounded-ds-md border p-ds-16 ${item.eligible ? "border-primary" : "border-border"}`} data-candidate-id={item.candidateId} data-review-state={item.state} data-ready={item.eligible ? "true" : "false"} data-theme={card.theme}>
-            <div className="flex flex-wrap items-center justify-between gap-ds-8">
-              <h3 className="text-label">{card.title} · {item.candidateId}</h3>
-              <Badge tone={toneFor(item.state)}>{STATE_LABEL[item.state] ?? item.state}</Badge>
-            </div>
-            <p className="mt-ds-8 text-caption">{THEME_LABEL[card.theme] ?? card.theme}{clusterCount[card.clusterKey] > 1 ? ` · ${clusterCount[card.clusterKey]} candidatos no mesmo tema` : ""}</p>
-            <p className="mt-ds-12 text-body">{card.summary}</p>
-            <p className="mt-ds-8 whitespace-pre-wrap text-body">{item.extractedValue}</p>
-            <p className="mt-ds-8 text-caption text-muted-foreground">Fonte: {item.sourceHost || "desconhecida"} · {item.sourceClass} · declaração {card.declarationType} · identidade {item.sourceIdentity} ({item.sourceRole})</p>
-            <p className="mt-ds-4 break-all text-caption text-muted-foreground">URL: {item.sourceUrl || "—"}</p>
-            <p className="mt-ds-8 text-body">Trecho original: {item.originalExcerpt}</p>
-            <p className="mt-ds-8 text-caption">Condições: {card.conditions.join(" ")}</p>
-            <p className="mt-ds-8 text-caption">Risco: {item.riskClass}</p>
-            <p className="mt-ds-4 text-caption">Uso na página: {card.pageUse}</p>
-            <p className="mt-ds-4 text-caption">Estado de aprovação: {STATE_LABEL[item.state] ?? item.state}</p>
-            <p className="mt-ds-4 text-caption">{item.blocker || "Este candidato pode ser decidido com o material apresentado."}</p>
-            <div className="mt-ds-12 flex flex-wrap gap-ds-8">
-              {item.availableActions.includes("ACCEPT_ELIGIBLE_FACT") ? (
-                <Button type="button" size="sm" disabled={busy || !item.eligible} onClick={() => onDecide(item.candidateId, item.version, "ACCEPT")}>
-                  Aprovar fato elegível
-                </Button>
-              ) : null}
-              {item.availableActions.includes("REJECT_CANDIDATE") ? (
-                <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => onDecide(item.candidateId, item.version, "REJECT")}>
-                  Rejeitar
-                </Button>
-              ) : null}
-              {item.availableActions.includes("REQUEST_NEW_EVIDENCE") ? (
-                <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => onDecide(item.candidateId, item.version, "REQUEST_NEW_EVIDENCE")}>
-                  Pedir evidência adicional
-                </Button>
-              ) : null}
-              {item.availableActions.includes("KEEP_PENDING") ? (
-                <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => onDecide(item.candidateId, item.version, "KEEP_PENDING")}>
-                  Manter pendente
-                </Button>
-              ) : null}
-            </div>
-          </article>
-        ))}
-      </section>
     </div>
   );
 }

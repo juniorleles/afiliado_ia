@@ -10,6 +10,7 @@ import { prepareReviewCandidate, type PreparedReviewCandidate } from "@/lib/pres
 import type { SourceIdentityRecord } from "@/lib/presell-quality/source-identity";
 import type { CommercialRelation } from "@/lib/presell-quality/commercial-graph";
 import { snapshotProductContract } from "@/lib/presell-quality/regeneration-gate";
+import { buildReviewPresentation, presentationMatchesApproval } from "@/lib/presell-quality/review-presentation";
 
 export type EvidenceDecision = "ACCEPT" | "REJECT" | "REQUEST_NEW_EVIDENCE" | "KEEP_PENDING" | "MARK_DUPLICATE";
 
@@ -62,11 +63,11 @@ export function appendEvidenceAudit(entry: EvidenceAuditEntry): EvidenceAuditEnt
   return entry;
 }
 
-function proposalFromCandidate(candidate: LedgerCandidate, field: ProductResearchField): FieldProposal {
+function proposalFromCandidate(candidate: LedgerCandidate, field: ProductResearchField, persistText: string): FieldProposal {
   return {
     field,
     currentValue: "",
-    suggestedValue: candidate.extractedValue,
+    suggestedValue: persistText,
     status: "SELLER_STATED",
     evidenceIds: [candidate.evidenceReference],
     sourceUrl: candidate.sourceUrl || null,
@@ -96,6 +97,7 @@ export function decideEvidenceCandidate(input: {
   rejectedIds?: Set<string>;
   officialHosts?: string[];
   confirmOverwrite?: boolean;
+  presentationVersion?: string;
 }): EvidenceDecisionResult {
   const prepared = prepareReviewCandidate({
     candidate: input.candidate,
@@ -136,6 +138,30 @@ export function decideEvidenceCandidate(input: {
       const audit = appendEvidenceAudit({ ...auditBase, resultingState: prepared.state, notes: ["RUN_MISSING"] });
       return { ok: false, reason: "RUN_MISSING", prepared, run: null, contractChanged: false, regenerationRequired: false, audit };
     }
+    const presented = buildReviewPresentation({
+      candidateId: input.candidate.candidateId,
+      version: input.candidate.version,
+      extractedValue: input.candidate.extractedValue,
+      originalExcerpt: input.candidate.originalExcerpt,
+      sourceHost: input.candidate.sourceHost,
+      sourceUrl: input.candidate.sourceUrl,
+      field: input.candidate.field,
+    });
+    if (presented.translationSafe) {
+      const previewCheck = presentationMatchesApproval({
+        presented,
+        expectedVersion: input.expectedVersion,
+        expectedPreviewVersion: input.presentationVersion,
+      });
+      if (!previewCheck.ok) {
+        const audit = appendEvidenceAudit({ ...auditBase, resultingState: prepared.state, notes: [previewCheck.reason] });
+        return { ok: false, reason: previewCheck.reason, prepared, run: input.run, contractChanged: false, regenerationRequired: false, audit };
+      }
+    } else if (input.presentationVersion) {
+      const audit = appendEvidenceAudit({ ...auditBase, resultingState: prepared.state, notes: ["UNSAFE_TRANSLATION"] });
+      return { ok: false, reason: "UNSAFE_TRANSLATION", prepared, run: input.run, contractChanged: false, regenerationRequired: false, audit };
+    }
+    const persistText = presented.translationSafe ? presented.preview : input.candidate.extractedValue;
     const existing = input.run.proposals.find((item) => item.field === prepared.contractField);
     if (existing?.status === "ACCEPTED" && PROTECTED_FIELDS.has(prepared.contractField) && !input.confirmOverwrite) {
       const audit = appendEvidenceAudit({ ...auditBase, resultingState: "ALREADY_ACCEPTED", notes: ["OVERWRITE_REQUIRED"] });
@@ -143,7 +169,7 @@ export function decideEvidenceCandidate(input: {
     }
     snapshotProductContract({ campaignId: input.campaignId, run: input.run, reason: `before-accept:${input.candidate.candidateId}` });
     if (existing?.status === "ACCEPTED" && prepared.contractField === "faq") {
-      const addition = input.candidate.extractedValue.trim();
+      const addition = persistText.trim();
       const current = (existing.currentValue || existing.suggestedValue || "").trim();
       if (current.toLowerCase().includes(addition.toLowerCase())) {
         const audit = appendEvidenceAudit({ ...auditBase, resultingState: "ALREADY_ACCEPTED", notes: ["FAQ_ALREADY_CONTAINS_TEXT"] });
@@ -167,7 +193,7 @@ export function decideEvidenceCandidate(input: {
       const audit = appendEvidenceAudit({ ...auditBase, resultingState: "ACCEPTED", notes: ["Appended seller-stated operational FAQ. Core facts were not overwritten."] });
       return { ok: true, reason: "ACCEPTED", prepared, run: next, contractChanged: true, regenerationRequired: true, audit };
     }
-    const promoted = proposalFromCandidate(input.candidate, prepared.contractField);
+    const promoted = proposalFromCandidate(input.candidate, prepared.contractField, persistText);
     const proposals = input.run.proposals.map((item) => (item.field === prepared.contractField ? { ...promoted, currentValue: item.currentValue } : item));
     if (!proposals.some((item) => item.field === prepared.contractField)) proposals.push(promoted);
     const staged = writeProductResearchRun({ ...input.run, proposals });
