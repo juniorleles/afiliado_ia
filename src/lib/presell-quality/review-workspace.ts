@@ -17,6 +17,8 @@ import { mapContentGapsToCandidates } from "@/lib/presell-quality/content-gap-ma
 import { readEvidenceAudit } from "@/lib/presell-quality/review-decide";
 import { evaluateRegenerationGate } from "@/lib/presell-quality/regeneration-gate";
 import { buildOperationalReviewCard } from "@/lib/presell-quality/operational-theme";
+import { readPrimaryPageResearch } from "@/lib/presell-quality/primary-page-research";
+import { readPrimaryAffiliatePage } from "@/lib/campaign-sources/primary-page";
 
 export type EvidenceReviewWorkspace = {
   campaignId: number;
@@ -37,6 +39,7 @@ export type EvidenceReviewWorkspace = {
   regenerationRequired: boolean;
   regenerationGate: ReturnType<typeof evaluateRegenerationGate>;
   operationalCards: ReturnType<typeof buildOperationalReviewCard>[];
+  primaryPage: ReturnType<typeof readPrimaryPageResearch>;
   commercialAuthorization: "BLOCKED";
   publicationReadiness: "BLOCKED";
 };
@@ -53,13 +56,18 @@ export function loadEvidenceReviewWorkspace(campaignId: number): EvidenceReviewW
       return "";
     }
   }).filter(Boolean))];
+  const primaryPage = readPrimaryPageResearch(campaignId);
+  const primaryHost = readPrimaryAffiliatePage(campaignId)?.host;
   const investigated = investigateCampaignSourceIdentity({
     campaignId,
     hosts: ledger.candidates.map((item) => ({ host: item.sourceHost, sourceClass: item.sourceClass })),
     acceptedSellerHosts,
+    primaryAffiliateHosts: primaryHost ? [primaryHost] : [],
   });
   const storedIdentity = readSourceIdentityReview(campaignId);
-  const identities = (storedIdentity?.records ?? investigated.records).map((record) => {
+  const storedRecords = storedIdentity?.records ?? investigated.records;
+  const extras = investigated.records.filter((item) => !storedRecords.some((row) => row.host === item.host));
+  const identities = [...storedRecords, ...extras].map((record) => {
     const fresh = investigated.records.find((item) => item.host === record.host);
     if (record.confirmedByHuman) return record;
     return fresh ?? record;
@@ -82,6 +90,7 @@ export function loadEvidenceReviewWorkspace(campaignId: number): EvidenceReviewW
     identities,
     relations: graph.relations,
     rejectedIds,
+    primaryAffiliateHosts: primaryHost ? [primaryHost] : [],
   });
   const inventory = buildEvidenceInventory({
     campaignId,
@@ -112,6 +121,7 @@ export function loadEvidenceReviewWorkspace(campaignId: number): EvidenceReviewW
     regenerationRequired: ledger.regenerationRequired,
     regenerationGate: evaluateRegenerationGate({ campaignId, run }),
     operationalCards: queue.map(buildOperationalReviewCard),
+    primaryPage,
     commercialAuthorization: "BLOCKED" as const,
     publicationReadiness: "BLOCKED" as const,
   };

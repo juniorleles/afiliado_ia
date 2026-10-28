@@ -64,6 +64,7 @@ export function triageFactCandidate(input: {
   acceptedTexts: string[];
   seenKeys?: Set<string>;
   officialHosts?: string[];
+  primaryAffiliateHosts?: string[];
 }): TriagedFact {
   const text = input.candidate.text.replace(/\s+/g, " ").trim();
   const excerpt = input.candidate.excerpt || text;
@@ -76,7 +77,8 @@ export function triageFactCandidate(input: {
   const acceptedMatch = input.acceptedTexts.some((item) => keyOf(item) === key || keyOf(item).includes(key) && key.length > 24);
   const medical = classifyEditorialText({ text, role: "OTHER" }).classification === "MEDICAL_OR_HEALTH_CLAIM" || EFFICACY.test(text);
   const official = (input.officialHosts ?? []).some((item) => host === item || host.endsWith(`.${item}`));
-  const clone = UNCERTAIN_HOST.test(host) || (!official && /defen+der/i.test(host));
+  const primaryAffiliate = (input.primaryAffiliateHosts ?? []).some((item) => host === item || host.endsWith(`.${item}`));
+  const clone = UNCERTAIN_HOST.test(host) || (!official && !primaryAffiliate && /defen+der/i.test(host));
   const seller = input.candidate.sourceClass === "SELLER" || input.candidate.sourceClass === "AFFILIATE_RESOURCE";
 
   let triageClass: TriageClass = "INSUFFICIENT_EVIDENCE";

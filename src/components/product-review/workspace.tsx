@@ -216,6 +216,7 @@ export function ProductReviewWorkspace({
             partiallySupportedRelationships={evidence?.partiallySupportedRelationships ?? 0}
             unresolvedRelationships={evidence?.unresolvedRelationships ?? 0}
             regenerationGate={evidence?.regenerationGate ?? null}
+            primaryPage={evidence?.primaryPage ?? null}
             busy={busy}
             onDecide={decideCandidate}
             onConfirmIdentity={confirmIdentity}

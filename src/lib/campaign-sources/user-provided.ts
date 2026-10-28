@@ -111,6 +111,7 @@ export function registerUserProvidedAffiliateUrl(input: {
     roles: roles.roles,
     notes: [
       ...roles.notes,
+      "PRIMARY_AFFILIATE_LANDING_PAGE: read-only extraction is allowed for this registered URL.",
       "USER_PROVIDED is not COMMERCIALLY_AUTHORIZED.",
       "The URL is not an active public CTA.",
       purpose.notes[0] ?? purpose.sourceStatus,

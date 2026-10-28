@@ -4,6 +4,7 @@ import { sanitizeSharedUrl } from "@/lib/campaign-sources/classify";
 import { qualityAssessmentRoot } from "@/lib/presell-quality/persist";
 import type { FactCandidate } from "@/lib/presell-quality/recovery";
 import { readOperationalCandidates } from "@/lib/presell-quality/operational-extract";
+import { readPrimaryPageCandidates } from "@/lib/presell-quality/primary-page-research";
 
 export const CANDIDATE_LEDGER_VERSION = 1 as const;
 
@@ -87,7 +88,7 @@ export function reconcileStoredCandidates(input: {
   const loaded: StoredFactCandidate[] = input.candidates ?? loadStoredFactCandidates(input.campaignId);
   const seen = new Map<string, string>();
   const candidates = loaded.map((item, index) => {
-    const candidateId = item.candidateId && /^54A[EO]-\d+/.test(item.candidateId)
+    const candidateId = item.candidateId && /^54A[EOR]-\d+/.test(item.candidateId)
       ? item.candidateId
       : `${input.idPrefix ?? "54AE"}-${String(index + 1).padStart(2, "0")}`;
     const key = `${item.field}|${keyOf(item.text)}`;
@@ -150,6 +151,20 @@ function keyOfCandidate(field: string, text: string): string {
 export function loadOrReconcileLedger(campaignId: number, idPrefix?: string): CandidateLedger {
   const stored = [
     ...loadStoredFactCandidates(campaignId),
+    ...readPrimaryPageCandidates(campaignId).map((item) => ({
+      field: item.field,
+      text: item.text,
+      sourceUrl: item.sourceUrl,
+      sourceClass: item.sourceClass,
+      excerpt: item.excerpt,
+      collectedAt: item.collectedAt,
+      verification: item.verification,
+      usable: Boolean(item.usable),
+      approvedForUse: false as const,
+      blockReason: item.blockReason,
+      duplicateOf: item.duplicateOf,
+      candidateId: item.candidateId,
+    })),
     ...readOperationalCandidates(campaignId).map((item) => ({
       field: item.field,
       text: item.text,

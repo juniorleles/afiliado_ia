@@ -63,6 +63,15 @@ export const REVIEW_COPY = {
   decideLater: "Decidir depois",
   confirmSeller: "Confirmar site de venda",
   confirmAffiliate: "Confirmar material de afiliado",
+  primaryTitle: "Informações encontradas na página principal",
+  primaryHelp: "Estas informações vieram da página comercial que você informou. Nada entra na Pre-sell sem a sua aprovação.",
+  primaryFound: "informações encontradas",
+  primaryFaqs: "perguntas e respostas capturadas",
+  primaryCommercial: "informações comerciais",
+  primaryApprovable: "podem ser analisadas agora",
+  primaryProof: "precisam de comprovação adicional",
+  primaryMissing: "não encontradas nesta página",
+  primaryBlocked: "bloqueadas por segurança",
 } as const;
 
 export function reviewStateLabel(state: string): string {

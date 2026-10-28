@@ -3,6 +3,7 @@ import path from "node:path";
 import { sanitizeSharedUrl } from "@/lib/campaign-sources/classify";
 import { classifyUrlRoles } from "@/lib/campaign-sources/roles";
 import { relatedHostEvidence } from "@/lib/campaign-sources/related-hosts";
+import { readPrimaryAffiliatePage } from "@/lib/campaign-sources/primary-page";
 import { readCampaignSources } from "@/lib/campaign-sources/store";
 import { acceptedProposals } from "@/lib/product-research/approved-facts";
 import type { ProductResearchRun } from "@/lib/product-research/types";
@@ -164,6 +165,8 @@ export function buildCommercialGraph(input: {
   const sources = readCampaignSources(input.campaignId);
   const accepted = acceptedProposals(input.run ?? null);
   const acceptedHosts = [...new Set(accepted.map((item) => hostOf(item.sourceUrl)).filter(Boolean))];
+  const primaryHost = readPrimaryAffiliatePage(input.campaignId)?.host;
+  const primaryAffiliateHosts = primaryHost ? [primaryHost] : [];
   const entities = new Map<string, CommercialEntity>();
   const relations: CommercialRelation[] = [];
   const productId = `product:${input.campaignId}`;
@@ -211,17 +214,42 @@ export function buildCommercialGraph(input: {
         scope: "CHECKOUT",
         state: "UNRESOLVED",
         confidence: "MEDIUM",
-        evidence: [{ id: source.sourceId, url, excerpt: "Checkout or order-now path. Not fetched.", collectedAt: source.fetchedAt, selfDeclared: false }],
+        evidence: [{ id: source.sourceId, url, excerpt: "Checkout or order-now path. Not used as a commercial CTA.", collectedAt: source.fetchedAt, selfDeclared: false }],
         confirmedByHuman: false,
         confirmedAt: null,
         notes: ["A checkout operator is not the manufacturer."],
       });
+      if (source.origin === "USER_PROVIDED") {
+        addRelation({
+          from: productId,
+          to: `website:${host}`,
+          type: "PROMOTES_AS_AFFILIATE",
+          scope: "AFFILIATE",
+          state: "PARTIALLY_SUPPORTED",
+          confidence: "MEDIUM",
+          evidence: [{
+            id: `${source.sourceId}-primary`,
+            url,
+            excerpt: "User-provided primary affiliate landing page. Read-only. Not manufacturer identity.",
+            collectedAt: source.fetchedAt,
+            selfDeclared: true,
+          }],
+          confirmedByHuman: false,
+          confirmedAt: null,
+          notes: [
+            "The operator supplied this URL as the commercial page to research.",
+            "Read access is not commercial authorization.",
+            "Confirming this affiliate page does not confirm the manufacturer.",
+          ],
+        });
+      }
       continue;
     }
     addHost(host, "WEBSITE");
     const identity = classifySourceIdentity({
       host,
       acceptedSellerHosts: acceptedHosts,
+      primaryAffiliateHosts,
       sourceClass: source.sourceClassification || source.sourceType,
     });
     if (report.roles.includes("AFFILIATE_RESOURCE_PAGE") || source.sourceType === "AFFILIATE_RESOURCE") {
@@ -322,7 +350,12 @@ export function buildCommercialGraph(input: {
     const host = publicHost(candidate.sourceHost);
     if (!host) continue;
     addHost(host);
-    const identity = classifySourceIdentity({ host, acceptedSellerHosts: acceptedHosts, sourceClass: candidate.sourceClass });
+    const identity = classifySourceIdentity({
+      host,
+      acceptedSellerHosts: acceptedHosts,
+      primaryAffiliateHosts,
+      sourceClass: candidate.sourceClass,
+    });
     if (identity.role === "CLONE") {
       addRelation({
         from: `website:${host}`,

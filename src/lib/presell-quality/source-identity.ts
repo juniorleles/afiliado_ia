@@ -26,12 +26,14 @@ export function classifySourceIdentity(input: {
   host: string;
   officialHosts?: string[];
   acceptedSellerHosts?: string[];
+  primaryAffiliateHosts?: string[];
   sourceClass?: string | null;
 }): SourceIdentityRecord {
   const host = input.host.toLowerCase();
   const official = (input.officialHosts ?? []).some((item) => host === item || host.endsWith(`.${item}`));
   const acceptedSeller = (input.acceptedSellerHosts ?? []).some((item) => host === item || host.endsWith(`.${item}`));
-  const clone = UNCERTAIN.test(host) || (!official && /defen+der/i.test(host) && !acceptedSeller);
+  const primaryAffiliate = (input.primaryAffiliateHosts ?? []).some((item) => host === item || host.endsWith(`.${item}`));
+  const clone = UNCERTAIN.test(host) || (!official && !primaryAffiliate && /defen+der/i.test(host) && !acceptedSeller);
   if (official) {
     return {
       host,
@@ -50,6 +52,21 @@ export function classifySourceIdentity(input: {
       role: "CLONE",
       evidence: ["Host is identity-uncertain or a lookalike."],
       notes: ["Domain similarity is not proof of common ownership."],
+      confirmedByHuman: false,
+      confirmedAt: null,
+    };
+  }
+  if (primaryAffiliate) {
+    return {
+      host,
+      state: "PARTIALLY_SUPPORTED",
+      role: "SELLER_OR_AFFILIATE",
+      evidence: ["This host is the user-provided primary affiliate landing page."],
+      notes: [
+        "User-provided is not manufacturer identity.",
+        "Confirming this affiliate page does not confirm the manufacturer.",
+        "Domain resemblance to another host is not proof of common ownership.",
+      ],
       confirmedByHuman: false,
       confirmedAt: null,
     };
@@ -86,6 +103,7 @@ export function investigateCampaignSourceIdentity(input: {
   hosts: Array<{ host: string; sourceClass?: string | null }>;
   officialHosts?: string[];
   acceptedSellerHosts?: string[];
+  primaryAffiliateHosts?: string[];
 }): SourceIdentityReview {
   const seen = new Set<string>();
   const records: SourceIdentityRecord[] = [];
@@ -97,6 +115,7 @@ export function investigateCampaignSourceIdentity(input: {
       host,
       officialHosts: input.officialHosts,
       acceptedSellerHosts: input.acceptedSellerHosts,
+      primaryAffiliateHosts: input.primaryAffiliateHosts,
       sourceClass: item.sourceClass,
     }));
   }

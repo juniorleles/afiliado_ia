@@ -38,6 +38,8 @@ import { activeResearchRun, listProductResearchRuns, readLatestProductResearch, 
 import type { ProductResearchRun } from "@/lib/product-research/types";
 import { classifySubmittedUrl } from "@/lib/campaign-sources/classify";
 import { mergeCampaignSources, readCampaignSources, upsertCampaignSource, writeCampaignSources } from "@/lib/campaign-sources/store";
+import { readPrimaryAffiliatePage } from "@/lib/campaign-sources/primary-page";
+import { processPrimaryAffiliatePage } from "@/lib/presell-quality/primary-page-research";
 import { extractAffiliatePolicy } from "@/lib/affiliate-policy/extract";
 import type { DiscoveredAffiliateAsset } from "@/lib/affiliate-policy/types";
 import { galleryKindFromAsset, mergeAssetDecisions } from "@/lib/product-research/asset-display";
@@ -174,11 +176,15 @@ export function createProductResearchJob(input: {
     originalUrl: item.originalUrl,
     notes: item.notes,
   }));
+  const primary = readPrimaryAffiliatePage(input.campaignId);
   run.limitations = [
     ...seeds.skipped.map((item) => `${item.status}: ${item.reason}`),
     ...sources.filter((item) => !classifySubmittedUrl(item.originalUrl, item.sourceType).fetchable).map((item) => item.notes[0] ?? item.sourceStatus),
+    primary
+      ? "PRIMARY_AFFILIATE_LANDING_PAGE is first. Secondary sources wait until that page is inventoried or its access limits are recorded."
+      : "",
   ].filter((item, index, all) => item && all.indexOf(item) === index);
-  if (!seeds.seeds.length) {
+  if (!seeds.seeds.length && !(primary && primary.readAllowed)) {
     run.status = "NEED_URL";
     run.stage = "blocked";
     run.finishedAt = new Date().toISOString();
@@ -187,6 +193,10 @@ export function createProductResearchJob(input: {
   }
   run.status = "QUEUED";
   run.stage = "queued";
+  if (primary && !seeds.seeds.length) {
+    run.seedRejection = null;
+    run.error = null;
+  }
   return writeProductResearchRun(run);
 }
 
@@ -220,14 +230,39 @@ export async function executeProductResearch(input: {
       discoveredAssets: priorLocked.assets,
       decisions: priorLocked.decisions,
     };
+    run.stage = "primary";
+    writeProductResearchRun(run);
+    const primaryResult = await processPrimaryAffiliatePage({
+      campaignId: input.campaignId,
+      fetchPage: input.fetchPage,
+      renderPage: input.fetchPage
+        ? async ({ url }) => ({
+            ok: false,
+            status: "BROWSER_UNAVAILABLE",
+            requestedUrl: url,
+            finalUrl: null,
+            html: "",
+            visibleText: "",
+            title: null,
+            expandedControls: 0,
+            transactionalClicks: 0,
+            elapsedMs: 0,
+            reason: "Injected fetchPage skips Playwright. HTTP fallback is used when safe.",
+          })
+        : undefined,
+    });
     const fetched = await fetchCoverageSources({
       urls: run.seeds,
       fetchPage: input.fetchPage,
-      discoverAdditional: true,
+      discoverAdditional: primaryResult.secondaryResearch.allowed,
       gaps: coverageGapsFromProposals(priorRun?.proposals),
       limits: GAP_FILL_RESEARCH_LIMITS,
     });
-    run.limitations = fetched.limitations;
+    run.limitations = [
+      `Primary page ${primaryResult.extractionStatus}: ${primaryResult.rootCause}`,
+      primaryResult.secondaryResearch.reason,
+      ...fetched.limitations,
+    ];
     const sources: EnrichmentSource[] = fetched.sources;
     const sourceClassByUrl = new Map<string, string>();
     for (const source of sources) {
@@ -268,6 +303,14 @@ export async function executeProductResearch(input: {
       notes: item.notes,
     }));
     if (!sources.length) {
+      if (primaryResult.extractionStatus === "COMPLETE" || primaryResult.extractionStatus === "PARTIAL") {
+        run.status = "COMPLETED";
+        run.stage = "review";
+        run.finishedAt = new Date().toISOString();
+        run.error = null;
+        run.limitations.push("Secondary informational pages were not fetched. The primary affiliate page inventory remains.");
+        return writeProductResearchRun(run);
+      }
       run.status = fetched.records.some((item) => !item.ok) ? "FAILED" : "COMPLETED";
       run.stage = "empty";
       run.finishedAt = new Date().toISOString();

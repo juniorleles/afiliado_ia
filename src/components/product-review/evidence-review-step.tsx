@@ -7,6 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { SourceIdentityPanel } from "@/components/product-review/source-identity-panel";
 import type { PreparedReviewCandidate } from "@/lib/presell-quality/review-prepare";
 import type { SourceIdentityPanelRow } from "@/lib/presell-quality/commercial-graph";
+import type { PrimaryPageResearchResult } from "@/lib/presell-quality/primary-page-research";
 import { buildReviewPresentation } from "@/lib/presell-quality/review-presentation";
 import {
   REVIEW_ACTION_LABEL,
@@ -52,6 +53,7 @@ export function EvidenceReviewStep({
   partiallySupportedRelationships,
   unresolvedRelationships,
   regenerationGate,
+  primaryPage,
   busy,
   onDecide,
   onConfirmIdentity,
@@ -69,6 +71,7 @@ export function EvidenceReviewStep({
   partiallySupportedRelationships: number;
   unresolvedRelationships: number;
   regenerationGate?: RegenerationGateView | null;
+  primaryPage?: PrimaryPageResearchResult | null;
   busy: boolean;
   onDecide: (candidateId: string, version: number, decision: "ACCEPT" | "REJECT" | "REQUEST_NEW_EVIDENCE" | "KEEP_PENDING", presentationVersion?: string) => void;
   onConfirmIdentity: (host: string, scope: "SELLER" | "AFFILIATE") => void;
@@ -109,6 +112,32 @@ export function EvidenceReviewStep({
         </p>
         <p className="sr-only">Lacunas com ação humana: {gapsReady}</p>
       </section>
+
+      {primaryPage ? (
+        <section className="rounded-ds-md border border-border p-ds-16" data-primary-page-review>
+          <h2 className="text-label">{REVIEW_COPY.primaryTitle}</h2>
+          <p className="mt-ds-8 text-body">{REVIEW_COPY.primaryHelp}</p>
+          <div className="mt-ds-16 grid gap-ds-12 md:grid-cols-2">
+            <p className="text-body">{primaryPage.inventory?.facts.length ?? 0} {REVIEW_COPY.primaryFound}</p>
+            <p className="text-body">{primaryPage.inventory?.faqs.filter((item) => item.answer).length ?? 0} {REVIEW_COPY.primaryFaqs}</p>
+            <p className="text-body">{primaryPage.newCandidates.filter((item) => item.risk === "OPERATIONAL" && item.usable).length} {REVIEW_COPY.primaryApprovable}</p>
+            <p className="text-body">{primaryPage.highRiskBlocked} {REVIEW_COPY.primaryBlocked}</p>
+          </div>
+          {(primaryPage.inventory?.faqs.length ?? 0) > 0 ? (
+            <div className="mt-ds-16 flex flex-col gap-ds-12">
+              {primaryPage.inventory?.faqs.slice(0, 8).map((faq) => (
+                <article key={faq.question} className="rounded-ds-md border border-border p-ds-12">
+                  <p className="text-label">{faq.question}</p>
+                  <p className="mt-ds-8 text-body">{faq.answer || "A resposta desta pergunta não estava acessível."}</p>
+                </article>
+              ))}
+            </div>
+          ) : null}
+          {(primaryPage.inventory?.missing.length ?? 0) > 0 ? (
+            <p className="mt-ds-12 text-caption text-muted-foreground">{REVIEW_COPY.primaryMissing}: {primaryPage.inventory?.missing.join(" ")}</p>
+          ) : null}
+        </section>
+      ) : null}
 
       <section>
         <h2 className="text-label">{REVIEW_COPY.needsDecision}</h2>

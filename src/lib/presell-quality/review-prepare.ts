@@ -63,6 +63,7 @@ export function prepareReviewCandidate(input: {
   relations?: CommercialRelation[];
   rejectedIds?: Set<string>;
   officialHosts?: string[];
+  primaryAffiliateHosts?: string[];
 }): PreparedReviewCandidate {
   const accepted = acceptedProposals(input.run);
   const acceptedTexts = accepted.map((item) => item.currentValue || item.suggestedValue);
@@ -82,6 +83,7 @@ export function prepareReviewCandidate(input: {
     },
     acceptedTexts,
     officialHosts: input.officialHosts,
+    primaryAffiliateHosts: input.primaryAffiliateHosts,
   });
   const identity = input.identity;
   const identityState = identity?.state ?? "UNRESOLVED";
@@ -173,6 +175,7 @@ export function prepareReviewQueue(input: {
   relations?: CommercialRelation[];
   rejectedIds?: Set<string>;
   officialHosts?: string[];
+  primaryAffiliateHosts?: string[];
 }): PreparedReviewCandidate[] {
   const byHost = new Map((input.identities ?? []).map((item) => [item.host, item]));
   return input.candidates.map((candidate) =>
@@ -183,6 +186,7 @@ export function prepareReviewQueue(input: {
       relations: input.relations,
       rejectedIds: input.rejectedIds,
       officialHosts: input.officialHosts,
+      primaryAffiliateHosts: input.primaryAffiliateHosts,
     }),
   );
 }
