@@ -138,7 +138,7 @@ export async function decideEvidenceCandidateAction(input: {
   campaignId: number;
   candidateId: string;
   expectedVersion: number;
-  decision: "ACCEPT" | "REJECT" | "REQUEST_NEW_EVIDENCE" | "MARK_DUPLICATE";
+  decision: "ACCEPT" | "REJECT" | "REQUEST_NEW_EVIDENCE" | "KEEP_PENDING" | "MARK_DUPLICATE";
   confirmOverwrite?: boolean;
 }) {
   await requireAdmin();

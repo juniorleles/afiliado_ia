@@ -15,6 +15,8 @@ import {
 import { prepareReviewQueue, reviewSummary } from "@/lib/presell-quality/review-prepare";
 import { mapContentGapsToCandidates } from "@/lib/presell-quality/content-gap-map";
 import { readEvidenceAudit } from "@/lib/presell-quality/review-decide";
+import { evaluateRegenerationGate } from "@/lib/presell-quality/regeneration-gate";
+import { buildOperationalReviewCard } from "@/lib/presell-quality/operational-theme";
 
 export type EvidenceReviewWorkspace = {
   campaignId: number;
@@ -33,6 +35,8 @@ export type EvidenceReviewWorkspace = {
   gaps: ReturnType<typeof mapContentGapsToCandidates>;
   lastReview: ReturnType<typeof readEvidenceAudit>[number] | null;
   regenerationRequired: boolean;
+  regenerationGate: ReturnType<typeof evaluateRegenerationGate>;
+  operationalCards: ReturnType<typeof buildOperationalReviewCard>[];
   commercialAuthorization: "BLOCKED";
   publicationReadiness: "BLOCKED";
 };
@@ -106,6 +110,8 @@ export function loadEvidenceReviewWorkspace(campaignId: number): EvidenceReviewW
     gaps,
     lastReview: readEvidenceAudit(campaignId).at(-1) ?? null,
     regenerationRequired: ledger.regenerationRequired,
+    regenerationGate: evaluateRegenerationGate({ campaignId, run }),
+    operationalCards: queue.map(buildOperationalReviewCard),
     commercialAuthorization: "BLOCKED" as const,
     publicationReadiness: "BLOCKED" as const,
   };

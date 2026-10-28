@@ -23,6 +23,7 @@ export const REVIEW_ACTIONS = [
   "ACCEPT_ELIGIBLE_FACT",
   "REJECT_CANDIDATE",
   "REQUEST_NEW_EVIDENCE",
+  "KEEP_PENDING",
   "MARK_DUPLICATE",
 ] as const;
 export type ReviewAction = (typeof REVIEW_ACTIONS)[number];
@@ -125,7 +126,7 @@ export function prepareReviewCandidate(input: {
     } else if (!contractField) {
       state = "INSUFFICIENT_EVIDENCE";
       blocker = "This operational note has no Product Contract field. Do not invent a field.";
-    } else if (acceptedField && acceptedField.status === "ACCEPTED") {
+    } else if (acceptedField && acceptedField.status === "ACCEPTED" && input.candidate.field !== "faq") {
       state = "ALREADY_ACCEPTED";
       blocker = `Field ${input.candidate.field} is already accepted. Overwrite requires an explicit confirm.`;
     } else {
@@ -134,12 +135,12 @@ export function prepareReviewCandidate(input: {
     }
   }
 
-  const availableActions: ReviewAction[] = ["REVIEW_EVIDENCE"];
-  if (state === "SOURCE_IDENTITY_UNRESOLVED") availableActions.push("CONFIRM_SOURCE_IDENTITY", "REJECT_CANDIDATE");
+  const availableActions: ReviewAction[] = ["REVIEW_EVIDENCE", "KEEP_PENDING"];
+  if (state === "SOURCE_IDENTITY_UNRESOLVED") availableActions.push("CONFIRM_SOURCE_IDENTITY", "REJECT_CANDIDATE", "REQUEST_NEW_EVIDENCE");
   if (state === "INSUFFICIENT_EVIDENCE") availableActions.push("REQUEST_NEW_EVIDENCE", "REJECT_CANDIDATE");
   if (state === "HIGH_RISK_CLAIM") availableActions.push("REJECT_CANDIDATE", "REQUEST_NEW_EVIDENCE");
   if (state === "DUPLICATE" || state === "ALREADY_ACCEPTED") availableActions.push("MARK_DUPLICATE");
-  if (state === "READY_FOR_REVIEW") availableActions.push("ACCEPT_ELIGIBLE_FACT", "REJECT_CANDIDATE");
+  if (state === "READY_FOR_REVIEW") availableActions.push("ACCEPT_ELIGIBLE_FACT", "REJECT_CANDIDATE", "REQUEST_NEW_EVIDENCE");
 
   return {
     candidateId: input.candidate.candidateId,

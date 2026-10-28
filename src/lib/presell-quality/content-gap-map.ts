@@ -1,15 +1,6 @@
 import type { ContentGap } from "@/lib/presell-quality/content-gap-report";
 import type { PreparedReviewCandidate } from "@/lib/presell-quality/review-prepare";
-
-const FIELD_ALIASES: Record<string, string[]> = {
-  productFormat: ["howItWorks", "description"],
-  quantity: ["howItWorks", "faq"],
-  shipping: ["faq", "guarantee"],
-  returnsProcess: ["guarantee", "faq"],
-  sellerContact: ["faq", "manufacturer"],
-  clinicalProof: ["benefits"],
-  testimonials: ["benefits", "faq"],
-};
+import { candidateSupportsGap } from "@/lib/presell-quality/operational-theme";
 
 export type MappedContentGap = ContentGap & {
   relatedCandidateIds: string[];
@@ -23,8 +14,7 @@ export function mapContentGapsToCandidates(input: {
   queue: PreparedReviewCandidate[];
 }): MappedContentGap[] {
   return input.gaps.map((gap) => {
-    const aliases = [gap.field, ...(FIELD_ALIASES[gap.field] ?? [])];
-    const related = input.queue.filter((item) => aliases.includes(item.field));
+    const related = input.queue.filter((item) => candidateSupportsGap(gap.field, item));
     const ready = related.filter((item) => item.eligible);
     const identity = related.filter((item) => item.state === "SOURCE_IDENTITY_UNRESOLVED");
     const blocked = related.filter((item) => item.state === "HIGH_RISK_CLAIM");

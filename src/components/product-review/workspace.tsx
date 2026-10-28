@@ -115,7 +115,7 @@ export function ProductReviewWorkspace({
     });
   }
 
-  function decideCandidate(candidateId: string, expectedVersion: number, decision: "ACCEPT" | "REJECT") {
+  function decideCandidate(candidateId: string, expectedVersion: number, decision: "ACCEPT" | "REJECT" | "REQUEST_NEW_EVIDENCE" | "KEEP_PENDING") {
     startTransition(async () => {
       try {
         const result = await decideEvidenceCandidateAction({ campaignId, candidateId, expectedVersion, decision });
@@ -215,6 +215,7 @@ export function ProductReviewWorkspace({
             verifiedManufacturerRelationships={evidence?.verifiedManufacturerRelationships ?? 0}
             partiallySupportedRelationships={evidence?.partiallySupportedRelationships ?? 0}
             unresolvedRelationships={evidence?.unresolvedRelationships ?? 0}
+            regenerationGate={evidence?.regenerationGate ?? null}
             busy={busy}
             onDecide={decideCandidate}
             onConfirmIdentity={confirmIdentity}

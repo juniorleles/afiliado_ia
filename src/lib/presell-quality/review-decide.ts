@@ -9,8 +9,11 @@ import { writeCandidateLedger, type CandidateLedger } from "@/lib/presell-qualit
 import { prepareReviewCandidate, type PreparedReviewCandidate } from "@/lib/presell-quality/review-prepare";
 import type { SourceIdentityRecord } from "@/lib/presell-quality/source-identity";
 import type { CommercialRelation } from "@/lib/presell-quality/commercial-graph";
+import { snapshotProductContract } from "@/lib/presell-quality/regeneration-gate";
 
-export type EvidenceDecision = "ACCEPT" | "REJECT" | "REQUEST_NEW_EVIDENCE" | "MARK_DUPLICATE";
+export type EvidenceDecision = "ACCEPT" | "REJECT" | "REQUEST_NEW_EVIDENCE" | "KEEP_PENDING" | "MARK_DUPLICATE";
+
+const PROTECTED_FIELDS = new Set(["description", "ingredients", "howItWorks", "guarantee"]);
 
 export type EvidenceAuditEntry = {
   at: string;
@@ -134,9 +137,35 @@ export function decideEvidenceCandidate(input: {
       return { ok: false, reason: "RUN_MISSING", prepared, run: null, contractChanged: false, regenerationRequired: false, audit };
     }
     const existing = input.run.proposals.find((item) => item.field === prepared.contractField);
-    if (existing?.status === "ACCEPTED" && !input.confirmOverwrite) {
+    if (existing?.status === "ACCEPTED" && PROTECTED_FIELDS.has(prepared.contractField) && !input.confirmOverwrite) {
       const audit = appendEvidenceAudit({ ...auditBase, resultingState: "ALREADY_ACCEPTED", notes: ["OVERWRITE_REQUIRED"] });
       return { ok: false, reason: "OVERWRITE_REQUIRED", prepared, run: input.run, contractChanged: false, regenerationRequired: false, audit };
+    }
+    snapshotProductContract({ campaignId: input.campaignId, run: input.run, reason: `before-accept:${input.candidate.candidateId}` });
+    if (existing?.status === "ACCEPTED" && prepared.contractField === "faq") {
+      const addition = input.candidate.extractedValue.trim();
+      const current = (existing.currentValue || existing.suggestedValue || "").trim();
+      if (current.toLowerCase().includes(addition.toLowerCase())) {
+        const audit = appendEvidenceAudit({ ...auditBase, resultingState: "ALREADY_ACCEPTED", notes: ["FAQ_ALREADY_CONTAINS_TEXT"] });
+        return { ok: false, reason: "ALREADY_ACCEPTED", prepared, run: input.run, contractChanged: false, regenerationRequired: false, audit };
+      }
+      const merged = current ? `${current}\n\n${addition}` : addition;
+      const next = writeProductResearchRun({
+        ...input.run,
+        proposals: input.run.proposals.map((item) => item.field === "faq"
+          ? {
+            ...item,
+            currentValue: merged,
+            suggestedValue: merged,
+            evidenceIds: [...new Set([...item.evidenceIds, input.candidate.evidenceReference])],
+            notes: [...item.notes, `Appended seller-stated candidate ${input.candidate.candidateId}.`],
+          }
+          : item),
+      });
+      snapshotProductContract({ campaignId: input.campaignId, run: next, reason: `after-append:${input.candidate.candidateId}` });
+      writeCandidateLedger({ ...input.ledger, regenerationRequired: true });
+      const audit = appendEvidenceAudit({ ...auditBase, resultingState: "ACCEPTED", notes: ["Appended seller-stated operational FAQ. Core facts were not overwritten."] });
+      return { ok: true, reason: "ACCEPTED", prepared, run: next, contractChanged: true, regenerationRequired: true, audit };
     }
     const promoted = proposalFromCandidate(input.candidate, prepared.contractField);
     const proposals = input.run.proposals.map((item) => (item.field === prepared.contractField ? { ...promoted, currentValue: item.currentValue } : item));
@@ -149,13 +178,23 @@ export function decideEvidenceCandidate(input: {
       action: "ACCEPT",
       confirmOverwrite: input.confirmOverwrite,
     });
+    snapshotProductContract({ campaignId: input.campaignId, run: next, reason: `after-accept:${input.candidate.candidateId}` });
     writeCandidateLedger({ ...input.ledger, regenerationRequired: true });
     const audit = appendEvidenceAudit({ ...auditBase, resultingState: "ACCEPTED", notes: ["Accepted as seller-stated via existing field review."] });
     return { ok: true, reason: "ACCEPTED", prepared, run: next, contractChanged: true, regenerationRequired: true, audit };
   }
 
+  if (input.decision === "KEEP_PENDING" || input.decision === "REQUEST_NEW_EVIDENCE") {
+    const audit = appendEvidenceAudit({
+      ...auditBase,
+      resultingState: prepared.state,
+      notes: [input.decision, "Candidate remains unchanged."],
+    });
+    return { ok: true, reason: input.decision, prepared, run: input.run, contractChanged: false, regenerationRequired: false, audit };
+  }
+
   const rejectedIds = new Set(input.rejectedIds);
-  if (input.decision === "REJECT" || input.decision === "MARK_DUPLICATE" || input.decision === "REQUEST_NEW_EVIDENCE") {
+  if (input.decision === "REJECT" || input.decision === "MARK_DUPLICATE") {
     rejectedIds.add(input.candidate.candidateId);
     const audit = appendEvidenceAudit({
       ...auditBase,
