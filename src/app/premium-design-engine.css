@@ -565,3 +565,146 @@
     padding-block: 1.35rem;
   }
 }
+
+/* 54BJ — scoped visual hierarchy. Does not apply to frozen 54BI or 54AZ. */
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .presell-standard-hero {
+  padding-block: clamp(1rem, 0.55rem + 1.9vw, 2.15rem);
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .v4-hero__copy {
+  gap: 1.05rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .v4-hero__copy .ds-display {
+  max-width: 11ch;
+  font-size: clamp(3.05rem, 2.35rem + 2.4vw, 4.05rem);
+  font-weight: 800;
+  line-height: 0.94;
+  letter-spacing: -0.038em;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .v4-hero__copy .ds-lead {
+  max-width: 34rem;
+  font-size: 1.125rem;
+  line-height: 1.48;
+  font-weight: 500;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .v4-hero__copy .ds-body {
+  font-size: 1.05rem;
+  line-height: 1.62;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .ds-hero__actions {
+  margin-top: 0.2rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .ds-hero__frame img {
+  object-fit: contain;
+  transform: none;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .premium-hero-rail {
+  gap: 0.75rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .premium-hero-rail__item {
+  align-items: start;
+  min-height: 100%;
+  padding: 0.9rem 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--ds-ink) 14%, var(--ds-line));
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--ds-surface) 92%, white);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--ds-ink) 6%, transparent);
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .premium-hero-rail__title {
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  color: var(--ds-accent-text);
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .premium-hero-rail__fact {
+  font-size: 0.86rem;
+  font-weight: 500;
+  line-height: 1.42;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .premium-hero-rail__icon {
+  width: 2.05rem;
+  height: 2.05rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .premium-card {
+  padding: 1.35rem 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--ds-ink) 12%, var(--ds-line));
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--ds-ink) 5.5%, transparent);
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .premium-card .ds-h3 {
+  font-size: 1.22rem;
+  letter-spacing: -0.02em;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .premium-card .ds-body {
+  line-height: 1.55;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .premium-grid {
+  gap: 1.05rem;
+}
+
+@media (min-width: 768px) and (max-width: 959px) {
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .ds-hero__stage {
+    max-width: 28rem;
+    margin-inline: auto;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .v4-hero__copy .ds-display {
+    max-width: none;
+    font-size: clamp(2.7rem, 2.2rem + 2vw, 3.4rem);
+  }
+}
+
+@media (max-width: 767px) {
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .presell-standard-hero {
+    padding-block: 1.3rem 1.7rem;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .v4-hero__copy {
+    gap: 1rem;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .v4-hero__copy .ds-display {
+    max-width: none;
+    font-size: clamp(2.35rem, 1.7rem + 5.2vw, 2.95rem);
+    line-height: 1.02;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .v4-hero__copy .ds-lead {
+    font-size: 1.05rem;
+    line-height: 1.5;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .ds-hero__stage {
+    max-width: 18.5rem;
+    margin-block: 0.45rem 0.25rem;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .premium-hero-chips {
+    gap: 0.55rem 0.65rem;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .premium-hero-chips li {
+    padding: 0.48rem 0.82rem 0.48rem 0.52rem;
+    font-size: 0.86rem;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .v4-band {
+    padding-block: 1.6rem;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BJ"] .premium-card {
+    padding: 1.2rem 1.1rem;
+  }
+}

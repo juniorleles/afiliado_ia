@@ -117,15 +117,15 @@ assert(
     resolveRendererCandidate({ requested: BEST_KNOWN_CANDIDATE_ID }).id === BEST_KNOWN_CANDIDATE_ID &&
     resolveRendererCandidate({ requested: "54BH" }).id === EXPERIMENTAL_CANDIDATE_ID &&
     resolveRendererCandidate({ requested: "54BF" }).id === EXPERIMENTAL_CANDIDATE_ID &&
-    PRIOR_CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BF" &&
+    parseRendererCandidateId("54BF") === EXPERIMENTAL_CANDIDATE_ID &&
     resolveRendererCandidate({}).id === BEST_KNOWN_CANDIDATE_ID,
   "5. renderer candidate switching remains explicit, including 54BH and the 54BF alias",
 );
 assert(
   /data-presell-standard="PRESELL_STANDARD_V1"/.test(v1) &&
-    /data-presell-execution="54BI"/.test(v1) &&
-    /data-presell-execution="54BI"/.test(via54bh) &&
-    /data-presell-execution="54BI"/.test(via54bf) &&
+    /data-presell-execution="54BJ"/.test(v1) &&
+    /data-presell-execution="54BJ"/.test(via54bh) &&
+    /data-presell-execution="54BJ"/.test(via54bf) &&
     PRESELL_STANDARD_ID === "PRESELL_STANDARD_V1" &&
     PRESELL_STANDARD_VERSION === "1",
   "6. template V1 remains renderable and is tagged with the current experimental execution",

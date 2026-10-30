@@ -499,7 +499,7 @@ export function V4Page({
 }) {
   const resolved = resolveRendererCandidate({ requested: candidate, campaignId });
   if (resolved.id === EXPERIMENTAL_CANDIDATE_ID) {
-    return <StandardV1Page model={model} />;
+    return <StandardV1Page model={model} executionId={resolved.executionId} />;
   }
   return <BestKnownPage model={model} />;
 }

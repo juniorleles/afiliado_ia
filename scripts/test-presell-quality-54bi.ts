@@ -84,6 +84,7 @@ const lab = disableCommercialCta(buildV4Model("s1")!);
 const v1 = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: EXPERIMENTAL_CANDIDATE_ID }));
 const az = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: BEST_KNOWN_CANDIDATE_ID }));
 const via54bh = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: CONTROLLED_IMPROVEMENT_EXECUTION_ID }));
+const via54bi = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: "54BI" }));
 const via54bf = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: "54BF" }));
 const def = renderToStaticMarkup(createElement(V4Page, { model: lab }));
 const identity = readJson(evidence, "candidate-identity.json");
@@ -95,8 +96,7 @@ const returnsSample = "The seller states a 60-day refund. Empty bottles may be r
 
 assert(bhPresent, "1. 54BH commit object remains recoverable");
 assert(
-  CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BI" &&
-    parseRendererCandidateId("54BI") === EXPERIMENTAL_CANDIDATE_ID &&
+  parseRendererCandidateId("54BI") === EXPERIMENTAL_CANDIDATE_ID &&
     (identity == null || identity.candidateExecution === "54BI"),
   "12. experimental candidate identity is PRESELL_STANDARD_V1 / execution 54BI",
 );
@@ -121,17 +121,20 @@ assert(
   resolveRendererCandidate({ requested: EXPERIMENTAL_CANDIDATE_ID }).id === EXPERIMENTAL_CANDIDATE_ID &&
     resolveRendererCandidate({ requested: BEST_KNOWN_CANDIDATE_ID }).id === BEST_KNOWN_CANDIDATE_ID &&
     resolveRendererCandidate({ requested: "54BI" }).id === EXPERIMENTAL_CANDIDATE_ID &&
+    resolveRendererCandidate({ requested: "54BJ" }).id === EXPERIMENTAL_CANDIDATE_ID &&
     resolveRendererCandidate({ requested: "54BH" }).id === EXPERIMENTAL_CANDIDATE_ID &&
     resolveRendererCandidate({ requested: "54BF" }).id === EXPERIMENTAL_CANDIDATE_ID &&
-    PRIOR_CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BF" &&
+    resolveRendererCandidate({ requested: "54BI" }).executionId === "54BI" &&
+    resolveRendererCandidate({ requested: "54BJ" }).executionId === CONTROLLED_IMPROVEMENT_EXECUTION_ID &&
     resolveRendererCandidate({}).id === BEST_KNOWN_CANDIDATE_ID,
   "11. renderer candidate switching remains explicit, including 54BI and prior aliases",
 );
 assert(
   /data-presell-standard="PRESELL_STANDARD_V1"/.test(v1) &&
-    /data-presell-execution="54BI"/.test(v1) &&
-    /data-presell-execution="54BI"/.test(via54bh) &&
-    /data-presell-execution="54BI"/.test(via54bf) &&
+    /data-presell-execution="54BJ"/.test(v1) &&
+    /data-presell-execution="54BJ"/.test(via54bh) &&
+    /data-presell-execution="54BJ"/.test(via54bf) &&
+    /data-presell-execution="54BI"/.test(via54bi) &&
     PRESELL_STANDARD_ID === "PRESELL_STANDARD_V1" &&
     PRESELL_STANDARD_VERSION === "1",
   "6. template V1 remains renderable and is tagged with the current experimental execution",

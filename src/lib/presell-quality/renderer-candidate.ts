@@ -5,16 +5,26 @@ import { PRESELL_STANDARD_ID } from "@/lib/presell-template/standard-v1";
 
 export const BEST_KNOWN_CANDIDATE_ID = "54AZ" as const;
 export const EXPERIMENTAL_CANDIDATE_ID = PRESELL_STANDARD_ID;
-export const PRIOR_CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BF" as const;
-export const RECENT_CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BH" as const;
-export const CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BI" as const;
+export const PRIOR_CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BH" as const;
+export const FROZEN_IMPROVEMENT_EXECUTION_ID = "54BI" as const;
+export const RECENT_CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BI" as const;
+export const CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BJ" as const;
+export const LEGACY_CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BF" as const;
 export const RENDERER_CANDIDATE_IDS = [BEST_KNOWN_CANDIDATE_ID, EXPERIMENTAL_CANDIDATE_ID] as const;
 export type RendererCandidateId = (typeof RENDERER_CANDIDATE_IDS)[number];
+export type ExperimentalExecutionId =
+  | typeof CONTROLLED_IMPROVEMENT_EXECUTION_ID
+  | typeof FROZEN_IMPROVEMENT_EXECUTION_ID
+  | typeof RECENT_CONTROLLED_IMPROVEMENT_EXECUTION_ID
+  | typeof PRIOR_CONTROLLED_IMPROVEMENT_EXECUTION_ID
+  | typeof LEGACY_CONTROLLED_IMPROVEMENT_EXECUTION_ID;
+export type PresellExecutionId = ExperimentalExecutionId | typeof BEST_KNOWN_CANDIDATE_ID;
 
 export type RendererCandidateSelection = {
   bestKnownCandidate: typeof BEST_KNOWN_CANDIDATE_ID;
   activePreviewCandidate: RendererCandidateId;
   experimentalCandidate: typeof EXPERIMENTAL_CANDIDATE_ID;
+  activeExecutionId: ExperimentalExecutionId;
 };
 
 export type ResolvedRendererCandidate = {
@@ -22,11 +32,26 @@ export type ResolvedRendererCandidate = {
   source: "prop" | "query" | "store" | "default";
   selection: RendererCandidateSelection;
   taggedAsStandard: boolean;
-  executionId: typeof CONTROLLED_IMPROVEMENT_EXECUTION_ID | typeof BEST_KNOWN_CANDIDATE_ID;
+  executionId: PresellExecutionId;
 };
 
 function selectionFile(campaignId: number): string {
   return path.join(qualityAssessmentRoot(), String(campaignId), "renderer-candidate.json");
+}
+
+export function experimentalExecutionIdOf(
+  requested?: string | null,
+  stored?: string | null,
+): ExperimentalExecutionId {
+  const normalized = requested?.trim();
+  if (normalized === FROZEN_IMPROVEMENT_EXECUTION_ID || normalized === RECENT_CONTROLLED_IMPROVEMENT_EXECUTION_ID) {
+    return FROZEN_IMPROVEMENT_EXECUTION_ID;
+  }
+  if (normalized === CONTROLLED_IMPROVEMENT_EXECUTION_ID) return CONTROLLED_IMPROVEMENT_EXECUTION_ID;
+  if (!normalized && (stored === FROZEN_IMPROVEMENT_EXECUTION_ID || stored === CONTROLLED_IMPROVEMENT_EXECUTION_ID)) {
+    return stored;
+  }
+  return CONTROLLED_IMPROVEMENT_EXECUTION_ID;
 }
 
 export function parseRendererCandidateId(value: string | null | undefined): RendererCandidateId | null {
@@ -36,8 +61,10 @@ export function parseRendererCandidateId(value: string | null | undefined): Rend
     normalized === EXPERIMENTAL_CANDIDATE_ID ||
     normalized === "PRESELL_STANDARD_V1" ||
     normalized === CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
+    normalized === FROZEN_IMPROVEMENT_EXECUTION_ID ||
     normalized === RECENT_CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
-    normalized === PRIOR_CONTROLLED_IMPROVEMENT_EXECUTION_ID
+    normalized === PRIOR_CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
+    normalized === LEGACY_CONTROLLED_IMPROVEMENT_EXECUTION_ID
   ) {
     return EXPERIMENTAL_CANDIDATE_ID;
   }
@@ -49,6 +76,7 @@ export function defaultRendererCandidateSelection(): RendererCandidateSelection 
     bestKnownCandidate: BEST_KNOWN_CANDIDATE_ID,
     activePreviewCandidate: BEST_KNOWN_CANDIDATE_ID,
     experimentalCandidate: EXPERIMENTAL_CANDIDATE_ID,
+    activeExecutionId: FROZEN_IMPROVEMENT_EXECUTION_ID,
   };
 }
 
@@ -62,18 +90,28 @@ export function readRendererCandidateSelection(campaignId: number): RendererCand
       bestKnownCandidate: BEST_KNOWN_CANDIDATE_ID,
       activePreviewCandidate: active,
       experimentalCandidate: EXPERIMENTAL_CANDIDATE_ID,
+      activeExecutionId: experimentalExecutionIdOf(null, stored.activeExecutionId ?? FROZEN_IMPROVEMENT_EXECUTION_ID),
     };
   } catch {
     return defaultRendererCandidateSelection();
   }
 }
 
-export function writeActivePreviewCandidate(campaignId: number, candidate: RendererCandidateId): RendererCandidateSelection {
+export function writeActivePreviewCandidate(
+  campaignId: number,
+  candidate: RendererCandidateId,
+  executionId?: ExperimentalExecutionId,
+): RendererCandidateSelection {
+  const current = readRendererCandidateSelection(campaignId);
   const next: RendererCandidateSelection = {
-    ...readRendererCandidateSelection(campaignId),
+    ...current,
     bestKnownCandidate: BEST_KNOWN_CANDIDATE_ID,
     activePreviewCandidate: candidate,
     experimentalCandidate: EXPERIMENTAL_CANDIDATE_ID,
+    activeExecutionId:
+      candidate === EXPERIMENTAL_CANDIDATE_ID
+        ? experimentalExecutionIdOf(executionId ?? CONTROLLED_IMPROVEMENT_EXECUTION_ID, current.activeExecutionId)
+        : current.activeExecutionId,
   };
   const file = selectionFile(campaignId);
   mkdirSync(path.dirname(file), { recursive: true });
@@ -93,7 +131,10 @@ export function resolveRendererCandidate(input: {
       source: "prop",
       selection,
       taggedAsStandard: fromProp === EXPERIMENTAL_CANDIDATE_ID,
-      executionId: fromProp === EXPERIMENTAL_CANDIDATE_ID ? CONTROLLED_IMPROVEMENT_EXECUTION_ID : BEST_KNOWN_CANDIDATE_ID,
+      executionId:
+        fromProp === EXPERIMENTAL_CANDIDATE_ID
+          ? experimentalExecutionIdOf(input.requested, selection.activeExecutionId)
+          : BEST_KNOWN_CANDIDATE_ID,
     };
   }
   if (input.campaignId != null && selection.activePreviewCandidate !== BEST_KNOWN_CANDIDATE_ID) {
@@ -104,7 +145,7 @@ export function resolveRendererCandidate(input: {
       taggedAsStandard: selection.activePreviewCandidate === EXPERIMENTAL_CANDIDATE_ID,
       executionId:
         selection.activePreviewCandidate === EXPERIMENTAL_CANDIDATE_ID
-          ? CONTROLLED_IMPROVEMENT_EXECUTION_ID
+          ? experimentalExecutionIdOf(null, selection.activeExecutionId)
           : BEST_KNOWN_CANDIDATE_ID,
     };
   }
@@ -117,6 +158,6 @@ export function resolveRendererCandidate(input: {
   };
 }
 
-export function rendererCandidateQuery(candidate: RendererCandidateId): string {
+export function rendererCandidateQuery(candidate: RendererCandidateId | ExperimentalExecutionId): string {
   return `candidate=${encodeURIComponent(candidate)}`;
 }

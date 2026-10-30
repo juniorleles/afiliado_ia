@@ -86,7 +86,7 @@ export default async function LpGenerationPreview({
           </div>
         </>
       )}
-      <V4Page model={model} candidate={renderer.id} campaignId={record.campaignId} />
+      <V4Page model={model} candidate={requestedCandidate ?? renderer.id} campaignId={record.campaignId} />
     </div>
   );
 }

@@ -24,6 +24,7 @@ import {
 } from "@/components/design-system/premium-blocks";
 import { AnnouncementBar, ShippingOrAccess } from "@/components/presell";
 import { experimentalEvidenceChips, experimentalSectionTitle, presentVisitorCopy, premiumSlotsFromModel } from "@/lib/presell-quality/premium-slots";
+import { CONTROLLED_IMPROVEMENT_EXECUTION_ID } from "@/lib/presell-quality/renderer-candidate";
 import { mapPresellStandardV1 } from "@/lib/presell-template";
 import { PRESELL_STANDARD_ID } from "@/lib/presell-template/standard-v1";
 import type { PresellStandardSectionId } from "@/lib/presell-template/standard-v1";
@@ -377,7 +378,13 @@ function templateBlueprintType(id: PresellStandardSectionId): SectionType | null
   return null;
 }
 
-export function StandardV1Page({ model }: { model: V4Model }) {
+export function StandardV1Page({
+  model,
+  executionId,
+}: {
+  model: V4Model;
+  executionId?: string | null;
+}) {
   const template = mapPresellStandardV1(model);
   const presentIds = new Set(template.sections.filter((item) => item.present).map((item) => item.id));
   const byType = new Map(model.blueprint.sections.map((section) => [section.sectionType, section]));
@@ -425,7 +432,7 @@ export function StandardV1Page({ model }: { model: V4Model }) {
       data-premium-engine="1"
       data-presell-standard={PRESELL_STANDARD_ID}
       data-presell-candidate={PRESELL_STANDARD_ID}
-      data-presell-execution="54BI"
+      data-presell-execution={executionId?.trim() || CONTROLLED_IMPROVEMENT_EXECUTION_ID}
     >
       {template.announcement ? <AnnouncementBar message={template.announcement.message} /> : null}
       {order.map((section) => {
