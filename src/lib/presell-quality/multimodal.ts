@@ -4,7 +4,9 @@ import { emptyCostMetadata, qualityCostGate } from "@/lib/presell-quality/cost";
 import { assessmentFromScores, unevaluatedAssessment } from "@/lib/presell-quality/evaluator";
 import { evaluationFingerprint, screenshotHashesOf } from "@/lib/presell-quality/fingerprint";
 import type { PresellEvaluationInput } from "@/lib/presell-quality/input";
-import { screenshotAssociationError, ModelPayloadError, normalizeModelPayload } from "@/lib/presell-quality/normalize";
+import { classifyEditorialPayload } from "@/lib/presell-quality/editorial-payload";
+import { classifyEditorialProviderError } from "@/lib/presell-quality/editorial-retry";
+import { screenshotAssociationError } from "@/lib/presell-quality/normalize";
 import { readPremiumReferenceBytes } from "@/lib/presell-quality/premium-standard";
 import {
   assessmentIsCurrent,
@@ -164,21 +166,17 @@ export function createMultimodalPresellEvaluator(deps: MultimodalEvaluatorDeps =
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        const code = /timeout/i.test(message) ? "TIMEOUT" : /HTTP_/i.test(message) ? "HTTP_ERROR" : "PROVIDER_ERROR";
-        return persist(failed(input, code, message));
+        return persist(failed(input, classifyEditorialProviderError(message), message));
       }
 
-      let payload;
-      try {
-        payload = normalizeModelPayload(completion.text);
-      } catch (err) {
-        const code = err instanceof ModelPayloadError ? err.code : "INVALID_JSON";
-        const estimated =
-          client.provider === "openai"
-            ? estimateOpenAiVisionUsd(completion.inputTokens, completion.outputTokens)
-            : estimateAnthropicUsd(completion.inputTokens, completion.outputTokens);
+      const classified = classifyEditorialPayload(completion.text);
+      const estimated =
+        client.provider === "openai"
+          ? estimateOpenAiVisionUsd(completion.inputTokens, completion.outputTokens)
+          : estimateAnthropicUsd(completion.inputTokens, completion.outputTokens);
+      if (!classified.ok) {
         return persist(
-          failed(input, code, err instanceof Error ? err.message : "Invalid model payload.", {
+          failed(input, classified.code, classified.message, {
             evaluatorModel: client.model,
             provider: client.provider,
             tokenUsage: { inputTokens: completion.inputTokens, outputTokens: completion.outputTokens },
@@ -189,13 +187,17 @@ export function createMultimodalPresellEvaluator(deps: MultimodalEvaluatorDeps =
               evaluationCount: 1,
               cached: false,
               notes: [
-                err instanceof Error ? err.message : "Invalid model payload.",
+                classified.message,
                 `Raw payload snippet: ${redactSecrets(completion.text).slice(0, 400)}`,
+                "invented:false",
+                "filledMissingDimensions:false",
+                "copiedPreviousScore:false",
               ],
             },
           }),
         );
       }
+      const payload = classified.payload;
 
       const assessment = assessmentFromScores(
         {
@@ -218,10 +220,6 @@ export function createMultimodalPresellEvaluator(deps: MultimodalEvaluatorDeps =
           evaluationCompleted: true,
         },
       );
-      const estimated =
-        client.provider === "openai"
-          ? estimateOpenAiVisionUsd(completion.inputTokens, completion.outputTokens)
-          : estimateAnthropicUsd(completion.inputTokens, completion.outputTokens);
       const complete: PresellQualityAssessment = {
         ...assessment,
         findings: payload.findings.length ? payload.findings : assessment.findings,

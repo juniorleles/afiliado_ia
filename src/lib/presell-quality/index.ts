@@ -14,7 +14,7 @@ export type { MultimodalPresellEvaluator } from "@/lib/presell-quality/multimoda
 export type { PresellEvaluationInput } from "@/lib/presell-quality/input";
 export { QUALITY_VIEWPORTS } from "@/lib/presell-quality/capture";
 export { OPENAI_VISION_PROVIDER_ID, OPENAI_VISION_MODEL, openaiVisionProviderStatus, createOpenAiVisionClient } from "@/lib/presell-quality/openai-provider";
-export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, EXECUTION_54AI_BUDGET, EXECUTION_54AJ_BUDGET, EXECUTION_54AK_BUDGET, EXECUTION_54AL_BUDGET, EXECUTION_54AT_BUDGET, EXECUTION_54AU_BUDGET, EXECUTION_54AW_BUDGET, EXECUTION_54AX_BUDGET, EXECUTION_54AY_BUDGET, EXECUTION_54AY_MAX_AI_COST_USD, EXECUTION_54AZ_BUDGET, EXECUTION_54AZ_MAX_AI_COST_USD, EXECUTION_54BA_BUDGET, EXECUTION_54BA_MAX_AI_COST_USD, budgetAllowsCall } from "@/lib/presell-quality/budget";
+export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, EXECUTION_54AI_BUDGET, EXECUTION_54AJ_BUDGET, EXECUTION_54AK_BUDGET, EXECUTION_54AL_BUDGET, EXECUTION_54AT_BUDGET, EXECUTION_54AU_BUDGET, EXECUTION_54AW_BUDGET, EXECUTION_54AX_BUDGET, EXECUTION_54AY_BUDGET, EXECUTION_54AY_MAX_AI_COST_USD, EXECUTION_54AZ_BUDGET, EXECUTION_54AZ_MAX_AI_COST_USD, EXECUTION_54BA_BUDGET, EXECUTION_54BA_MAX_AI_COST_USD, EXECUTION_54BB_BUDGET, EXECUTION_54BB_MAX_AI_COST_USD, budgetAllowsCall } from "@/lib/presell-quality/budget";
 export {
   EXECUTION_54AT_ID,
   EXECUTION_54AW_ID,
@@ -22,11 +22,13 @@ export {
   EXECUTION_54AY_ID,
   EXECUTION_54AZ_ID,
   EXECUTION_54BA_ID,
+  EXECUTION_54BB_ID,
   EXECUTION_54AW_BUDGET as EXECUTION_54AW_LEDGER_BUDGET,
   EXECUTION_54AX_BUDGET as EXECUTION_54AX_LEDGER_BUDGET,
   EXECUTION_54AY_BUDGET as EXECUTION_54AY_LEDGER_BUDGET,
   EXECUTION_54AZ_BUDGET as EXECUTION_54AZ_LEDGER_BUDGET,
   EXECUTION_54BA_BUDGET as EXECUTION_54BA_LEDGER_BUDGET,
+  EXECUTION_54BB_BUDGET as EXECUTION_54BB_LEDGER_BUDGET,
   emptyExecutionBudgetLedger,
   budgetAllowsPaidCall,
   reservePaidCall,
@@ -211,6 +213,9 @@ export { applyDeclaredPresellMedia, galleryHasDuplicateSrc } from "@/lib/presell
 export { gallerySuppressionImpact, GALLERY_IMPACT_NOISE_BAND } from "@/lib/presell-quality/gallery-impact";
 export { contentFingerprintOf, presentationFingerprintOf } from "@/lib/presell-quality/context";
 export { screenshotAssociationError, bindScreenshotsToGeneration, rubricVersionsComparable } from "@/lib/presell-quality/normalize";
+export { classifyEditorialPayload, structuredEditorialFailure } from "@/lib/presell-quality/editorial-payload";
+export { editorialRetryAllowed, classifyEditorialProviderError, EDITORIAL_RETRYABLE_CODES } from "@/lib/presell-quality/editorial-retry";
+export { recover54baComposition, applyRecovered54baFiles, RECOVER_54BA_FILES, RECOVER_54BA_MARKERS } from "@/lib/presell-quality/recover-54ba";
 export { validateScreenshotBinding, boundScreenshotsForImmutableFixture } from "@/lib/presell-quality/binding";
 export { measureEvaluatorConsistency, EVALUATOR_VARIATION_LIMIT } from "@/lib/presell-quality/consistency";
 export { compareEditorialPages, normalizeVisualComparisonPayload, VISUAL_COMPARISON_JSON_SCHEMA } from "@/lib/presell-quality/visual-compare";

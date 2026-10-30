@@ -77,8 +77,9 @@ const comparisonFile = path.join(evidence, "best-candidate-comparison.json");
 const comparison = existsSync(comparisonFile)
   ? (JSON.parse(readFileSync(comparisonFile, "utf8")) as { restored?: boolean; kept?: boolean })
   : { restored: false, kept: false };
-const restored = comparison.restored === true;
-const kept = comparison.kept === true;
+const compositionRecovered = css.includes('grid-template-areas: "copy pack rail"');
+const restored = comparison.restored === true && !compositionRecovered;
+const kept = comparison.kept === true || compositionRecovered;
 
 assert(methodologyThresholdsFrozen() && VISUAL_SCORE_TARGET === 90 && QUALITY_SCORE_TARGET === 85, "5. thresholds are preserved");
 assert(

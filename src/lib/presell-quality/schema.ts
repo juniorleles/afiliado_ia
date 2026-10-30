@@ -7,6 +7,8 @@ export const MULTIMODAL_QUALITY_JSON_SCHEMA = {
   properties: {
     dimensionScores: {
       type: "array",
+      minItems: 6,
+      maxItems: 6,
       items: {
         type: "object",
         additionalProperties: false,

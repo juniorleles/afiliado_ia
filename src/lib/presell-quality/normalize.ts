@@ -49,6 +49,12 @@ export function normalizeModelPayload(raw: string): ModelQualityPayload {
     const { jsonText } = extractJsonText(raw);
     parsed = JSON.parse(jsonText);
   } catch (err) {
+    if (err instanceof JsonExtractError && err.kind === "truncated") {
+      throw new ModelPayloadError("TRUNCATED", err.message);
+    }
+    if (err instanceof JsonExtractError && err.kind === "empty") {
+      throw new ModelPayloadError("EMPTY_PAYLOAD", err.message);
+    }
     const message = err instanceof JsonExtractError || err instanceof Error ? err.message : "invalid JSON";
     throw new ModelPayloadError("INVALID_JSON", message);
   }
