@@ -23,6 +23,13 @@ export const SOURCE_CANDIDATE_COMPOSITION: VisualComposition = {
   copy: { tone: "compliance", compliancePlacement: "inline" },
   packages: { density: "plain", priceEmphasis: "display", highlight: "none" },
   identity: { radius: "soft", cardElevation: "flat", buttonWeight: "quiet" },
+  conversion: {
+    sandboxPlacement: "inline",
+    hideHeroChips: false,
+    productPresentation: "none",
+    sectionJourney: "source",
+    offerCompare: false,
+  },
 };
 
 export const IMPROVED_SEED_COMPOSITION: VisualComposition = {
@@ -39,13 +46,53 @@ export const IMPROVED_SEED_COMPOSITION: VisualComposition = {
   copy: { tone: "commercial", compliancePlacement: "aside" },
   packages: { density: "featured", priceEmphasis: "display", highlight: "middle" },
   identity: { radius: "crisp", cardElevation: "raised", buttonWeight: "strong" },
+  conversion: {
+    sandboxPlacement: "aside",
+    hideHeroChips: false,
+    productPresentation: "none",
+    sectionJourney: "source",
+    offerCompare: false,
+  },
+};
+
+export const CONVERSION_SEED_COMPOSITION: VisualComposition = {
+  ...IMPROVED_SEED_COMPOSITION,
+  executionId: "54BQ",
+  iteration: 1,
+  packages: { density: "featured", priceEmphasis: "display", highlight: "best-value" },
+  conversion: {
+    sandboxPlacement: "admin",
+    hideHeroChips: true,
+    productPresentation: "editorial",
+    sectionJourney: "packages-first",
+    offerCompare: true,
+  },
 };
 
 function compositionFile(campaignId: number): string {
   return path.join(qualityAssessmentRoot(), String(campaignId), "visual-optimization.json");
 }
 
+function withConversionDefaults(composition: VisualComposition): VisualComposition {
+  return {
+    ...composition,
+    conversion: composition.conversion ?? {
+      sandboxPlacement: composition.copy.compliancePlacement === "aside" ? "aside" : "inline",
+      hideHeroChips: false,
+      productPresentation: "none",
+      sectionJourney: "source",
+      offerCompare: composition.packages.density === "featured",
+    },
+  };
+}
+
 export function defaultVisualComposition(executionId: string, iteration = 1): VisualComposition {
+  if (executionId === "54BQ") {
+    return { ...CONVERSION_SEED_COMPOSITION, executionId, iteration };
+  }
+  if (executionId === "54BO") {
+    return { ...SOURCE_CANDIDATE_COMPOSITION, executionId, iteration };
+  }
   return { ...IMPROVED_SEED_COMPOSITION, executionId, iteration };
 }
 
@@ -53,7 +100,7 @@ export function readVisualComposition(campaignId: number): VisualComposition | n
   const file = compositionFile(campaignId);
   if (!existsSync(file)) return null;
   try {
-    return JSON.parse(readFileSync(file, "utf8")) as VisualComposition;
+    return withConversionDefaults(JSON.parse(readFileSync(file, "utf8")) as VisualComposition);
   } catch {
     return null;
   }
@@ -67,7 +114,7 @@ export function writeVisualComposition(campaignId: number, composition: VisualCo
 }
 
 export function cloneComposition(composition: VisualComposition): VisualComposition {
-  return JSON.parse(JSON.stringify(composition)) as VisualComposition;
+  return withConversionDefaults(JSON.parse(JSON.stringify(composition)) as VisualComposition);
 }
 
 const VALUE_MAP: Record<string, readonly string[]> = {
@@ -83,30 +130,70 @@ const VALUE_MAP: Record<string, readonly string[]> = {
   SET_CARD_ELEVATION: ["flat", "raised"],
   SET_BUTTON_WEIGHT: ["quiet", "strong"],
   SET_RADIUS: ["soft", "crisp"],
+  SET_SANDBOX_PLACEMENT: ["admin", "aside", "inline"],
+  SET_PRODUCT_PRESENTATION: ["editorial", "none"],
+  SET_SECTION_JOURNEY: ["packages-first", "source"],
 };
 
 function applyOne(composition: VisualComposition, change: LayoutChange | CopyChange): AppliedChange {
   const op = change.op;
+  const value = change.value;
+  if (!composition.conversion) {
+    composition.conversion = {
+      sandboxPlacement: "aside",
+      hideHeroChips: false,
+      productPresentation: "none",
+      sectionJourney: "source",
+      offerCompare: false,
+    };
+  }
   if (isForbiddenAgentTarget(op)) {
-    return { op, value: String(change.value ?? ""), applied: false, reason: "Forbidden target (gate, contract, publication, or ads)." };
+    return { op, value: String(value ?? ""), applied: false, reason: "Forbidden target (gate, contract, publication, or ads)." };
   }
   if (op === "MOVE_COMPLIANCE" || op === "PRESENT_COMMERCIAL_TONE" || isAllowedCopyOp(op)) {
     if (op === "MOVE_COMPLIANCE") {
       composition.copy.compliancePlacement = "aside";
       return { op, value: "aside", applied: true, reason: "Compliance copy moved to a dedicated aside." };
     }
-    if (op === "PRESENT_COMMERCIAL_TONE" || op === "SET_COPY_TONE") {
+    if (op === "PRESENT_COMMERCIAL_TONE") {
       composition.copy.tone = "commercial";
       return { op, value: "commercial", applied: true, reason: "Hero copy uses commercial presentation of approved facts." };
     }
+    if (op === "MOVE_SANDBOX_TO_ADMIN") {
+      composition.conversion.sandboxPlacement = "admin";
+      composition.copy.compliancePlacement = "aside";
+      return { op, value: "admin", applied: true, reason: "Sandbox chrome is kept out of commercial copy." };
+    }
+    if (op === "HIDE_HERO_CHIPS") {
+      composition.conversion.hideHeroChips = value !== false && value !== "false";
+      return { op, value: composition.conversion.hideHeroChips, applied: true, reason: "Repeated hero chips are hidden." };
+    }
+    if (op === "SET_OFFER_COMPARE") {
+      composition.conversion.offerCompare = value !== false && value !== "false";
+      composition.packages.density = "featured";
+      composition.packages.highlight = composition.packages.highlight === "none" ? "best-value" : composition.packages.highlight;
+      return { op, value: composition.conversion.offerCompare, applied: true, reason: "Offer comparison presentation enabled." };
+    }
+    if (op === "SET_HEADLINE" || op === "SET_SUBHEADLINE" || op === "SET_HERO_BODY" || op === "SET_CTA_LABEL") {
+      return { op, value: String(value ?? ""), applied: false, reason: "Copy text is applied through the commercial copy state, not the layout schema." };
+    }
   }
   if (!isAllowedLayoutOp(op)) {
-    return { op, value: String(change.value ?? ""), applied: false, reason: "Operation is not in the controlled composition schema." };
+    return { op, value: String(value ?? ""), applied: false, reason: "Operation is not in the controlled composition schema." };
   }
-  const value = change.value;
   if (op === "SET_PACKAGES_IN_FOLD") {
     composition.hero.packagesInFold = value === true || value === "true";
     return { op, value: composition.hero.packagesInFold, applied: true, reason: "Package placement updated." };
+  }
+  if (op === "SET_HIDE_HERO_CHIPS") {
+    composition.conversion.hideHeroChips = value !== false && value !== "false";
+    return { op, value: composition.conversion.hideHeroChips, applied: true, reason: "Repeated hero chips are hidden." };
+  }
+  if (op === "SET_OFFER_COMPARE") {
+    composition.conversion.offerCompare = value !== false && value !== "false";
+    composition.packages.density = "featured";
+    if (composition.packages.highlight === "none") composition.packages.highlight = "best-value";
+    return { op, value: composition.conversion.offerCompare, applied: true, reason: "Offer comparison presentation enabled." };
   }
   const allowed = VALUE_MAP[op];
   const text = String(value);
@@ -125,6 +212,9 @@ function applyOne(composition: VisualComposition, change: LayoutChange | CopyCha
   if (op === "SET_CARD_ELEVATION") composition.identity.cardElevation = text as VisualComposition["identity"]["cardElevation"];
   if (op === "SET_BUTTON_WEIGHT") composition.identity.buttonWeight = text as VisualComposition["identity"]["buttonWeight"];
   if (op === "SET_RADIUS") composition.identity.radius = text as VisualComposition["identity"]["radius"];
+  if (op === "SET_SANDBOX_PLACEMENT") composition.conversion.sandboxPlacement = text as VisualComposition["conversion"]["sandboxPlacement"];
+  if (op === "SET_PRODUCT_PRESENTATION") composition.conversion.productPresentation = text as VisualComposition["conversion"]["productPresentation"];
+  if (op === "SET_SECTION_JOURNEY") composition.conversion.sectionJourney = text as VisualComposition["conversion"]["sectionJourney"];
   return { op, value: text, applied: true, reason: "Applied through the structured composition." };
 }
 
@@ -178,5 +268,10 @@ export function compositionDataAttributes(composition: VisualComposition): Recor
     "data-card-elevation": composition.identity.cardElevation,
     "data-button-weight": composition.identity.buttonWeight,
     "data-radius": composition.identity.radius,
+    "data-sandbox-placement": composition.conversion.sandboxPlacement,
+    "data-hide-hero-chips": composition.conversion.hideHeroChips ? "1" : "0",
+    "data-product-presentation": composition.conversion.productPresentation,
+    "data-section-journey": composition.conversion.sectionJourney,
+    "data-offer-compare": composition.conversion.offerCompare ? "1" : "0",
   };
 }

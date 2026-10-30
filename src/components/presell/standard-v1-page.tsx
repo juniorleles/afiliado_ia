@@ -30,19 +30,27 @@ import {
   PREMIUM_PRODUCER_CONTENT_V2_COMPOSITION_ID,
   PREMIUM_STRUCTURAL_COMPOSITION_ID,
   PREMIUM_VISUAL_OPTIMIZATION_COMPOSITION_ID,
+  PREMIUM_CONVERSION_OPTIMIZATION_COMPOSITION_ID,
   usesPremiumProducerContent,
   usesPremiumProducerContentV2,
   usesPremiumStructuralComposition,
   usesPremiumVisualOptimization,
+  usesPremiumConversionOptimization,
 } from "@/lib/presell-quality/renderer-candidate";
 import { readCommercialReuse, type CommercialReuseManifest } from "@/lib/presell-quality/commercial-reuse";
 import {
+  buildSeedCommercialCopy,
   compositionDataAttributes,
   complianceLines,
+  conversionSectionTitle,
   defaultVisualComposition,
   heroIntroduction,
+  presentCommercialHeroCopy,
   presentPackageShipping,
+  readCommercialCopy,
   readVisualComposition,
+  inventoryFromPage,
+  type CommercialCopyState,
   type VisualComposition,
 } from "@/lib/presell-quality/visual-optimization-agent";
 import { mapPresellStandardV1 } from "@/lib/presell-template";
@@ -104,11 +112,21 @@ function SellerStatedOffers({
   if (!manifest.approvedPackages.length) return null;
   const optimized = Boolean(composition);
   const highlight = composition?.packages.highlight ?? "none";
+  const compare = Boolean(composition?.conversion.offerCompare);
+  const lowestUnit = manifest.approvedPackages.reduce((best, item) => {
+    const amount = Number(item.unitPrice.replace(/[^\d.]/g, ""));
+    return Number.isFinite(amount) && amount < best.amount ? { amount, id: item.id } : best;
+  }, { amount: Number.POSITIVE_INFINITY, id: "" });
   return (
     <DsSection tone="soft" className={cx("v4-band", (finalized || optimized) && "premium-producer-offers")} id="seller-stated-packages">
       <DsContainer>
         <DsKicker>{optimized ? "Available packages" : "Seller-stated offer"}</DsKicker>
         <h2 className="ds-h2">{optimized ? "Choose a bottle count" : "Packages shown on the seller's order page"}</h2>
+        {compare ? (
+          <p className="ds-body" data-offer-compare="1">
+            {manifest.approvedPackages.map((item) => `${item.quantity}: ${item.unitPrice} each · ${item.currentTotal}`).join("  ·  ")}
+          </p>
+        ) : null}
         {optimized ? null : <p className="ds-body">{manifest.attribution}</p>}
         <div
           className="premium-grid premium-producer-packages"
@@ -119,7 +137,7 @@ function SellerStatedOffers({
           {manifest.approvedPackages.map((item, index) => {
             const featured =
               (highlight === "middle" && index === 1) ||
-              (highlight === "best-value" && /best value/i.test(item.label));
+              (highlight === "best-value" && (item.id === lowestUnit.id || /best value/i.test(item.label)));
             return (
               <article
                 key={item.id}
@@ -162,6 +180,8 @@ function StructuralHero({
   showPackageLink,
   commercialSummary,
   composition,
+  commercialCopy,
+  conversion,
 }: {
   model: V4Model;
   announcementMessage?: string | null;
@@ -169,15 +189,19 @@ function StructuralHero({
   showPackageLink?: boolean;
   commercialSummary?: string | null;
   composition?: VisualComposition | null;
+  commercialCopy?: CommercialCopyState | null;
+  conversion?: boolean;
 }) {
   const image = model.commercialImage;
   const name = model.contract.identity.productName;
   const kind = model.contract.identity.productKind;
-  const headline = model.copy.headline.text;
-  const subheadline = model.copy.subheadline?.text;
-  const value = model.copy.valueProposition?.text;
-  const introduction = model.copy.introduction.text;
+  const headline = commercialCopy?.headline.text || model.copy.headline.text;
+  const subheadline = commercialCopy?.subheadline.text || model.copy.subheadline?.text;
+  const value = conversion ? null : model.copy.valueProposition?.text;
+  const introduction = commercialCopy?.heroBody.text || model.copy.introduction.text;
   const slots = premiumSlotsFromModel(model);
+  const hideChips = Boolean(conversion && composition?.conversion.hideHeroChips);
+  const ctaLabel = commercialCopy?.ctaLabel || (composition ? "See packages" : "See seller-stated packages");
   return (
     <section
       className="ds-hero-band presell-standard-hero premium-structural-hero"
@@ -193,11 +217,11 @@ function StructuralHero({
             {distinctText(headline, name) ? <p className="v4-identity">{name}</p> : null}
             <h1 className="ds-display">{distinctText(headline, name) ? headline : name}</h1>
             {distinctText(subheadline, headline, name, kind) ? <p className="ds-lead">{subheadline}</p> : null}
-            {distinctText(value, headline, subheadline, name) ? <p className="ds-lead">{value}</p> : null}
-            {distinctText(introduction, headline, subheadline, value, name) ? (
+            {value && distinctText(value, headline, subheadline, name) ? <p className="ds-lead">{value}</p> : null}
+            {distinctText(introduction, headline, subheadline, value || "", name) ? (
               <p className="ds-body">{composition ? heroIntroduction(introduction, composition) : presentVisitorCopy(introduction)}</p>
             ) : null}
-            <EvidenceChips items={experimentalEvidenceChips(slots.evidenceChips, announcementMessage).slice(0, 3)} />
+            {hideChips ? null : <EvidenceChips items={experimentalEvidenceChips(slots.evidenceChips, announcementMessage).slice(0, 3)} />}
           </div>
           {image ? (
             <div className="premium-structural-hero__product">
@@ -208,12 +232,22 @@ function StructuralHero({
               </div>
             </div>
           ) : null}
-          <aside className="premium-structural-hero__facts" aria-label="Approved product facts">
-            <HeroLogisticsRail items={slots.fulfillment} factMode="compact" />
-          </aside>
+          {hideChips ? null : (
+            <aside className="premium-structural-hero__facts" aria-label="Approved product facts">
+              <HeroLogisticsRail items={slots.fulfillment} factMode="compact" />
+            </aside>
+          )}
           <div className="premium-structural-hero__actions">
-            {model.hopSlot === "hero" ? <Hop model={model} slot="hero" /> : <PremiumCta slot="hero" />}
-            {model.hopSlot === "offers" ? (
+            {conversion && showPackageLink ? (
+              <a className="ds-btn ds-btn--cta" href="#seller-stated-packages" data-v4-cta="inpage">
+                {ctaLabel}
+              </a>
+            ) : model.hopSlot === "hero" ? (
+              <Hop model={model} slot="hero" />
+            ) : (
+              <PremiumCta slot="hero" />
+            )}
+            {!conversion && model.hopSlot === "offers" ? (
               <a className="ds-btn ds-btn--ghost" href="#offers" data-v4-cta="inpage">
                 See packages
               </a>
@@ -223,9 +257,9 @@ function StructuralHero({
                 {commercialSummary}
               </p>
             ) : null}
-            {showPackageLink ? (
+            {!conversion && showPackageLink ? (
               <a className="ds-btn ds-btn--ghost" href="#seller-stated-packages" data-v4-cta="inpage">
-                {composition ? "See packages" : "See seller-stated packages"}
+                {ctaLabel}
               </a>
             ) : null}
             {showAffiliateNote && composition?.copy.compliancePlacement !== "aside" ? (
@@ -561,11 +595,48 @@ export function StandardV1Page({
   const producer = usesPremiumProducerContent(taggedExecution);
   const producerV2 = usesPremiumProducerContentV2(taggedExecution);
   const visualOpt = usesPremiumVisualOptimization(taggedExecution);
-  const composition =
-    visualOpt && campaignId != null ? readVisualComposition(campaignId) ?? defaultVisualComposition("54BP") : visualOpt ? defaultVisualComposition("54BP") : null;
+  const conversion = usesPremiumConversionOptimization(taggedExecution);
+  const storedComposition = campaignId != null ? readVisualComposition(campaignId) : null;
+  const composition = visualOpt
+    ? storedComposition && storedComposition.executionId === taggedExecution
+      ? storedComposition
+      : defaultVisualComposition(conversion ? "54BQ" : "54BP")
+    : null;
   const commercial = producer && campaignId != null ? readCommercialReuse(campaignId) : null;
+  const slots = premiumSlotsFromModel(model);
+  const commercialCopy =
+    conversion
+      ? campaignId != null
+        ? readCommercialCopy(campaignId) ??
+          buildSeedCommercialCopy({
+            ...inventoryFromPage({
+              productName: model.contract.identity.productName,
+              productKind: model.contract.identity.productKind ?? null,
+              ingredients: slots.ingredients.map((item) => item.name),
+              description: model.copy.introduction.text,
+              usage: slots.usage.join(" "),
+              guarantee: slots.guarantee.statements.join(" "),
+              guaranteeDays: slots.guarantee.days,
+              packages: commercial?.approvedPackages ?? [],
+            }),
+            executionId: "54BQ",
+          })
+        : buildSeedCommercialCopy({
+            ...inventoryFromPage({
+              productName: model.contract.identity.productName,
+              productKind: model.contract.identity.productKind ?? null,
+              ingredients: slots.ingredients.map((item) => item.name),
+              description: model.copy.introduction.text,
+              usage: slots.usage.join(" "),
+              guarantee: slots.guarantee.statements.join(" "),
+              guaranteeDays: slots.guarantee.days,
+              packages: [],
+            }),
+            executionId: "54BQ",
+          })
+      : null;
   const commercialSummary =
-    visualOpt && commercial?.approvedPackages.length
+    (conversion || visualOpt) && commercial?.approvedPackages.length
       ? commercial.approvedPackages.map((item) => `${item.quantity} at ${item.unitPrice} per bottle`).join("; ")
       : producerV2 && commercial?.approvedPackages.length
         ? `Seller-stated packages: ${commercial.approvedPackages.map((item) => `${item.quantity} at ${item.unitPrice}`).join(", ")} per bottle.`
@@ -588,13 +659,36 @@ export function StandardV1Page({
           ? byType.get(type)
           : undefined;
     if (!match || seen.has(match.sectionId) || !visible(model, match.sectionType)) continue;
+    if (
+      conversion &&
+      composition?.conversion.hideHeroChips &&
+      (match.sectionType === "differentiators" || match.sectionType === "benefits")
+    ) {
+      seen.add(match.sectionId);
+      continue;
+    }
     seen.add(match.sectionId);
     order.push(match);
   }
   for (const section of model.blueprint.sections) {
     if (seen.has(section.sectionId) || !visible(model, section.sectionType)) continue;
     if (section.sectionType === "offers" || section.sectionType === "demonstration" || section.sectionType === "cta_final") continue;
+    if (
+      conversion &&
+      composition?.conversion.hideHeroChips &&
+      (section.sectionType === "differentiators" || section.sectionType === "benefits")
+    ) {
+      continue;
+    }
     order.push(section);
+  }
+  if (conversion && composition?.conversion.sectionJourney === "packages-first") {
+    const rank = ["hero", "specifications", "how_it_works", "guarantee", "trust", "faq", "legal"];
+    order.sort((left, right) => {
+      const a = rank.indexOf(left.sectionType);
+      const b = rank.indexOf(right.sectionType);
+      return (a < 0 ? 99 : a) - (b < 0 ? 99 : b);
+    });
   }
   const patch = model.qualityPatch;
   const heroMode = v4HeroMode(model.commercialImage);
@@ -619,15 +713,17 @@ export function StandardV1Page({
       data-presell-candidate={PRESELL_STANDARD_ID}
       data-presell-execution={taggedExecution}
       data-presell-composition={
-        visualOpt
-          ? PREMIUM_VISUAL_OPTIMIZATION_COMPOSITION_ID
-          : producerV2
-            ? PREMIUM_PRODUCER_CONTENT_V2_COMPOSITION_ID
-            : producer
-              ? PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID
-              : structural
-                ? PREMIUM_STRUCTURAL_COMPOSITION_ID
-                : undefined
+        conversion
+          ? PREMIUM_CONVERSION_OPTIMIZATION_COMPOSITION_ID
+          : visualOpt
+            ? PREMIUM_VISUAL_OPTIMIZATION_COMPOSITION_ID
+            : producerV2
+              ? PREMIUM_PRODUCER_CONTENT_V2_COMPOSITION_ID
+              : producer
+                ? PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID
+                : structural
+                  ? PREMIUM_STRUCTURAL_COMPOSITION_ID
+                  : undefined
       }
       {...compositionAttrs}
     >
@@ -644,6 +740,8 @@ export function StandardV1Page({
                   showPackageLink={Boolean(commercial?.approvedPackages.length)}
                   commercialSummary={commercialSummary}
                   composition={composition}
+                  commercialCopy={commercialCopy}
+                  conversion={conversion}
                 />
               ) : (
                 <Hero model={model} announcementMessage={template.announcement?.message ?? null} />
@@ -651,10 +749,37 @@ export function StandardV1Page({
               {producer && commercial?.approvedPackages.length ? (
                 <SellerStatedOffers manifest={commercial} finalized={producerV2} composition={composition} />
               ) : null}
+              {conversion && composition?.conversion.productPresentation === "editorial" && model.commercialImage ? (
+                <DsSection tone="alt" className="v4-band" id="product-presentation">
+                  <DsContainer>
+                    <div data-product-presentation="editorial" data-v4-section="demonstration">
+                      <h2 className="ds-h2">The product</h2>
+                      <div className="premium-editorial-product">
+                        <div className="ds-hero__stage">
+                          <div className="ds-hero__frame">
+                            <img
+                              src={model.commercialImage.src}
+                              alt={model.commercialImage.alt}
+                              width={1200}
+                              height={1200}
+                              data-v4-image="commercial"
+                            />
+                          </div>
+                        </div>
+                        <p className="ds-body">{presentCommercialHeroCopy(model.copy.introduction.text)}</p>
+                      </div>
+                    </div>
+                  </DsContainer>
+                </DsSection>
+              ) : null}
               {composition?.copy.compliancePlacement === "aside" ? (
                 <aside className="premium-compliance-band" data-compliance-band="1">
                   <DsContainer>
-                    {complianceLines({ attribution: commercial?.attribution, affiliate: producer }).map((line) => (
+                    {complianceLines({
+                      attribution: commercial?.attribution,
+                      affiliate: producer,
+                      sandboxPlacement: composition.conversion.sandboxPlacement,
+                    }).map((line) => (
                       <p className="ds-meta" key={line}>
                         {line}
                       </p>
@@ -748,20 +873,45 @@ export function StandardV1Page({
               <DsContainer width={section.sectionType === "offers" || section.sectionType === "differentiators" ? "wide" : "content"}>
                 <div data-v4-section={section.sectionType} data-v4-purpose={section.commercialPurpose}>
                   <h2 className="ds-h2">
-                    {experimentalSectionTitle({
-                      sectionType: section.sectionType,
-                      headline: section.headline.text,
-                      productName: model.contract.identity.productName,
-                      productKind: model.contract.identity.productKind,
-                      ingredientCount: premiumSlotsFromModel(model).ingredients.length,
-                      usageCount: premiumSlotsFromModel(model).usage.length,
-                      guaranteeDays: premiumSlotsFromModel(model).guarantee.days,
-                      productFormat: template.productFormat,
-                      titles: patch?.titles,
-                    })}
+                    {conversion
+                      ? conversionSectionTitle({
+                          sectionType: section.sectionType,
+                          fallback: experimentalSectionTitle({
+                            sectionType: section.sectionType,
+                            headline: section.headline.text,
+                            productName: model.contract.identity.productName,
+                            productKind: model.contract.identity.productKind ?? null,
+                            ingredientCount: slots.ingredients.length,
+                            usageCount: slots.usage.length,
+                            guaranteeDays: slots.guarantee.days,
+                            productFormat: template.productFormat,
+                            titles: patch?.titles,
+                          }),
+                          ingredientCount: slots.ingredients.length,
+                          productFormat: template.productFormat,
+                        })
+                      : experimentalSectionTitle({
+                          sectionType: section.sectionType,
+                          headline: section.headline.text,
+                          productName: model.contract.identity.productName,
+                          productKind: model.contract.identity.productKind ?? null,
+                          ingredientCount: premiumSlotsFromModel(model).ingredients.length,
+                          usageCount: premiumSlotsFromModel(model).usage.length,
+                          guaranteeDays: premiumSlotsFromModel(model).guarantee.days,
+                          productFormat: template.productFormat,
+                          titles: patch?.titles,
+                        })}
                   </h2>
                   {inner}
-                  {section.sectionType === "guarantee" && model.hopSlot === "none" ? <PremiumCta slot="mid" /> : null}
+                  {section.sectionType === "guarantee" && model.hopSlot === "none" ? (
+                    conversion && commercial?.approvedPackages.length ? (
+                      <a className="ds-btn ds-btn--cta" href="#seller-stated-packages" data-v4-cta="inpage">
+                        {commercialCopy?.ctaLabel || "See packages"}
+                      </a>
+                    ) : (
+                      <PremiumCta slot="mid" />
+                    )
+                  ) : null}
                 </div>
               </DsContainer>
             </DsSection>
@@ -769,7 +919,15 @@ export function StandardV1Page({
               <DsSection id="shipping-or-access" tone="alt" className="v4-band">
                 <DsContainer width="content">
                   <div data-v4-section="trust" data-presell-section="SHIPPING_OR_ACCESS">
-                    <h2 className="ds-h2">{template.productFormat === "DIGITAL" ? "Access" : "Shipping"}</h2>
+                    <h2 className="ds-h2">
+                      {conversion
+                        ? template.productFormat === "DIGITAL"
+                          ? "Access and payment"
+                          : "Delivery and payment"
+                        : template.productFormat === "DIGITAL"
+                          ? "Access"
+                          : "Shipping"}
+                    </h2>
                     <ShippingOrAccess items={shippingCards} />
                   </div>
                 </DsContainer>

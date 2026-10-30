@@ -1520,3 +1520,236 @@
     font-size: 2.25rem;
   }
 }
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .ds-announce {
+  background: color-mix(in srgb, var(--ds-ink) 88%, #12351f);
+  color: #f6f1e4;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero {
+  min-height: 0;
+  padding-block: 1.15rem 1.25rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"][data-hero-density="compact"] .premium-structural-hero {
+  padding-block: 1rem 1.1rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__grid {
+  display: grid;
+  gap: 0.9rem 1.2rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__copy .ds-display {
+  max-width: 14ch;
+  font-size: clamp(2.45rem, 1.8rem + 1.8vw, 3.35rem);
+  line-height: 0.95;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__copy .ds-lead,
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__copy .ds-body {
+  max-width: 32rem;
+  font-size: 1.05rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__product .ds-hero__stage {
+  width: 100%;
+  max-width: 22rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"][data-packshot-scale="xl"] .premium-structural-hero__product .ds-hero__stage {
+  max-width: 34rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__product .ds-hero__frame img {
+  object-fit: contain;
+  transform: none;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"][data-button-weight="strong"] .ds-btn--cta {
+  min-height: 3.15rem;
+  width: 100%;
+  justify-content: center;
+  font-size: 1.05rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"][data-compliance="aside"] .premium-cta__caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-producer-offers {
+  padding-block: 0.85rem 1.15rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-producer-offers .ds-h2 {
+  font-size: clamp(1.45rem, 1.2rem + 1vw, 1.85rem);
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-producer-packages {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"][data-package-density="featured"] .premium-producer-packages .premium-card {
+  display: grid;
+  gap: 0.28rem;
+  padding: 0.85rem 1rem 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--ds-ink) 12%, var(--ds-line));
+  min-height: 0;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"][data-card-elevation="raised"] .premium-card {
+  box-shadow: 0 16px 32px color-mix(in srgb, var(--ds-ink) 8%, transparent);
+  background: color-mix(in srgb, var(--ds-surface) 96%, white);
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"][data-radius="crisp"] .premium-card,
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"][data-radius="crisp"] .ds-btn {
+  border-radius: 0.85rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-card--featured {
+  border-color: color-mix(in srgb, var(--ds-cta) 45%, var(--ds-line));
+  background: color-mix(in srgb, var(--ds-cta) 7%, var(--ds-surface));
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .ds-display--package {
+  font-size: 2.25rem;
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-compliance-band {
+  padding-block: 0.85rem 1.1rem;
+  background: color-mix(in srgb, var(--ds-ink) 5%, var(--ds-bg));
+  border-block: 1px solid var(--ds-line);
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-compliance-band .ds-meta {
+  max-width: 54rem;
+}
+
+@media (min-width: 960px) {
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__grid {
+    grid-template-columns: minmax(0, 0.92fr) minmax(20rem, 1.15fr) minmax(12rem, 0.62fr);
+    grid-template-areas:
+      "copy product facts"
+      "actions product facts";
+    align-items: start;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"][data-hero-columns="product-copy-facts"] .premium-structural-hero__grid {
+    grid-template-columns: minmax(20rem, 1.15fr) minmax(0, 0.92fr) minmax(12rem, 0.62fr);
+    grid-template-areas:
+      "product copy facts"
+      "product actions facts";
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__copy { grid-area: copy; }
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__product { grid-area: product; }
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__facts { grid-area: facts; }
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__actions { grid-area: actions; max-width: 22rem; }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"][data-packshot-scale="xl"] .premium-structural-hero__product .ds-hero__stage {
+    max-width: 36rem;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-hero-chips {
+    display: none;
+  }
+}
+
+@media (max-width: 959px) {
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "product"
+      "copy"
+      "actions"
+      "facts";
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__copy,
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__product,
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__facts,
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__actions {
+    grid-area: auto;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__copy { grid-area: copy; }
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__product { grid-area: product; }
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__facts { grid-area: facts; }
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__actions { grid-area: actions; }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__product .ds-hero__stage {
+    max-width: 24rem;
+    margin-inline: auto;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-producer-packages {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-hero-chips {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero {
+    min-height: 0;
+    padding-block: 0.9rem 1rem;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"][data-packshot-scale="xl"] .premium-structural-hero__product .ds-hero__stage {
+    max-width: 20.5rem;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .ds-display--package {
+    font-size: 2.25rem;
+  }
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-structural-hero__copy .ds-display {
+  max-width: 22ch;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-editorial-product {
+  display: grid;
+  gap: 1.15rem 1.5rem;
+  align-items: center;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-editorial-product .ds-hero__stage {
+  max-width: 18rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] [data-offer-compare] {
+  font-size: 0.98rem;
+  color: var(--ds-ink);
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"][data-sandbox-placement="admin"] .premium-cta__caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+@media (min-width: 960px) {
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"][data-hide-hero-chips="1"] .premium-structural-hero__grid {
+    grid-template-columns: minmax(0, 1fr) minmax(20rem, 1.05fr);
+    grid-template-areas:
+      "copy product"
+      "actions product";
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BQ"] .premium-editorial-product {
+    grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr);
+  }
+}

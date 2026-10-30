@@ -1,6 +1,8 @@
 export const VISUAL_OPTIMIZATION_AGENT_ID = "PRESELL_VISUAL_OPTIMIZATION_AGENT_V1" as const;
 export const VISUAL_OPTIMIZATION_PROMPT_VERSION = "1" as const;
 export const VISUAL_OPTIMIZATION_MAX_ITERATIONS = 3 as const;
+export const CONVERSION_OPTIMIZATION_AGENT_ID = "PRESELL_CONVERSION_OPTIMIZATION_AGENT_V1" as const;
+export const CONVERSION_OPTIMIZATION_PROMPT_VERSION = "1" as const;
 
 export const VISUAL_OPTIMIZATION_OPS = [
   "SET_HERO_DENSITY",
@@ -16,10 +18,27 @@ export const VISUAL_OPTIMIZATION_OPS = [
   "SET_CARD_ELEVATION",
   "SET_BUTTON_WEIGHT",
   "SET_RADIUS",
+  "SET_SANDBOX_PLACEMENT",
+  "SET_HIDE_HERO_CHIPS",
+  "SET_PRODUCT_PRESENTATION",
+  "SET_SECTION_JOURNEY",
+  "SET_OFFER_COMPARE",
 ] as const;
 export type VisualOptimizationOp = (typeof VISUAL_OPTIMIZATION_OPS)[number];
 
-export const ALLOWED_COPY_OPS = ["MOVE_COMPLIANCE", "PRESENT_COMMERCIAL_TONE"] as const;
+export const ALLOWED_COPY_OPS = [
+  "MOVE_COMPLIANCE",
+  "PRESENT_COMMERCIAL_TONE",
+  "SET_HEADLINE",
+  "SET_SUBHEADLINE",
+  "SET_HERO_BODY",
+  "SET_CTA_LABEL",
+  "MOVE_SANDBOX_TO_ADMIN",
+  "HIDE_HERO_CHIPS",
+  "SET_PRODUCT_PRESENTATION",
+  "SET_SECTION_JOURNEY",
+  "SET_OFFER_COMPARE",
+] as const;
 export type AllowedCopyOp = (typeof ALLOWED_COPY_OPS)[number];
 
 export const FORBIDDEN_AGENT_TARGETS = [
@@ -45,6 +64,17 @@ export type CompliancePlacement = "inline" | "aside" | "footer-band";
 export type CardElevation = "flat" | "raised";
 export type ButtonWeight = "quiet" | "strong";
 export type RadiusToken = "soft" | "crisp";
+export type SandboxPlacement = "admin" | "aside" | "inline";
+export type ProductPresentation = "editorial" | "none";
+export type SectionJourney = "packages-first" | "source";
+
+export type ConversionComposition = {
+  sandboxPlacement: SandboxPlacement;
+  hideHeroChips: boolean;
+  productPresentation: ProductPresentation;
+  sectionJourney: SectionJourney;
+  offerCompare: boolean;
+};
 
 export type VisualComposition = {
   version: 1;
@@ -71,6 +101,53 @@ export type VisualComposition = {
     cardElevation: CardElevation;
     buttonWeight: ButtonWeight;
   };
+  conversion: ConversionComposition;
+};
+
+export type FactBackedCopy = {
+  current: string;
+  proposed: string;
+  supporting_fact_ids: string[];
+};
+
+export type CommercialCopyState = {
+  version: 1;
+  executionId: string;
+  iteration: number;
+  headline: { text: string; supportingFactIds: string[] };
+  subheadline: { text: string; supportingFactIds: string[] };
+  heroBody: { text: string; supportingFactIds: string[] };
+  ctaLabel: string;
+};
+
+export type ApprovedCopyInventory = {
+  productName: string;
+  productKind: string | null;
+  ingredients: string[];
+  description: string;
+  usage: string;
+  guarantee: string;
+  guaranteeDays: number | null;
+  packages: Array<{ quantity: string; unitPrice: string; currentTotal: string; duration: string; shippingTerm: string; bonuses: string[] }>;
+  approvedExcerpts: string[];
+};
+
+export type CommercialCopyPlan = {
+  headline: FactBackedCopy;
+  subheadline: FactBackedCopy;
+  section_changes: CopyChange[];
+  offer_presentation: LayoutChange[];
+  visual_changes: LayoutChange[];
+  conversion_improvements: string[];
+  compliance_risks: string[];
+};
+
+export type FactMappingRow = {
+  field: string;
+  text: string;
+  supportingFactIds: string[];
+  grounded: boolean;
+  reason: string;
 };
 
 export type LayoutChange = {
@@ -127,10 +204,12 @@ export type IterationRecord = {
   iteration: number;
   candidate: string;
   composition: VisualComposition;
+  copy?: CommercialCopyState;
   kept: boolean;
   reason: string;
   inspect: VisualInspectResult[];
   applied: AppliedChange[];
   analysis: VisualAnalysisPlan | null;
+  commercialPlan?: CommercialCopyPlan | null;
   analysisSource: "ai" | "confirmed-defects" | "none";
 };

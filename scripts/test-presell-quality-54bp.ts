@@ -31,6 +31,7 @@ import {
   methodologyThresholdsFrozen,
   EXPERIMENTAL_CANDIDATE_ID,
   CONTROLLED_IMPROVEMENT_EXECUTION_ID,
+  VISUAL_OPTIMIZATION_EXECUTION_ID,
   PRODUCER_CONTENT_EXECUTION_ID,
   PRODUCER_CONTENT_V2_EXECUTION_ID,
   FROZEN_IMPROVEMENT_EXECUTION_ID,
@@ -89,7 +90,8 @@ assert(
 );
 
 assert(
-  CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BP" &&
+  CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BQ" &&
+    VISUAL_OPTIMIZATION_EXECUTION_ID === "54BP" &&
     PRODUCER_CONTENT_V2_EXECUTION_ID === "54BO" &&
     PRODUCER_CONTENT_EXECUTION_ID === "54BN" &&
     FROZEN_IMPROVEMENT_EXECUTION_ID === "54BI" &&
@@ -99,6 +101,7 @@ assert(
     resolveRendererCandidate({ requested: "54BO" }).executionId === "54BO" &&
     experimentalExecutionIdOf("54BP") === "54BP" &&
     usesPremiumVisualOptimization("54BP") &&
+    usesPremiumVisualOptimization("54BQ") &&
     !usesPremiumVisualOptimization("54BO") &&
     usesPremiumProducerContentV2("54BO") &&
     !usesPremiumProducerContentV2("54BP"),

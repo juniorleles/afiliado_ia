@@ -142,7 +142,7 @@ const azHtml = renderToStaticMarkup(createElement(V4Page, { model: lab, candidat
 assert(
   VISUAL_HIERARCHY_EXECUTION_ID === "54BJ" &&
     STRUCTURAL_COMPOSITION_EXECUTION_ID === "54BL" &&
-    CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BP" &&
+    CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BQ" &&
     FROZEN_IMPROVEMENT_EXECUTION_ID === "54BI" &&
     parseRendererCandidateId("54BJ") === EXPERIMENTAL_CANDIDATE_ID &&
     parseRendererCandidateId("54BI") === EXPERIMENTAL_CANDIDATE_ID &&
