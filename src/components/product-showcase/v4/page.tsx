@@ -24,6 +24,12 @@ import {
   UsageSteps,
 } from "@/components/design-system/premium-blocks";
 import { presentVisitorCopy, premiumSlotsFromModel } from "@/lib/presell-quality/premium-slots";
+import { StandardV1Page } from "@/components/presell/standard-v1-page";
+import {
+  BEST_KNOWN_CANDIDATE_ID,
+  EXPERIMENTAL_CANDIDATE_ID,
+  resolveRendererCandidate,
+} from "@/lib/presell-quality/renderer-candidate";
 
 function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");
@@ -359,7 +365,7 @@ function LegalSection({ model, section }: { model: V4Model; section: BlueprintSe
   );
 }
 
-export function V4Page({ model }: { model: V4Model }) {
+function BestKnownPage({ model }: { model: V4Model }) {
   const order = model.blueprint.sections.filter((section) => visible(model, section.sectionType));
   const patch = model.qualityPatch;
   const heroMode = v4HeroMode(model.commercialImage);
@@ -377,6 +383,7 @@ export function V4Page({ model }: { model: V4Model }) {
       data-v4-gallery-state={gallery.render ? "visible" : "suppressed"}
       data-quality-fixes={patch?.applied.join(" ") || undefined}
       data-premium-engine="1"
+      data-presell-candidate={BEST_KNOWN_CANDIDATE_ID}
     >
       {order.map((section) => {
         if (section.sectionType === "hero") {
@@ -479,4 +486,20 @@ export function V4Page({ model }: { model: V4Model }) {
       ) : null}
     </main>
   );
+}
+
+export function V4Page({
+  model,
+  candidate,
+  campaignId,
+}: {
+  model: V4Model;
+  candidate?: string | null;
+  campaignId?: number;
+}) {
+  const resolved = resolveRendererCandidate({ requested: candidate, campaignId });
+  if (resolved.id === EXPERIMENTAL_CANDIDATE_ID) {
+    return <StandardV1Page model={model} />;
+  }
+  return <BestKnownPage model={model} />;
 }

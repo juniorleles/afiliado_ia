@@ -65,8 +65,9 @@ export type VisitorCaptureManifest = {
   notes: string[];
 };
 
-export function visitorCapturePreviewPath(generationId: string): string {
-  return `/admin/lab/lp-generator/${generationId}/preview?visualCapture=visitor`;
+export function visitorCapturePreviewPath(generationId: string, candidate?: string | null): string {
+  const base = `/admin/lab/lp-generator/${generationId}/preview?visualCapture=visitor`;
+  return candidate ? `${base}&candidate=${encodeURIComponent(candidate)}` : base;
 }
 
 export function adminChromePresentInHtml(html: string): boolean {
@@ -94,13 +95,14 @@ export async function captureVisitorVisuals(input: {
   baseUrl?: string;
   naming?: VisitorCaptureNaming;
   manifestName?: string;
+  candidate?: string | null;
 }): Promise<VisitorCaptureManifest> {
   const notes: string[] = [];
   const shots: VisitorCaptureShot[] = [];
   const inspect: Record<string, VisitorCaptureInspect> = {};
   mkdirSync(input.outDir, { recursive: true });
   const base = (input.baseUrl ?? "http://127.0.0.1:3000").replace(/\/$/, "");
-  const previewPath = visitorCapturePreviewPath(input.generationId);
+  const previewPath = visitorCapturePreviewPath(input.generationId, input.candidate);
   const url = `${base}${previewPath}`;
   let checkoutRequest = false;
 

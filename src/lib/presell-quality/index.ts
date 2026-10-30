@@ -14,7 +14,7 @@ export type { MultimodalPresellEvaluator } from "@/lib/presell-quality/multimoda
 export type { PresellEvaluationInput } from "@/lib/presell-quality/input";
 export { QUALITY_VIEWPORTS } from "@/lib/presell-quality/capture";
 export { OPENAI_VISION_PROVIDER_ID, OPENAI_VISION_MODEL, openaiVisionProviderStatus, createOpenAiVisionClient } from "@/lib/presell-quality/openai-provider";
-export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, EXECUTION_54AI_BUDGET, EXECUTION_54AJ_BUDGET, EXECUTION_54AK_BUDGET, EXECUTION_54AL_BUDGET, EXECUTION_54AT_BUDGET, EXECUTION_54AU_BUDGET, EXECUTION_54AW_BUDGET, EXECUTION_54AX_BUDGET, EXECUTION_54AY_BUDGET, EXECUTION_54AY_MAX_AI_COST_USD, EXECUTION_54AZ_BUDGET, EXECUTION_54AZ_MAX_AI_COST_USD, EXECUTION_54BA_BUDGET, EXECUTION_54BA_MAX_AI_COST_USD, EXECUTION_54BB_BUDGET, EXECUTION_54BB_MAX_AI_COST_USD, EXECUTION_54BD_BUDGET, EXECUTION_54BD_MAX_AI_COST_USD, budgetAllowsCall } from "@/lib/presell-quality/budget";
+export { OPENAI_LOOP_BUDGET, EXECUTION_54AH_BUDGET, EXECUTION_54AI_BUDGET, EXECUTION_54AJ_BUDGET, EXECUTION_54AK_BUDGET, EXECUTION_54AL_BUDGET, EXECUTION_54AT_BUDGET, EXECUTION_54AU_BUDGET, EXECUTION_54AW_BUDGET, EXECUTION_54AX_BUDGET, EXECUTION_54AY_BUDGET, EXECUTION_54AY_MAX_AI_COST_USD, EXECUTION_54AZ_BUDGET, EXECUTION_54AZ_MAX_AI_COST_USD, EXECUTION_54BA_BUDGET, EXECUTION_54BA_MAX_AI_COST_USD, EXECUTION_54BB_BUDGET, EXECUTION_54BB_MAX_AI_COST_USD, EXECUTION_54BD_BUDGET, EXECUTION_54BD_MAX_AI_COST_USD, EXECUTION_54BE_BUDGET, EXECUTION_54BE_MAX_AI_COST_USD, budgetAllowsCall } from "@/lib/presell-quality/budget";
 export {
   EXECUTION_54AT_ID,
   EXECUTION_54AW_ID,
@@ -24,6 +24,7 @@ export {
   EXECUTION_54BA_ID,
   EXECUTION_54BB_ID,
   EXECUTION_54BD_ID,
+  EXECUTION_54BE_ID,
   EXECUTION_54AW_BUDGET as EXECUTION_54AW_LEDGER_BUDGET,
   EXECUTION_54AX_BUDGET as EXECUTION_54AX_LEDGER_BUDGET,
   EXECUTION_54AY_BUDGET as EXECUTION_54AY_LEDGER_BUDGET,
@@ -31,6 +32,7 @@ export {
   EXECUTION_54BA_BUDGET as EXECUTION_54BA_LEDGER_BUDGET,
   EXECUTION_54BB_BUDGET as EXECUTION_54BB_LEDGER_BUDGET,
   EXECUTION_54BD_BUDGET as EXECUTION_54BD_LEDGER_BUDGET,
+  EXECUTION_54BE_BUDGET as EXECUTION_54BE_LEDGER_BUDGET,
   emptyExecutionBudgetLedger,
   budgetAllowsPaidCall,
   reservePaidCall,
@@ -58,7 +60,7 @@ export {
   weightedVisualScore,
   visualWeightsSumToOne,
 } from "@/lib/presell-quality/premium-design";
-export { premiumSlotsFromModel, daysFromText, presentVisitorCopy, joinSplitSteps, splitUsageSentences, compactFact, premiumSectionTitle, uniqueGuaranteeStatements } from "@/lib/presell-quality/premium-slots";
+export { premiumSlotsFromModel, daysFromText, presentVisitorCopy, joinSplitSteps, splitUsageSentences, compactFact, premiumSectionTitle, experimentalSectionTitle, uniqueGuaranteeStatements } from "@/lib/presell-quality/premium-slots";
 export { evaluateVisualGate, criticalVisualDefects, paidAiBlockedFor54au, paidAiBlockedFor54ax } from "@/lib/presell-quality/visual-gate";
 export {
   PREMIUM_VISUAL_EVALUATION_V2,
@@ -88,8 +90,20 @@ export {
   createDesignCheckpoint,
   createDesignCheckpointFromFiles,
   restoreDesignCheckpoint,
+  restoreProtectedPath,
   checkpointDiffers,
 } from "@/lib/presell-quality/design-checkpoint";
+export {
+  BEST_KNOWN_CANDIDATE_ID,
+  EXPERIMENTAL_CANDIDATE_ID,
+  RENDERER_CANDIDATE_IDS,
+  parseRendererCandidateId,
+  resolveRendererCandidate,
+  readRendererCandidateSelection,
+  writeActivePreviewCandidate,
+  defaultRendererCandidateSelection,
+  rendererCandidateQuery,
+} from "@/lib/presell-quality/renderer-candidate";
 export {
   visitorCapturePreviewPath,
   adminChromePresentInHtml,

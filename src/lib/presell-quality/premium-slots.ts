@@ -205,6 +205,43 @@ export function premiumSectionTitle(input: {
   return publicSectionTitle(input.sectionType, input.headline, input.titles);
 }
 
+export function experimentalSectionTitle(input: {
+  sectionType: SectionType;
+  headline: string;
+  productName: string;
+  productKind?: string | null;
+  ingredientCount?: number;
+  usageCount?: number;
+  guaranteeDays?: number | null;
+  productFormat?: "PHYSICAL" | "DIGITAL" | "UNKNOWN";
+  titles?: Partial<Record<SectionType, string>>;
+}): string {
+  if (input.titles?.[input.sectionType]) return input.titles[input.sectionType]!;
+  const name = input.productName.trim();
+  const kind = input.productKind?.trim() ?? "";
+  if (input.sectionType === "how_it_works") {
+    return name ? `How to use ${name}` : "Directions for Use";
+  }
+  if (input.sectionType === "specifications") {
+    if ((input.ingredientCount ?? 0) > 0 && name) return `What's in ${name}`;
+    return /\b(digital|course|download|module)\b/i.test(kind) ? "Included modules" : "Ingredients";
+  }
+  if (input.sectionType === "guarantee") {
+    if (input.guaranteeDays) return `${input.guaranteeDays}-day seller-stated refund`;
+    return name ? `Refund terms for ${name}` : "Seller-Stated Guarantee";
+  }
+  if (input.sectionType === "trust") {
+    return input.productFormat === "DIGITAL" ? "Access and payment" : "Shipping, returns, and payment";
+  }
+  if (input.sectionType === "differentiators" || input.sectionType === "benefits") {
+    return name ? `What ${name} includes` : "Features";
+  }
+  if (input.sectionType === "faq") {
+    return name ? `Questions about ${name}` : "Frequently asked questions";
+  }
+  return publicSectionTitle(input.sectionType, input.headline, input.titles);
+}
+
 function fulfillmentIcon(kind: FulfillmentCardModel["kind"]): PremiumIconName {
   if (kind === "DISPATCH") return "clock";
   if (kind === "DELIVERY") return "truck";

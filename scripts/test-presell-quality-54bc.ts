@@ -41,7 +41,8 @@ function assert(condition: boolean, message: string) {
 
 const ROOT = process.cwd();
 const lab = disableCommercialCta(buildV4Model("s1")!);
-const markup = renderToStaticMarkup(createElement(V4Page, { model: lab }));
+const markup = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: PRESELL_STANDARD_ID }));
+const bestKnownMarkup = renderToStaticMarkup(createElement(V4Page, { model: lab }));
 const document = mapPresellStandardV1(lab);
 const validation = validatePresellTemplateDocument(document);
 const preflight = runTemplateQualityPreflight({ model: lab, markup, contractValid: true });
@@ -108,9 +109,14 @@ assert(
   "18. 54AZ/54BA checkpoints remain",
 );
 
+assert(
+  /data-presell-candidate="54AZ"/.test(bestKnownMarkup) && !/data-presell-standard="PRESELL_STANDARD_V1"/.test(bestKnownMarkup),
+  "2c. default renderer is the 54AZ best-known candidate",
+);
+
 const scenarios = labScenarioKeys().map((key) => {
   const model = disableCommercialCta(buildV4Model(key)!);
-  const html = renderToStaticMarkup(createElement(V4Page, { model }));
+  const html = renderToStaticMarkup(createElement(V4Page, { model, candidate: PRESELL_STANDARD_ID }));
   const mapped = mapPresellStandardV1(model);
   return (
     mapped.cta.enabled === false &&

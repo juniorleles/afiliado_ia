@@ -11,6 +11,7 @@ import { applySandboxToModel } from "@/lib/sandbox/cta";
 import { applyQualityPatch, readQualityPatch } from "@/lib/presell-quality/patch";
 import { disableCommercialCta } from "@/lib/presell-quality/content-safety";
 import { PREMIUM_DISPLAY_THEME } from "@/lib/presell-quality/premium-design";
+import { resolveRendererCandidate } from "@/lib/presell-quality/renderer-candidate";
 import "@/app/design-system-lab.css";
 import "@/app/renderer-v4-lab.css";
 import "@/app/premium-design-engine.css";
@@ -28,15 +29,18 @@ export default async function LpGenerationPreview({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ visualCapture?: string | string[] }>;
+  searchParams: Promise<{ visualCapture?: string | string[]; candidate?: string | string[] }>;
 }) {
   await requireAdmin();
   const { id } = await params;
-  const captureFlag = (await searchParams).visualCapture;
+  const query = await searchParams;
+  const captureFlag = query.visualCapture;
   const visitorCapture = (Array.isArray(captureFlag) ? captureFlag[0] : captureFlag) === "visitor";
+  const requestedCandidate = Array.isArray(query.candidate) ? query.candidate[0] : query.candidate;
   const record = readGeneration(id);
   const stored = readGenerationModel(id);
   if (!record || !stored) notFound();
+  const renderer = resolveRendererCandidate({ requested: requestedCandidate, campaignId: record.campaignId });
   const patch = readQualityPatch(id);
   const patched = patch ? applyQualityPatch(stored, patch) : stored;
   const sandboxed = record.sandbox?.enabled
@@ -56,6 +60,7 @@ export default async function LpGenerationPreview({
       data-visual-capture={visitorCapture ? "visitor" : "lab"}
       data-v4-status={model.blueprint.strategyStatus}
       data-sandbox={record.sandbox?.enabled ? "true" : undefined}
+      data-presell-candidate={renderer.id}
     >
       <DsTokenStyle />
       {visitorCapture ? null : (
@@ -70,6 +75,7 @@ export default async function LpGenerationPreview({
               <span>{COMPOSITIONS[model.composition].name}</span>
               <span>{THEMES[PREMIUM_DISPLAY_THEME].label}</span>
               <span>{model.blueprint.conversionGoal}</span>
+              <span>{renderer.id}</span>
             </div>
             <Link href={`/admin/lab/lp-generator/${record.id}`}>Detalhes da geração</Link>
           </div>
@@ -78,7 +84,7 @@ export default async function LpGenerationPreview({
           </div>
         </>
       )}
-      <V4Page model={model} />
+      <V4Page model={model} candidate={renderer.id} campaignId={record.campaignId} />
     </div>
   );
 }

@@ -99,6 +99,15 @@ export function createDesignCheckpointFromFiles(input: {
   return checkpoint;
 }
 
+export function restoreProtectedPath(relative: string): boolean {
+  return (
+    relative === "src/components/product-showcase/v4/page.tsx" ||
+    relative === "src/lib/presell-quality/renderer-candidate.ts" ||
+    relative.startsWith("src/components/presell/") ||
+    relative.startsWith("src/lib/presell-template/")
+  );
+}
+
 export function restoreDesignCheckpoint(
   checkpoint: DesignCheckpoint,
   options: { root?: string; confirm: true },
@@ -107,6 +116,10 @@ export function restoreDesignCheckpoint(
   const restored: string[] = [];
   const skipped: string[] = [];
   for (const file of checkpoint.files) {
+    if (restoreProtectedPath(file.path)) {
+      skipped.push(file.path);
+      continue;
+    }
     if (!DESIGN_CHECKPOINT_FILES.includes(file.path as (typeof DESIGN_CHECKPOINT_FILES)[number]) && !file.path.startsWith("src/")) {
       skipped.push(file.path);
       continue;
