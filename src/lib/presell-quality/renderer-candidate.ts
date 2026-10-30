@@ -5,6 +5,7 @@ import { PRESELL_STANDARD_ID } from "@/lib/presell-template/standard-v1";
 
 export const BEST_KNOWN_CANDIDATE_ID = "54AZ" as const;
 export const EXPERIMENTAL_CANDIDATE_ID = PRESELL_STANDARD_ID;
+export const CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BF" as const;
 export const RENDERER_CANDIDATE_IDS = [BEST_KNOWN_CANDIDATE_ID, EXPERIMENTAL_CANDIDATE_ID] as const;
 export type RendererCandidateId = (typeof RENDERER_CANDIDATE_IDS)[number];
 
@@ -19,6 +20,7 @@ export type ResolvedRendererCandidate = {
   source: "prop" | "query" | "store" | "default";
   selection: RendererCandidateSelection;
   taggedAsStandard: boolean;
+  executionId: typeof CONTROLLED_IMPROVEMENT_EXECUTION_ID | typeof BEST_KNOWN_CANDIDATE_ID;
 };
 
 function selectionFile(campaignId: number): string {
@@ -28,7 +30,13 @@ function selectionFile(campaignId: number): string {
 export function parseRendererCandidateId(value: string | null | undefined): RendererCandidateId | null {
   const normalized = value?.trim();
   if (normalized === BEST_KNOWN_CANDIDATE_ID) return BEST_KNOWN_CANDIDATE_ID;
-  if (normalized === EXPERIMENTAL_CANDIDATE_ID || normalized === "PRESELL_STANDARD_V1") return EXPERIMENTAL_CANDIDATE_ID;
+  if (
+    normalized === EXPERIMENTAL_CANDIDATE_ID ||
+    normalized === "PRESELL_STANDARD_V1" ||
+    normalized === CONTROLLED_IMPROVEMENT_EXECUTION_ID
+  ) {
+    return EXPERIMENTAL_CANDIDATE_ID;
+  }
   return null;
 }
 
@@ -76,7 +84,13 @@ export function resolveRendererCandidate(input: {
   const selection = input.campaignId != null ? readRendererCandidateSelection(input.campaignId) : defaultRendererCandidateSelection();
   const fromProp = parseRendererCandidateId(input.requested);
   if (fromProp) {
-    return { id: fromProp, source: "prop", selection, taggedAsStandard: fromProp === EXPERIMENTAL_CANDIDATE_ID };
+    return {
+      id: fromProp,
+      source: "prop",
+      selection,
+      taggedAsStandard: fromProp === EXPERIMENTAL_CANDIDATE_ID,
+      executionId: fromProp === EXPERIMENTAL_CANDIDATE_ID ? CONTROLLED_IMPROVEMENT_EXECUTION_ID : BEST_KNOWN_CANDIDATE_ID,
+    };
   }
   if (input.campaignId != null && selection.activePreviewCandidate !== BEST_KNOWN_CANDIDATE_ID) {
     return {
@@ -84,9 +98,19 @@ export function resolveRendererCandidate(input: {
       source: "store",
       selection,
       taggedAsStandard: selection.activePreviewCandidate === EXPERIMENTAL_CANDIDATE_ID,
+      executionId:
+        selection.activePreviewCandidate === EXPERIMENTAL_CANDIDATE_ID
+          ? CONTROLLED_IMPROVEMENT_EXECUTION_ID
+          : BEST_KNOWN_CANDIDATE_ID,
     };
   }
-  return { id: BEST_KNOWN_CANDIDATE_ID, source: "default", selection, taggedAsStandard: false };
+  return {
+    id: BEST_KNOWN_CANDIDATE_ID,
+    source: "default",
+    selection,
+    taggedAsStandard: false,
+    executionId: BEST_KNOWN_CANDIDATE_ID,
+  };
 }
 
 export function rendererCandidateQuery(candidate: RendererCandidateId): string {

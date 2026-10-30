@@ -85,7 +85,11 @@ assert(
   "5b. rollback cannot delete the template implementation or the switcher",
 );
 assert(/minmax\(26rem, 1\.32fr\)/.test(readFileSync(path.join(ROOT, "src/app/premium-design-engine.css"), "utf8")), "6. 54AZ desktop packshot packing remains");
-assert(/minmax\(28rem, 1\.5fr\)/.test(readFileSync(path.join(ROOT, "src/app/premium-design-engine.css"), "utf8")), "6b. experimental desktop hero packing is stronger and scoped");
+assert(
+  !/minmax\(28rem, 1\.5fr\)/.test(readFileSync(path.join(ROOT, "src/app/premium-design-engine.css"), "utf8")) &&
+    !/scale\(1\.14\)/.test(readFileSync(path.join(ROOT, "src/app/premium-design-engine.css"), "utf8")),
+  "6b. experimental desktop no longer uses the 54BE packshot scale that clipped the bottles",
+);
 assert(/max-width: 18\.5rem/.test(readFileSync(path.join(ROOT, "src/app/premium-design-engine.css"), "utf8")), "7. experimental mobile packshot spacing is adjusted");
 assert(
   experimentalSectionTitle({
@@ -93,8 +97,8 @@ assert(
     headline: "Overview",
     productName: "Northwind Capsules",
     usageCount: 3,
-  }) === "How to use Northwind Capsules",
-  "8. experimental titles use the product name from the contract",
+  }) === "Directions for use",
+  "8. experimental titles stay factual without repeating the product name",
 );
 assert(!/clinically proven|cure|treat/i.test(v1), "9. blocked medical claims are not added");
 assert(mapPresellStandardV1(lab).cta.enabled === false && /data-v4-cta="preview-disabled"/.test(v1), "10. commercial CTA stays disabled");

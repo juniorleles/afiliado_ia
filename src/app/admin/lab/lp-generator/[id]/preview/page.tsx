@@ -61,6 +61,7 @@ export default async function LpGenerationPreview({
       data-v4-status={model.blueprint.strategyStatus}
       data-sandbox={record.sandbox?.enabled ? "true" : undefined}
       data-presell-candidate={renderer.id}
+      data-presell-execution={renderer.executionId}
     >
       <DsTokenStyle />
       {visitorCapture ? null : (
@@ -76,6 +77,7 @@ export default async function LpGenerationPreview({
               <span>{THEMES[PREMIUM_DISPLAY_THEME].label}</span>
               <span>{model.blueprint.conversionGoal}</span>
               <span>{renderer.id}</span>
+              <span>{renderer.executionId}</span>
             </div>
             <Link href={`/admin/lab/lp-generator/${record.id}`}>Detalhes da geração</Link>
           </div>
