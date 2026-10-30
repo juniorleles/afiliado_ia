@@ -24,7 +24,11 @@ import {
 } from "@/components/design-system/premium-blocks";
 import { AnnouncementBar, ShippingOrAccess } from "@/components/presell";
 import { experimentalEvidenceChips, experimentalSectionTitle, presentVisitorCopy, premiumSlotsFromModel } from "@/lib/presell-quality/premium-slots";
-import { CONTROLLED_IMPROVEMENT_EXECUTION_ID } from "@/lib/presell-quality/renderer-candidate";
+import {
+  CONTROLLED_IMPROVEMENT_EXECUTION_ID,
+  PREMIUM_STRUCTURAL_COMPOSITION_ID,
+  usesPremiumStructuralComposition,
+} from "@/lib/presell-quality/renderer-candidate";
 import { mapPresellStandardV1 } from "@/lib/presell-template";
 import { PRESELL_STANDARD_ID } from "@/lib/presell-template/standard-v1";
 import type { PresellStandardSectionId } from "@/lib/presell-template/standard-v1";
@@ -70,6 +74,62 @@ function toneFor(type: BlueprintSection["sectionType"]): "plain" | "alt" | "soft
   if (type === "offers") return "soft";
   if (type === "specifications" || type === "differentiators" || type === "trust") return "alt";
   return "plain";
+}
+
+function StructuralHero({ model, announcementMessage }: { model: V4Model; announcementMessage?: string | null }) {
+  const image = model.commercialImage;
+  const name = model.contract.identity.productName;
+  const kind = model.contract.identity.productKind;
+  const headline = model.copy.headline.text;
+  const subheadline = model.copy.subheadline?.text;
+  const value = model.copy.valueProposition?.text;
+  const introduction = model.copy.introduction.text;
+  const slots = premiumSlotsFromModel(model);
+  return (
+    <section
+      className="ds-hero-band presell-standard-hero premium-structural-hero"
+      id="hero"
+      data-v4-section="hero"
+      data-structural-hero="v2"
+      data-hero-mode={v4HeroMode(image)}
+    >
+      <DsContainer>
+        <div className="premium-structural-hero__grid">
+          <div className="premium-structural-hero__copy">
+            {kind ? <DsKicker>{kind}</DsKicker> : null}
+            {distinctText(headline, name) ? <p className="v4-identity">{name}</p> : null}
+            <h1 className="ds-display">{distinctText(headline, name) ? headline : name}</h1>
+            {distinctText(subheadline, headline, name, kind) ? <p className="ds-lead">{subheadline}</p> : null}
+            {distinctText(value, headline, subheadline, name) ? <p className="ds-lead">{value}</p> : null}
+            {distinctText(introduction, headline, subheadline, value, name) ? (
+              <p className="ds-body">{presentVisitorCopy(introduction)}</p>
+            ) : null}
+            <EvidenceChips items={experimentalEvidenceChips(slots.evidenceChips, announcementMessage).slice(0, 3)} />
+          </div>
+          {image ? (
+            <div className="premium-structural-hero__product">
+              <div className="ds-hero__stage">
+                <div className="ds-hero__frame">
+                  <img src={image.src} alt={image.alt} width={1200} height={1200} data-v4-image="commercial" decoding="async" />
+                </div>
+              </div>
+            </div>
+          ) : null}
+          <aside className="premium-structural-hero__facts" aria-label="Approved product facts">
+            <HeroLogisticsRail items={slots.fulfillment} factMode="compact" />
+          </aside>
+          <div className="premium-structural-hero__actions">
+            {model.hopSlot === "hero" ? <Hop model={model} slot="hero" /> : <PremiumCta slot="hero" />}
+            {model.hopSlot === "offers" ? (
+              <a className="ds-btn ds-btn--ghost" href="#offers" data-v4-cta="inpage">
+                See packages
+              </a>
+            ) : null}
+          </div>
+        </div>
+      </DsContainer>
+    </section>
+  );
 }
 
 function Hero({ model, announcementMessage }: { model: V4Model; announcementMessage?: string | null }) {
@@ -386,6 +446,8 @@ export function StandardV1Page({
   executionId?: string | null;
 }) {
   const template = mapPresellStandardV1(model);
+  const taggedExecution = executionId?.trim() || CONTROLLED_IMPROVEMENT_EXECUTION_ID;
+  const structural = usesPremiumStructuralComposition(taggedExecution);
   const presentIds = new Set(template.sections.filter((item) => item.present).map((item) => item.id));
   const byType = new Map(model.blueprint.sections.map((section) => [section.sectionType, section]));
   const order: BlueprintSection[] = [];
@@ -432,14 +494,19 @@ export function StandardV1Page({
       data-premium-engine="1"
       data-presell-standard={PRESELL_STANDARD_ID}
       data-presell-candidate={PRESELL_STANDARD_ID}
-      data-presell-execution={executionId?.trim() || CONTROLLED_IMPROVEMENT_EXECUTION_ID}
+      data-presell-execution={taggedExecution}
+      data-presell-composition={structural ? PREMIUM_STRUCTURAL_COMPOSITION_ID : undefined}
     >
       {template.announcement ? <AnnouncementBar message={template.announcement.message} /> : null}
       {order.map((section) => {
         if (section.sectionType === "hero") {
           return (
             <div key={section.sectionId}>
-              <Hero model={model} announcementMessage={template.announcement?.message ?? null} />
+              {structural ? (
+                <StructuralHero model={model} announcementMessage={template.announcement?.message ?? null} />
+              ) : (
+                <Hero model={model} announcementMessage={template.announcement?.message ?? null} />
+              )}
               {gallery.render && model.galleryImages?.length ? (
                 <DsSection tone="alt" className="v4-band" id="gallery">
                   <DsContainer width="wide">

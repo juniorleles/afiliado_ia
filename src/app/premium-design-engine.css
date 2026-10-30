@@ -708,3 +708,208 @@
     padding: 1.2rem 1.1rem;
   }
 }
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero {
+  padding-block: 1.4rem 1.6rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__grid {
+  display: grid;
+  gap: 1rem 1.25rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__copy {
+  display: grid;
+  gap: 0.85rem;
+  align-content: start;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__copy .ds-display {
+  max-width: 18ch;
+  font-size: clamp(2.55rem, 1.9rem + 2vw, 3.55rem);
+  line-height: 0.98;
+  letter-spacing: -0.032em;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__copy .ds-lead {
+  max-width: 34rem;
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__product {
+  display: grid;
+  place-items: center;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__product .ds-hero__stage {
+  width: 100%;
+  max-width: 22rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__product .ds-hero__frame img {
+  object-fit: contain;
+  transform: none;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__facts .premium-hero-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__facts .premium-hero-rail__item {
+  min-height: 0;
+  padding: 0.72rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--ds-ink) 12%, var(--ds-line));
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--ds-surface) 94%, white);
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__facts .premium-hero-rail__fact {
+  font-size: 0.86rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__actions {
+  display: grid;
+  gap: 0.55rem;
+  align-content: start;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__actions .ds-btn--cta {
+  width: 100%;
+  justify-content: center;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-steps {
+  gap: 0.85rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-steps__item {
+  padding: 1rem 1.05rem;
+  align-items: start;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-grid[data-premium="ingredients"] {
+  gap: 1rem;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-grid[data-premium="ingredients"] .premium-card {
+  padding: 1.15rem 1.05rem;
+}
+
+@media (min-width: 960px) {
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__grid {
+    grid-template-columns: minmax(0, 1.08fr) minmax(16.5rem, 0.92fr) minmax(13rem, 0.72fr);
+    grid-template-areas:
+      "copy product facts"
+      "actions product facts";
+    gap: 1.15rem 1.4rem;
+    align-items: center;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__copy {
+    grid-area: copy;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__product {
+    grid-area: product;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__facts {
+    grid-area: facts;
+    align-self: stretch;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__actions {
+    grid-area: actions;
+    max-width: 22rem;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__product .ds-hero__stage {
+    max-width: 24rem;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-hero-chips {
+    display: none;
+  }
+}
+
+@media (max-width: 959px) {
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "product"
+      "copy"
+      "facts"
+      "actions";
+    justify-items: stretch;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__copy {
+    grid-area: copy;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__product {
+    grid-area: product;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__facts {
+    grid-area: facts;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__actions {
+    grid-area: actions;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-hero-rail {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-hero-chips {
+    display: none;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__copy .ds-display {
+    max-width: none;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__product .ds-hero__stage {
+    max-width: 22rem;
+    margin-inline: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero {
+    padding-block: 1.05rem 1.25rem;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__copy {
+    gap: 0.7rem;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__copy .ds-display {
+    font-size: clamp(2.05rem, 1.45rem + 5vw, 2.55rem);
+    line-height: 1.04;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__copy .ds-lead {
+    font-size: 1rem;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__product .ds-hero__stage {
+    max-width: 18.5rem;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .premium-structural-hero__facts .premium-hero-rail__item {
+    padding: 0.62rem 0.72rem;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BL"] .v4-band {
+    padding-block: 1.45rem;
+  }
+}

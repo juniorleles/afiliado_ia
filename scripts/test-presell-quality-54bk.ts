@@ -24,6 +24,7 @@ import {
   EXPERIMENTAL_CANDIDATE_ID,
   CONTROLLED_IMPROVEMENT_EXECUTION_ID,
   FROZEN_IMPROVEMENT_EXECUTION_ID,
+  VISUAL_HIERARCHY_EXECUTION_ID,
   experimentalExecutionIdOf,
   parseRendererCandidateId,
   resolveRendererCandidate,
@@ -56,6 +57,7 @@ const bjEvidence = path.join(ROOT, "data/evidence/execution-54bj-visual-hierarch
 const EXPECTED_REFERENCE = "21cd6030b11127a59d531417bac5613d0ae3d64f2a1bc19e33d2b926049a9938";
 const BI_COMMIT = "5f8d109b0b9ef358958f91431e3bb9dc78728543";
 const BJ_COMMIT = "2a648452cd47cc34c441ee70a751a798842c1175";
+const BK_COMMIT = "368ef31377092ff79b39ab8c20ccb9d7b249671a";
 const BJ_MESSAGE = "test(presell): preserve visual regression evidence and candidate isolation";
 const REQUIRED = [
   "execution-summary.md",
@@ -134,15 +136,18 @@ assert(
 
 const lab = disableCommercialCta(buildV4Model("s1")!);
 const biHtml = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: FROZEN_IMPROVEMENT_EXECUTION_ID }));
-const bjHtml = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: CONTROLLED_IMPROVEMENT_EXECUTION_ID }));
+const bjHtml = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: VISUAL_HIERARCHY_EXECUTION_ID }));
 const azHtml = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: BEST_KNOWN_CANDIDATE_ID }));
 assert(
-  CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BJ" &&
+  VISUAL_HIERARCHY_EXECUTION_ID === "54BJ" &&
+    CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BL" &&
     FROZEN_IMPROVEMENT_EXECUTION_ID === "54BI" &&
     parseRendererCandidateId("54BJ") === EXPERIMENTAL_CANDIDATE_ID &&
     parseRendererCandidateId("54BI") === EXPERIMENTAL_CANDIDATE_ID &&
+    parseRendererCandidateId("54BL") === EXPERIMENTAL_CANDIDATE_ID &&
     resolveRendererCandidate({ requested: "54BJ" }).executionId === "54BJ" &&
     resolveRendererCandidate({ requested: "54BI" }).executionId === "54BI" &&
+    resolveRendererCandidate({ requested: "54BL" }).executionId === "54BL" &&
     experimentalExecutionIdOf("54BI") === "54BI" &&
     /data-presell-execution="54BI"/.test(biHtml) &&
     /data-presell-execution="54BJ"/.test(bjHtml) &&
@@ -222,7 +227,7 @@ assert(
   "13. 54BL plan is ready and was not executed",
 );
 
-const visualDiff = git(`git diff --name-only HEAD -- ${VISUAL_PATHS.join(" ")}`);
+const visualDiff = git(`git diff --name-only ${BJ_COMMIT} ${BK_COMMIT} -- ${VISUAL_PATHS.join(" ")}`);
 const css = readFileSync(path.join(ROOT, "src/app/premium-design-engine.css"), "utf8");
 assert(
   visualDiff === "" &&

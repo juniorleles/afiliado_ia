@@ -5,10 +5,12 @@ import { PRESELL_STANDARD_ID } from "@/lib/presell-template/standard-v1";
 
 export const BEST_KNOWN_CANDIDATE_ID = "54AZ" as const;
 export const EXPERIMENTAL_CANDIDATE_ID = PRESELL_STANDARD_ID;
+export const PREMIUM_STRUCTURAL_COMPOSITION_ID = "PREMIUM_STRUCTURAL_V2" as const;
 export const PRIOR_CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BH" as const;
 export const FROZEN_IMPROVEMENT_EXECUTION_ID = "54BI" as const;
 export const RECENT_CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BI" as const;
-export const CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BJ" as const;
+export const VISUAL_HIERARCHY_EXECUTION_ID = "54BJ" as const;
+export const CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BL" as const;
 export const LEGACY_CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BF" as const;
 export const RENDERER_CANDIDATE_IDS = [BEST_KNOWN_CANDIDATE_ID, EXPERIMENTAL_CANDIDATE_ID] as const;
 export type RendererCandidateId = (typeof RENDERER_CANDIDATE_IDS)[number];
@@ -16,6 +18,7 @@ export type ExperimentalExecutionId =
   | typeof CONTROLLED_IMPROVEMENT_EXECUTION_ID
   | typeof FROZEN_IMPROVEMENT_EXECUTION_ID
   | typeof RECENT_CONTROLLED_IMPROVEMENT_EXECUTION_ID
+  | typeof VISUAL_HIERARCHY_EXECUTION_ID
   | typeof PRIOR_CONTROLLED_IMPROVEMENT_EXECUTION_ID
   | typeof LEGACY_CONTROLLED_IMPROVEMENT_EXECUTION_ID;
 export type PresellExecutionId = ExperimentalExecutionId | typeof BEST_KNOWN_CANDIDATE_ID;
@@ -47,11 +50,34 @@ export function experimentalExecutionIdOf(
   if (normalized === FROZEN_IMPROVEMENT_EXECUTION_ID || normalized === RECENT_CONTROLLED_IMPROVEMENT_EXECUTION_ID) {
     return FROZEN_IMPROVEMENT_EXECUTION_ID;
   }
-  if (normalized === CONTROLLED_IMPROVEMENT_EXECUTION_ID) return CONTROLLED_IMPROVEMENT_EXECUTION_ID;
-  if (!normalized && (stored === FROZEN_IMPROVEMENT_EXECUTION_ID || stored === CONTROLLED_IMPROVEMENT_EXECUTION_ID)) {
+  if (normalized === VISUAL_HIERARCHY_EXECUTION_ID) return VISUAL_HIERARCHY_EXECUTION_ID;
+  if (normalized === CONTROLLED_IMPROVEMENT_EXECUTION_ID || normalized === PREMIUM_STRUCTURAL_COMPOSITION_ID) {
+    return CONTROLLED_IMPROVEMENT_EXECUTION_ID;
+  }
+  if (
+    !normalized &&
+    (stored === FROZEN_IMPROVEMENT_EXECUTION_ID ||
+      stored === CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
+      stored === VISUAL_HIERARCHY_EXECUTION_ID)
+  ) {
     return stored;
   }
   return CONTROLLED_IMPROVEMENT_EXECUTION_ID;
+}
+
+export function usesPremiumStructuralComposition(executionId?: string | null): boolean {
+  const normalized = executionId?.trim();
+  if (
+    normalized === FROZEN_IMPROVEMENT_EXECUTION_ID ||
+    normalized === RECENT_CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
+    normalized === VISUAL_HIERARCHY_EXECUTION_ID ||
+    normalized === PRIOR_CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
+    normalized === LEGACY_CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
+    normalized === BEST_KNOWN_CANDIDATE_ID
+  ) {
+    return false;
+  }
+  return experimentalExecutionIdOf(normalized) === CONTROLLED_IMPROVEMENT_EXECUTION_ID;
 }
 
 export function parseRendererCandidateId(value: string | null | undefined): RendererCandidateId | null {
@@ -60,9 +86,11 @@ export function parseRendererCandidateId(value: string | null | undefined): Rend
   if (
     normalized === EXPERIMENTAL_CANDIDATE_ID ||
     normalized === "PRESELL_STANDARD_V1" ||
+    normalized === PREMIUM_STRUCTURAL_COMPOSITION_ID ||
     normalized === CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
     normalized === FROZEN_IMPROVEMENT_EXECUTION_ID ||
     normalized === RECENT_CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
+    normalized === VISUAL_HIERARCHY_EXECUTION_ID ||
     normalized === PRIOR_CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
     normalized === LEGACY_CONTROLLED_IMPROVEMENT_EXECUTION_ID
   ) {

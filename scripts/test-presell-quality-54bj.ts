@@ -44,6 +44,7 @@ import {
   EXPERIMENTAL_CANDIDATE_ID,
   CONTROLLED_IMPROVEMENT_EXECUTION_ID,
   FROZEN_IMPROVEMENT_EXECUTION_ID,
+  VISUAL_HIERARCHY_EXECUTION_ID,
   experimentalExecutionIdOf,
   parseRendererCandidateId,
   resolveRendererCandidate,
@@ -80,7 +81,7 @@ const css = readFileSync(path.join(ROOT, "src/app/premium-design-engine.css"), "
 const v1Source = readFileSync(path.join(ROOT, "src/components/presell/standard-v1-page.tsx"), "utf8");
 const lab = disableCommercialCta(buildV4Model("s1")!);
 const v1 = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: EXPERIMENTAL_CANDIDATE_ID }));
-const bj = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: CONTROLLED_IMPROVEMENT_EXECUTION_ID }));
+const bj = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: VISUAL_HIERARCHY_EXECUTION_ID }));
 const bi = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: FROZEN_IMPROVEMENT_EXECUTION_ID }));
 const az = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: BEST_KNOWN_CANDIDATE_ID }));
 const def = renderToStaticMarkup(createElement(V4Page, { model: lab }));
@@ -104,7 +105,8 @@ assert(
   "2. 54BI design checkpoint identity is recoverable when written",
 );
 assert(
-  CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BJ" &&
+  VISUAL_HIERARCHY_EXECUTION_ID === "54BJ" &&
+    CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BL" &&
     FROZEN_IMPROVEMENT_EXECUTION_ID === "54BI" &&
     parseRendererCandidateId("54BJ") === EXPERIMENTAL_CANDIDATE_ID &&
     parseRendererCandidateId("54BI") === EXPERIMENTAL_CANDIDATE_ID &&

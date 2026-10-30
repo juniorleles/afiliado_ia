@@ -41,6 +41,7 @@ import {
   BEST_KNOWN_CANDIDATE_ID,
   EXPERIMENTAL_CANDIDATE_ID,
   CONTROLLED_IMPROVEMENT_EXECUTION_ID,
+  FROZEN_IMPROVEMENT_EXECUTION_ID,
   PRIOR_CONTROLLED_IMPROVEMENT_EXECUTION_ID,
   parseRendererCandidateId,
   resolveRendererCandidate,
@@ -123,9 +124,9 @@ assert(
 );
 assert(
   /data-presell-standard="PRESELL_STANDARD_V1"/.test(v1) &&
-    /data-presell-execution="54BJ"/.test(v1) &&
-    /data-presell-execution="54BJ"/.test(via54bh) &&
-    /data-presell-execution="54BJ"/.test(via54bf) &&
+    new RegExp(`data-presell-execution="${CONTROLLED_IMPROVEMENT_EXECUTION_ID}"`).test(v1) &&
+    new RegExp(`data-presell-execution="${CONTROLLED_IMPROVEMENT_EXECUTION_ID}"`).test(via54bh) &&
+    new RegExp(`data-presell-execution="${CONTROLLED_IMPROVEMENT_EXECUTION_ID}"`).test(via54bf) &&
     PRESELL_STANDARD_ID === "PRESELL_STANDARD_V1" &&
     PRESELL_STANDARD_VERSION === "1",
   "6. template V1 remains renderable and is tagged with the current experimental execution",
@@ -144,6 +145,7 @@ const patchedBase = stored && patch ? applyQualityPatch(stored, patch) : stored;
 const sandboxed = patchedBase && record?.sandbox?.enabled ? applySandboxToModel(patchedBase, { href: record.sandbox.ctaPath }) : patchedBase;
 const patched = sandboxed ? disableCommercialCta(sandboxed) : null;
 const campaignV1 = patched ? renderToStaticMarkup(createElement(V4Page, { model: patched, candidate: EXPERIMENTAL_CANDIDATE_ID })) : "";
+const campaignFrozen = patched ? renderToStaticMarkup(createElement(V4Page, { model: patched, candidate: FROZEN_IMPROVEMENT_EXECUTION_ID })) : "";
 const campaignAz = patched ? renderToStaticMarkup(createElement(V4Page, { model: patched, candidate: BEST_KNOWN_CANDIDATE_ID })) : "";
 assert(
   /factMode="authorized"/.test(v1Source) &&
@@ -151,7 +153,7 @@ assert(
     /factMode = "compact"/.test(blocks) &&
     presentFulfillmentFact(dispatchSample, "DISPATCH").includes("ship") &&
     presentFulfillmentFact(dispatchSample, "DISPATCH").length > compactFact(dispatchSample, 48, "DISPATCH").length &&
-    (!patched || (/data-fact-mode="authorized"/.test(campaignV1) && /data-fact-mode="compact"/.test(campaignAz))),
+    (!patched || (/data-fact-mode="authorized"/.test(campaignFrozen) && /data-fact-mode="compact"/.test(campaignAz))),
   "8. V1 logistics cards use authorized body strings; 54AZ stays compact",
 );
 const slots = premiumSlotsFromModel(lab);
