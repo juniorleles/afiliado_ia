@@ -41,6 +41,7 @@ import {
   EXPERIMENTAL_CANDIDATE_ID,
   CONTROLLED_IMPROVEMENT_EXECUTION_ID,
   PRODUCER_CONTENT_EXECUTION_ID,
+  PRODUCER_CONTENT_V2_EXECUTION_ID,
   STRUCTURAL_COMPOSITION_EXECUTION_ID,
   FROZEN_IMPROVEMENT_EXECUTION_ID,
   PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID,
@@ -49,6 +50,7 @@ import {
   usesPremiumStructuralComposition,
   usesPremiumProducerContent,
   usesPremiumProducerContentV2,
+  usesPremiumVisualOptimization,
   parseRendererCandidateId,
   resolveRendererCandidate,
   readRendererCandidateSelection,
@@ -88,7 +90,8 @@ function readJson(dir: string, file: string): Record<string, unknown> | null {
 
 const css = readFileSync(path.join(ROOT, "src/app/premium-design-engine.css"), "utf8");
 const lab = disableCommercialCta(buildV4Model("s1")!);
-const bo = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: CONTROLLED_IMPROVEMENT_EXECUTION_ID }));
+const bo = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: PRODUCER_CONTENT_V2_EXECUTION_ID }));
+const bp = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: CONTROLLED_IMPROVEMENT_EXECUTION_ID }));
 const bn = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: PRODUCER_CONTENT_EXECUTION_ID }));
 const bl = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: STRUCTURAL_COMPOSITION_EXECUTION_ID }));
 const bi = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: FROZEN_IMPROVEMENT_EXECUTION_ID }));
@@ -106,7 +109,8 @@ assert(
 );
 
 assert(
-  CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BO" &&
+  CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BP" &&
+    PRODUCER_CONTENT_V2_EXECUTION_ID === "54BO" &&
     PRODUCER_CONTENT_EXECUTION_ID === "54BN" &&
     STRUCTURAL_COMPOSITION_EXECUTION_ID === "54BL" &&
     FROZEN_IMPROVEMENT_EXECUTION_ID === "54BI" &&
@@ -115,36 +119,42 @@ assert(
     parseRendererCandidateId("54BO") === EXPERIMENTAL_CANDIDATE_ID &&
     parseRendererCandidateId("PREMIUM_PRODUCER_CONTENT_V2") === EXPERIMENTAL_CANDIDATE_ID &&
     resolveRendererCandidate({ requested: "54BO" }).executionId === "54BO" &&
+    resolveRendererCandidate({ requested: "54BP" }).executionId === "54BP" &&
     resolveRendererCandidate({ requested: "54BN" }).executionId === "54BN" &&
     resolveRendererCandidate({ requested: "54BL" }).executionId === "54BL" &&
     resolveRendererCandidate({ requested: "54BI" }).executionId === "54BI" &&
     experimentalExecutionIdOf("54BO") === "54BO" &&
     usesPremiumProducerContentV2("54BO") &&
     !usesPremiumProducerContentV2("54BN") &&
+    !usesPremiumProducerContentV2("54BP") &&
+    usesPremiumVisualOptimization("54BP") &&
+    !usesPremiumVisualOptimization("54BO") &&
     usesPremiumProducerContent("54BN") &&
     usesPremiumStructuralComposition("54BO") &&
     usesPremiumStructuralComposition("54BN") &&
     usesPremiumStructuralComposition("54BL") &&
     !usesPremiumProducerContent("54BI"),
-  "4. 54BO has a distinct experimental identity and PREMIUM_PRODUCER_CONTENT_V2 composition",
+  "4. 54BO remains a distinct PREMIUM_PRODUCER_CONTENT_V2 candidate after 54BP",
 );
 
 assert(
   /data-presell-execution="54BO"/.test(bo) &&
     /data-presell-composition="PREMIUM_PRODUCER_CONTENT_V2"/.test(bo) &&
+    /data-presell-execution="54BP"/.test(bp) &&
+    /data-presell-composition="PREMIUM_VISUAL_OPTIMIZATION_V1"/.test(bp) &&
     /data-presell-execution="54BN"/.test(bn) &&
     /data-presell-composition="PREMIUM_PRODUCER_CONTENT_V1"/.test(bn) &&
     /data-presell-execution="54BL"/.test(bl) &&
     /data-presell-execution="54BI"/.test(bi) &&
-    /data-presell-execution="54BO"/.test(v1),
-  "5. renderer switching keeps 54BO, 54BN, 54BL, and 54BI distinct",
+    /data-presell-execution="54BP"/.test(v1),
+  "5. renderer switching keeps 54BP, 54BO, 54BN, 54BL, and 54BI distinct",
 );
 
 assert(/\[data-presell-execution="54BO"\]/.test(css), "6a. 54BO CSS selector is isolated");
 assert(/\[data-presell-execution="54BN"\]/.test(css), "6b. 54BN CSS selector remains isolated");
 assert(/min-height:\s*900px/.test(css), "6c. desktop hero fills the 1440x900 fold");
 assert(
-  /data-package-layout=\{finalized \? "below-hero" : "legacy"\}/.test(
+  /data-package-layout=\{optimized \? "optimized" : finalized \? "below-hero" : "legacy"\}/.test(
     readFileSync(path.join(ROOT, "src/components/presell/standard-v1-page.tsx"), "utf8"),
   ),
   "6d. packages use the below-hero layout on 54BO",

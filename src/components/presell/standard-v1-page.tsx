@@ -29,11 +29,22 @@ import {
   PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID,
   PREMIUM_PRODUCER_CONTENT_V2_COMPOSITION_ID,
   PREMIUM_STRUCTURAL_COMPOSITION_ID,
+  PREMIUM_VISUAL_OPTIMIZATION_COMPOSITION_ID,
   usesPremiumProducerContent,
   usesPremiumProducerContentV2,
   usesPremiumStructuralComposition,
+  usesPremiumVisualOptimization,
 } from "@/lib/presell-quality/renderer-candidate";
 import { readCommercialReuse, type CommercialReuseManifest } from "@/lib/presell-quality/commercial-reuse";
+import {
+  compositionDataAttributes,
+  complianceLines,
+  defaultVisualComposition,
+  heroIntroduction,
+  presentPackageShipping,
+  readVisualComposition,
+  type VisualComposition,
+} from "@/lib/presell-quality/visual-optimization-agent";
 import { mapPresellStandardV1 } from "@/lib/presell-template";
 import { PRESELL_STANDARD_ID } from "@/lib/presell-template/standard-v1";
 import type { PresellStandardSectionId } from "@/lib/presell-template/standard-v1";
@@ -84,40 +95,60 @@ function toneFor(type: BlueprintSection["sectionType"]): "plain" | "alt" | "soft
 function SellerStatedOffers({
   manifest,
   finalized,
+  composition,
 }: {
   manifest: CommercialReuseManifest;
   finalized?: boolean;
+  composition?: VisualComposition | null;
 }) {
   if (!manifest.approvedPackages.length) return null;
+  const optimized = Boolean(composition);
+  const highlight = composition?.packages.highlight ?? "none";
   return (
-    <DsSection tone="soft" className={cx("v4-band", finalized && "premium-producer-offers")} id="seller-stated-packages">
+    <DsSection tone="soft" className={cx("v4-band", (finalized || optimized) && "premium-producer-offers")} id="seller-stated-packages">
       <DsContainer>
-        <DsKicker>Seller-stated offer</DsKicker>
-        <h2 className="ds-h2">Packages shown on the seller&apos;s order page</h2>
-        <p className="ds-body">{manifest.attribution}</p>
+        <DsKicker>{optimized ? "Available packages" : "Seller-stated offer"}</DsKicker>
+        <h2 className="ds-h2">{optimized ? "Choose a bottle count" : "Packages shown on the seller's order page"}</h2>
+        {optimized ? null : <p className="ds-body">{manifest.attribution}</p>}
         <div
           className="premium-grid premium-producer-packages"
           data-premium="packages"
           data-seller-stated-offers="1"
-          data-package-layout={finalized ? "below-hero" : "legacy"}
+          data-package-layout={optimized ? "optimized" : finalized ? "below-hero" : "legacy"}
         >
-          {manifest.approvedPackages.map((item) => (
-            <article key={item.id} className="premium-card" data-seller-package={item.id}>
-              <p className="ds-kicker">{item.label}</p>
-              <h3 className="ds-h3">
-                {item.quantity}
-                {item.duration ? ` · ${item.duration}` : ""}
-              </h3>
-              <p className="ds-display ds-display--package">{item.unitPrice}</p>
-              <p className="ds-meta">per bottle, seller-stated</p>
-              <p className="ds-body">
-                Current total {item.currentTotal}
-                {item.comparedTotal ? ` (listed comparison ${item.comparedTotal})` : ""}
-              </p>
-              {item.bonuses.length ? <p className="ds-body">{item.bonuses.join(" · ")}</p> : null}
-              <p className="ds-meta">{item.shippingTerm}</p>
-            </article>
-          ))}
+          {manifest.approvedPackages.map((item, index) => {
+            const featured =
+              (highlight === "middle" && index === 1) ||
+              (highlight === "best-value" && /best value/i.test(item.label));
+            return (
+              <article
+                key={item.id}
+                className={cx("premium-card", featured && "premium-card--featured")}
+                data-seller-package={item.id}
+                data-package-featured={featured ? "1" : undefined}
+              >
+                <p className="ds-kicker">{item.label}</p>
+                <h3 className="ds-h3">
+                  {item.quantity}
+                  {item.duration ? ` · ${item.duration}` : ""}
+                </h3>
+                <p className="ds-display ds-display--package">{item.unitPrice}</p>
+                <p className="ds-meta">{optimized ? "per bottle" : "per bottle, seller-stated"}</p>
+                <p className="ds-body">
+                  {optimized ? `Total ${item.currentTotal}` : `Current total ${item.currentTotal}`}
+                  {item.comparedTotal ? ` (listed comparison ${item.comparedTotal})` : ""}
+                </p>
+                {item.bonuses.length ? (
+                  <p className="ds-body">
+                    {optimized
+                      ? item.bonuses.map((bonus) => bonus.replace(/^Seller-stated extras:\s*/i, "Includes ")).join(" · ")
+                      : item.bonuses.join(" · ")}
+                  </p>
+                ) : null}
+                <p className="ds-meta">{optimized ? presentPackageShipping(item.shippingTerm) : item.shippingTerm}</p>
+              </article>
+            );
+          })}
         </div>
       </DsContainer>
     </DsSection>
@@ -130,12 +161,14 @@ function StructuralHero({
   showAffiliateNote,
   showPackageLink,
   commercialSummary,
+  composition,
 }: {
   model: V4Model;
   announcementMessage?: string | null;
   showAffiliateNote?: boolean;
   showPackageLink?: boolean;
   commercialSummary?: string | null;
+  composition?: VisualComposition | null;
 }) {
   const image = model.commercialImage;
   const name = model.contract.identity.productName;
@@ -162,7 +195,7 @@ function StructuralHero({
             {distinctText(subheadline, headline, name, kind) ? <p className="ds-lead">{subheadline}</p> : null}
             {distinctText(value, headline, subheadline, name) ? <p className="ds-lead">{value}</p> : null}
             {distinctText(introduction, headline, subheadline, value, name) ? (
-              <p className="ds-body">{presentVisitorCopy(introduction)}</p>
+              <p className="ds-body">{composition ? heroIntroduction(introduction, composition) : presentVisitorCopy(introduction)}</p>
             ) : null}
             <EvidenceChips items={experimentalEvidenceChips(slots.evidenceChips, announcementMessage).slice(0, 3)} />
           </div>
@@ -192,10 +225,10 @@ function StructuralHero({
             ) : null}
             {showPackageLink ? (
               <a className="ds-btn ds-btn--ghost" href="#seller-stated-packages" data-v4-cta="inpage">
-                See seller-stated packages
+                {composition ? "See packages" : "See seller-stated packages"}
               </a>
             ) : null}
-            {showAffiliateNote ? (
+            {showAffiliateNote && composition?.copy.compliancePlacement !== "aside" ? (
               <p className="ds-meta">
                 This page is an informational presentation. I may earn a commission if you purchase through the seller.
               </p>
@@ -527,11 +560,17 @@ export function StandardV1Page({
   const structural = usesPremiumStructuralComposition(taggedExecution);
   const producer = usesPremiumProducerContent(taggedExecution);
   const producerV2 = usesPremiumProducerContentV2(taggedExecution);
+  const visualOpt = usesPremiumVisualOptimization(taggedExecution);
+  const composition =
+    visualOpt && campaignId != null ? readVisualComposition(campaignId) ?? defaultVisualComposition("54BP") : visualOpt ? defaultVisualComposition("54BP") : null;
   const commercial = producer && campaignId != null ? readCommercialReuse(campaignId) : null;
   const commercialSummary =
-    producerV2 && commercial?.approvedPackages.length
-      ? `Seller-stated packages: ${commercial.approvedPackages.map((item) => `${item.quantity} at ${item.unitPrice}`).join(", ")} per bottle.`
-      : null;
+    visualOpt && commercial?.approvedPackages.length
+      ? commercial.approvedPackages.map((item) => `${item.quantity} at ${item.unitPrice} per bottle`).join("; ")
+      : producerV2 && commercial?.approvedPackages.length
+        ? `Seller-stated packages: ${commercial.approvedPackages.map((item) => `${item.quantity} at ${item.unitPrice}`).join(", ")} per bottle.`
+        : null;
+  const compositionAttrs = composition ? compositionDataAttributes(composition) : {};
   const presentIds = new Set(template.sections.filter((item) => item.present).map((item) => item.id));
   const byType = new Map(model.blueprint.sections.map((section) => [section.sectionType, section]));
   const order: BlueprintSection[] = [];
@@ -580,14 +619,17 @@ export function StandardV1Page({
       data-presell-candidate={PRESELL_STANDARD_ID}
       data-presell-execution={taggedExecution}
       data-presell-composition={
-        producerV2
-          ? PREMIUM_PRODUCER_CONTENT_V2_COMPOSITION_ID
-          : producer
-            ? PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID
-            : structural
-              ? PREMIUM_STRUCTURAL_COMPOSITION_ID
-              : undefined
+        visualOpt
+          ? PREMIUM_VISUAL_OPTIMIZATION_COMPOSITION_ID
+          : producerV2
+            ? PREMIUM_PRODUCER_CONTENT_V2_COMPOSITION_ID
+            : producer
+              ? PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID
+              : structural
+                ? PREMIUM_STRUCTURAL_COMPOSITION_ID
+                : undefined
       }
+      {...compositionAttrs}
     >
       {template.announcement ? <AnnouncementBar message={template.announcement.message} /> : null}
       {order.map((section) => {
@@ -601,12 +643,24 @@ export function StandardV1Page({
                   showAffiliateNote={producer}
                   showPackageLink={Boolean(commercial?.approvedPackages.length)}
                   commercialSummary={commercialSummary}
+                  composition={composition}
                 />
               ) : (
                 <Hero model={model} announcementMessage={template.announcement?.message ?? null} />
               )}
               {producer && commercial?.approvedPackages.length ? (
-                <SellerStatedOffers manifest={commercial} finalized={producerV2} />
+                <SellerStatedOffers manifest={commercial} finalized={producerV2} composition={composition} />
+              ) : null}
+              {composition?.copy.compliancePlacement === "aside" ? (
+                <aside className="premium-compliance-band" data-compliance-band="1">
+                  <DsContainer>
+                    {complianceLines({ attribution: commercial?.attribution, affiliate: producer }).map((line) => (
+                      <p className="ds-meta" key={line}>
+                        {line}
+                      </p>
+                    ))}
+                  </DsContainer>
+                </aside>
               ) : null}
               {gallery.render && model.galleryImages?.length ? (
                 <DsSection tone="alt" className="v4-band" id="gallery">

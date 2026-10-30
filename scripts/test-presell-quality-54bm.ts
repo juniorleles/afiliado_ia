@@ -145,7 +145,7 @@ assert(
     biOfficial.finalMobileVisualScore === 72 &&
     biOfficial.finalEditorialScore === 74 &&
     STRUCTURAL_COMPOSITION_EXECUTION_ID === "54BL" &&
-    CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BO" &&
+    CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BP" &&
     FROZEN_IMPROVEMENT_EXECUTION_ID === "54BI" &&
     resolveRendererCandidate({ requested: "54BI" }).executionId === "54BI" &&
     resolveRendererCandidate({ requested: "54BL" }).executionId === "54BL",
