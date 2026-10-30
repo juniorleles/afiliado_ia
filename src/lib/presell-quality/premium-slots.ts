@@ -222,7 +222,11 @@ export function experimentalSectionTitle(input: {
   productFormat?: "PHYSICAL" | "DIGITAL" | "UNKNOWN";
   titles?: Partial<Record<SectionType, string>>;
 }): string {
-  if (input.titles?.[input.sectionType]) return input.titles[input.sectionType]!;
+  if (input.titles?.[input.sectionType]) {
+    const patched = input.titles[input.sectionType]!;
+    if (input.sectionType === "guarantee" && /\d+-day/.test(patched)) return "Seller-stated refund terms";
+    return patched;
+  }
   const kind = input.productKind?.trim() ?? "";
   if (input.sectionType === "how_it_works") {
     return (input.usageCount ?? 0) > 0 ? "Directions for use" : publicSectionTitle(input.sectionType, input.headline, input.titles);
@@ -232,7 +236,6 @@ export function experimentalSectionTitle(input: {
     return /\b(digital|course|download|module)\b/i.test(kind) ? "Included modules" : "What's included";
   }
   if (input.sectionType === "guarantee") {
-    if (input.guaranteeDays) return `${input.guaranteeDays}-day seller-stated refund`;
     return "Seller-stated refund terms";
   }
   if (input.sectionType === "trust") {
@@ -329,6 +332,20 @@ export function evidenceChipsFrom(model: V4Model, slots: Pick<PremiumSlots, "gua
   if (payment) chips.push({ label: compactFact(payment.body, 48, "PAYMENT") || "Seller-stated payment terms", icon: "card" });
   if (!chips.length && model.copy.faq.length) chips.push({ label: "Source questions answered", icon: "help" });
   return chips.slice(0, 4);
+}
+
+export function isRefundWindowChip(label: string): boolean {
+  return /\d+-day seller-stated refund/i.test(label);
+}
+
+export function experimentalEvidenceChips(chips: EvidenceChip[], announcementMessage?: string | null): EvidenceChip[] {
+  const announce = (announcementMessage ?? "").trim().toLowerCase();
+  return chips.filter((chip) => {
+    if (!isRefundWindowChip(chip.label)) return true;
+    if (!announce) return true;
+    const label = chip.label.trim().toLowerCase();
+    return !(announce === label || announce.includes(label) || label.includes(announce));
+  });
 }
 
 export function premiumSlotsFromModel(model: V4Model): PremiumSlots {

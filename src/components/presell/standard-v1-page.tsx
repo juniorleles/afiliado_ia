@@ -23,7 +23,7 @@ import {
   UsageSteps,
 } from "@/components/design-system/premium-blocks";
 import { AnnouncementBar, ShippingOrAccess } from "@/components/presell";
-import { experimentalSectionTitle, presentVisitorCopy, premiumSlotsFromModel } from "@/lib/presell-quality/premium-slots";
+import { experimentalEvidenceChips, experimentalSectionTitle, presentVisitorCopy, premiumSlotsFromModel } from "@/lib/presell-quality/premium-slots";
 import { mapPresellStandardV1 } from "@/lib/presell-template";
 import { PRESELL_STANDARD_ID } from "@/lib/presell-template/standard-v1";
 import type { PresellStandardSectionId } from "@/lib/presell-template/standard-v1";
@@ -71,7 +71,7 @@ function toneFor(type: BlueprintSection["sectionType"]): "plain" | "alt" | "soft
   return "plain";
 }
 
-function Hero({ model }: { model: V4Model }) {
+function Hero({ model, announcementMessage }: { model: V4Model; announcementMessage?: string | null }) {
   const image = model.commercialImage;
   const heroMode = v4HeroMode(image);
   const editorial = heroMode === "EDITORIAL_NO_IMAGE";
@@ -121,7 +121,7 @@ function Hero({ model }: { model: V4Model }) {
             {distinctText(introduction, headline, subheadline, value, name) ? (
               <p className="ds-body">{presentVisitorCopy(introduction)}</p>
             ) : null}
-            <EvidenceChips items={premiumSlotsFromModel(model).evidenceChips.slice(0, 3)} />
+            <EvidenceChips items={experimentalEvidenceChips(premiumSlotsFromModel(model).evidenceChips, announcementMessage).slice(0, 3)} />
             <div className="ds-hero__actions">
               {model.hopSlot === "hero" ? <Hop model={model} slot="hero" /> : <PremiumCta slot="hero" />}
               {model.hopSlot === "offers" ? (
@@ -425,14 +425,14 @@ export function StandardV1Page({ model }: { model: V4Model }) {
       data-premium-engine="1"
       data-presell-standard={PRESELL_STANDARD_ID}
       data-presell-candidate={PRESELL_STANDARD_ID}
-      data-presell-execution="54BH"
+      data-presell-execution="54BI"
     >
       {template.announcement ? <AnnouncementBar message={template.announcement.message} /> : null}
       {order.map((section) => {
         if (section.sectionType === "hero") {
           return (
             <div key={section.sectionId}>
-              <Hero model={model} />
+              <Hero model={model} announcementMessage={template.announcement?.message ?? null} />
               {gallery.render && model.galleryImages?.length ? (
                 <DsSection tone="alt" className="v4-band" id="gallery">
                   <DsContainer width="wide">

@@ -98,8 +98,8 @@ assert(
 assert(/data-presell-candidate="54AZ"/.test(az) && !/data-presell-standard="PRESELL_STANDARD_V1"/.test(az), "5. 54AZ remains renderable without the V1 tag");
 assert(
   /data-presell-standard="PRESELL_STANDARD_V1"/.test(v1) &&
-    /data-presell-execution="54BH"/.test(v1) &&
-    /data-presell-execution="54BH"/.test(via54bf),
+    /data-presell-execution="54BI"/.test(v1) &&
+    /data-presell-execution="54BI"/.test(via54bf),
   "6. template V1 remains renderable and is tagged with the current experimental execution",
 );
 assert(/minmax\(26rem, 1\.32fr\)/.test(css) && !/minmax\(28rem, 1\.5fr\)/.test(css) && !/scale\(1\.14\)/.test(css), "7. desktop hero packing restores 54AZ and no longer clips via scale");

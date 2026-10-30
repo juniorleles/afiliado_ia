@@ -92,8 +92,7 @@ const returnsSample = "The seller states a 60-day refund. Empty bottles may be r
 
 assert(bgPresent, "1. 54BG commit object remains recoverable");
 assert(
-  CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BH" &&
-    parseRendererCandidateId("54BH") === EXPERIMENTAL_CANDIDATE_ID &&
+  parseRendererCandidateId("54BH") === EXPERIMENTAL_CANDIDATE_ID &&
     (identity == null || identity.candidateExecution === "54BH"),
   "1b. experimental candidate identity is PRESELL_STANDARD_V1 / execution 54BH",
 );
@@ -124,12 +123,12 @@ assert(
 );
 assert(
   /data-presell-standard="PRESELL_STANDARD_V1"/.test(v1) &&
-    /data-presell-execution="54BH"/.test(v1) &&
-    /data-presell-execution="54BH"/.test(via54bh) &&
-    /data-presell-execution="54BH"/.test(via54bf) &&
+    /data-presell-execution="54BI"/.test(v1) &&
+    /data-presell-execution="54BI"/.test(via54bh) &&
+    /data-presell-execution="54BI"/.test(via54bf) &&
     PRESELL_STANDARD_ID === "PRESELL_STANDARD_V1" &&
     PRESELL_STANDARD_VERSION === "1",
-  "6. template V1 remains renderable and is tagged as execution 54BH",
+  "6. template V1 remains renderable and is tagged with the current experimental execution",
 );
 assert(
   /data-presell-section="ANNOUNCEMENT_BAR"/.test(v1) &&

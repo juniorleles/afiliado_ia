@@ -129,10 +129,25 @@ const scenarios = labScenarioKeys().map((key) => {
 });
 assert(scenarios.every(Boolean), "19. multiproduct regression stays generic and omits empty optional sections");
 
+const azOfficial = existsSync(path.join(process.cwd(), "data/evidence/execution-54az-design-recovery/official-v2-scores.json"))
+  ? (JSON.parse(readFileSync(path.join(process.cwd(), "data/evidence/execution-54az-design-recovery/official-v2-scores.json"), "utf8")) as {
+      finalDesktopVisualScore?: number;
+      finalMobileVisualScore?: number;
+      finalEditorialScore?: number;
+    })
+  : null;
+assert(
+  azOfficial?.finalDesktopVisualScore === 72 && azOfficial.finalMobileVisualScore === 68 && azOfficial.finalEditorialScore === 73,
+  "20. 54AZ official scores remain 72/68/73 in evidence",
+);
 const best = readBestCandidate(237);
 assert(
-  !best || (best.desktopVisualScore === 72 && best.mobileVisualScore === 68 && best.editorialScore === 73 && best.humanReviewUnlocked === false),
-  "20. best known 54AZ scores are preserved",
+  !best ||
+    (best.humanReviewUnlocked === false &&
+      (best.desktopVisualScore ?? 0) >= 72 &&
+      (best.mobileVisualScore ?? 0) >= 68 &&
+      (best.editorialScore ?? 0) >= 73),
+  "20b. live best candidate is not worse than 54AZ and does not unlock human review",
 );
 assert(EXECUTION_54BC_PAID_AI_BUDGET_USD === 0, "21. this execution authorizes no paid AI");
 assert(VISUAL_SCORE_TARGET === 90 && QUALITY_SCORE_TARGET === 85, "21b. thresholds are unchanged");
