@@ -1,0 +1,27 @@
+export const PRESELL_STANDARD_ID = "PRESELL_STANDARD_V1" as const;
+export const PRESELL_STANDARD_VERSION = "1" as const;
+export const PRESELL_STANDARD_REFERENCE = "PREMIUM_PRESELL_DESIGN_STANDARD_V1" as const;
+export const EXECUTION_54BC_PAID_AI_BUDGET_USD = 0;
+
+export const PRESELL_STANDARD_SECTION_IDS = [
+  "ANNOUNCEMENT_BAR",
+  "PREMIUM_HERO",
+  "TRUST_INFORMATION",
+  "PRODUCT_OVERVIEW",
+  "HOW_IT_WORKS",
+  "INGREDIENTS_OR_MODULES",
+  "GUARANTEE",
+  "COMMERCIAL_CTA",
+  "SHIPPING_OR_ACCESS",
+  "VERIFIED_TESTIMONIALS",
+  "PREMIUM_FAQ",
+  "LEGAL_FOOTER",
+] as const;
+
+export type PresellStandardSectionId = (typeof PRESELL_STANDARD_SECTION_IDS)[number];
+
+export const PRESELL_REQUIRED_SECTIONS: readonly PresellStandardSectionId[] = ["PREMIUM_HERO", "LEGAL_FOOTER"];
+
+export const PRESELL_OPTIONAL_SECTIONS: readonly PresellStandardSectionId[] = PRESELL_STANDARD_SECTION_IDS.filter(
+  (id) => !PRESELL_REQUIRED_SECTIONS.includes(id),
+);

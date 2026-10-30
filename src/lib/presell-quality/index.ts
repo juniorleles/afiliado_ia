@@ -232,4 +232,17 @@ export { detectDoublePenalty } from "@/lib/presell-quality/dimension-overlap";
 export { buildEditorialEnrichmentPlan } from "@/lib/presell-quality/enrichment-plan";
 export { runAutonomousRecovery, validateFactCandidate, nextQualityAction } from "@/lib/presell-quality/recovery";
 export { runWithTemporaryPaidAi, paidProviderAllowed } from "@/lib/ai/paid-gate";
+export {
+  PRESELL_STANDARD_ID,
+  PRESELL_STANDARD_VERSION,
+  PRESELL_STANDARD_SECTION_IDS,
+  PRESELL_REQUIRED_SECTIONS,
+  PRESELL_OPTIONAL_SECTIONS,
+  EXECUTION_54BC_PAID_AI_BUDGET_USD,
+  PRESELL_SECTION_REGISTRY,
+  mapPresellStandardV1,
+  validatePresellTemplateDocument,
+  runTemplateQualityPreflight,
+  producerEvidenceLibraryFromRun,
+} from "@/lib/presell-template";
 export { MULTIMODAL_PROVIDER_ID, MULTIMODAL_MODEL_ID, multimodalProviderStatus } from "@/lib/presell-quality/provider";
