@@ -138,7 +138,7 @@ function Hero({ model }: { model: V4Model }) {
                   <img src={image.src} alt={image.alt} width={1200} height={1200} data-v4-image="commercial" decoding="async" />
                 </div>
               </div>
-              <HeroLogisticsRail items={premiumSlotsFromModel(model).fulfillment} />
+              <HeroLogisticsRail items={premiumSlotsFromModel(model).fulfillment} factMode="authorized" />
             </div>
           ) : null}
           {editorial ? (
@@ -425,7 +425,7 @@ export function StandardV1Page({ model }: { model: V4Model }) {
       data-premium-engine="1"
       data-presell-standard={PRESELL_STANDARD_ID}
       data-presell-candidate={PRESELL_STANDARD_ID}
-      data-presell-execution="54BF"
+      data-presell-execution="54BH"
     >
       {template.announcement ? <AnnouncementBar message={template.announcement.message} /> : null}
       {order.map((section) => {

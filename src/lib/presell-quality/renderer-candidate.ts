@@ -5,7 +5,8 @@ import { PRESELL_STANDARD_ID } from "@/lib/presell-template/standard-v1";
 
 export const BEST_KNOWN_CANDIDATE_ID = "54AZ" as const;
 export const EXPERIMENTAL_CANDIDATE_ID = PRESELL_STANDARD_ID;
-export const CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BF" as const;
+export const PRIOR_CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BF" as const;
+export const CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BH" as const;
 export const RENDERER_CANDIDATE_IDS = [BEST_KNOWN_CANDIDATE_ID, EXPERIMENTAL_CANDIDATE_ID] as const;
 export type RendererCandidateId = (typeof RENDERER_CANDIDATE_IDS)[number];
 
@@ -33,7 +34,8 @@ export function parseRendererCandidateId(value: string | null | undefined): Rend
   if (
     normalized === EXPERIMENTAL_CANDIDATE_ID ||
     normalized === "PRESELL_STANDARD_V1" ||
-    normalized === CONTROLLED_IMPROVEMENT_EXECUTION_ID
+    normalized === CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
+    normalized === PRIOR_CONTROLLED_IMPROVEMENT_EXECUTION_ID
   ) {
     return EXPERIMENTAL_CANDIDATE_ID;
   }

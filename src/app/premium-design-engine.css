@@ -445,6 +445,28 @@
   margin: 0;
 }
 
+@media (min-width: 768px) {
+  .ds-root[data-ds-engine="premium"] [data-presell-standard="PRESELL_STANDARD_V1"] .presell-announce {
+    padding: 0.32rem 1rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    background: color-mix(in srgb, var(--ds-ink) 3.5%, var(--ds-bg));
+    color: color-mix(in srgb, var(--ds-ink) 68%, var(--ds-muted));
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-standard="PRESELL_STANDARD_V1"] .premium-hero-rail__item {
+    align-items: start;
+    min-height: 0;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-standard="PRESELL_STANDARD_V1"] .premium-hero-rail__fact {
+    font-size: 0.78rem;
+    font-weight: 550;
+    line-height: 1.35;
+  }
+}
+
 .ds-root[data-ds-engine="premium"] [data-presell-standard="PRESELL_STANDARD_V1"] .presell-standard-hero {
   background:
     radial-gradient(980px 520px at 88% 6%, color-mix(in srgb, var(--ds-accent-soft) 62%, transparent), transparent 64%),

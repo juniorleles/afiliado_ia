@@ -102,6 +102,12 @@ function windowsIn(text: string): string[] {
   return [...text.matchAll(/\b\d{1,3}\s*(?:to\s+\d{1,3}\s+)?(?:working\s+)?(?:hours|days)\b/gi)].map((item) => item[0]);
 }
 
+export function presentFulfillmentFact(text: string, kind?: FulfillmentCardModel["kind"]): string {
+  const value = clean(text);
+  if (!value) return "";
+  return firstSentences(value, kind === "PAYMENT" ? 1 : 2) || compactFact(value, 96, kind);
+}
+
 export function compactFact(text: string, max = 48, kind?: FulfillmentCardModel["kind"]): string {
   const value = clean(text);
   if (!value) return "";

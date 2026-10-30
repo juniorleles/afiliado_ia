@@ -5,6 +5,7 @@ import {
 } from "@/lib/presell-quality/premium-design";
 import {
   compactFact,
+  presentFulfillmentFact,
   type EvidenceChip,
   type FaqView,
   type FulfillmentCardModel,
@@ -122,21 +123,33 @@ export function FulfillmentCardGrid({ items }: { items: FulfillmentCardModel[] }
   );
 }
 
-export function HeroLogisticsRail({ items }: { items: FulfillmentCardModel[] }) {
+export function HeroLogisticsRail({
+  items,
+  factMode = "compact",
+}: {
+  items: FulfillmentCardModel[];
+  factMode?: "compact" | "authorized";
+}) {
   if (!items.length) return null;
   return (
-    <aside className="premium-hero-rail" data-premium="hero-rail">
-      {items.slice(0, 4).map((item) => (
-        <div className="premium-hero-rail__item" key={item.kind}>
-          <span className="premium-hero-rail__icon">
-            <PremiumIcon name={item.icon} />
-          </span>
-          <span className="premium-hero-rail__copy">
-            <span className="premium-hero-rail__title">{item.title}</span>
-            <span className="premium-hero-rail__fact">{compactFact(item.body, 48, item.kind) || item.title}</span>
-          </span>
-        </div>
-      ))}
+    <aside className="premium-hero-rail" data-premium="hero-rail" data-fact-mode={factMode}>
+      {items.slice(0, 4).map((item) => {
+        const fact =
+          factMode === "authorized"
+            ? presentFulfillmentFact(item.body, item.kind) || item.body || item.title
+            : compactFact(item.body, 48, item.kind) || item.title;
+        return (
+          <div className="premium-hero-rail__item" key={item.kind}>
+            <span className="premium-hero-rail__icon">
+              <PremiumIcon name={item.icon} />
+            </span>
+            <span className="premium-hero-rail__copy">
+              <span className="premium-hero-rail__title">{item.title}</span>
+              <span className="premium-hero-rail__fact">{fact}</span>
+            </span>
+          </div>
+        );
+      })}
     </aside>
   );
 }
