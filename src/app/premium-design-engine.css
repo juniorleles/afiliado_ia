@@ -469,17 +469,3 @@
     grid-template-columns: 1fr;
   }
 }
-
-.ds-root[data-ds-engine="premium"] .presell-announce {
-  margin: 0;
-  padding: 0.65rem 1.25rem;
-  background: color-mix(in srgb, var(--ds-ink) 6%, var(--ds-bg));
-  color: var(--ds-ink);
-  text-align: center;
-  font-size: 0.92rem;
-  letter-spacing: 0.01em;
-}
-
-.ds-root[data-ds-engine="premium"] .presell-announce p {
-  margin: 0;
-}

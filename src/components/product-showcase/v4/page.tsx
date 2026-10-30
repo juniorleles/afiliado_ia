@@ -23,12 +23,7 @@ import {
   PremiumFaq,
   UsageSteps,
 } from "@/components/design-system/premium-blocks";
-import { AnnouncementBar, ShippingOrAccess } from "@/components/presell";
 import { presentVisitorCopy, premiumSlotsFromModel } from "@/lib/presell-quality/premium-slots";
-import { mapPresellStandardV1 } from "@/lib/presell-template";
-import { PRESELL_STANDARD_ID } from "@/lib/presell-template/standard-v1";
-import type { PresellStandardSectionId } from "@/lib/presell-template/standard-v1";
-import type { SectionType } from "@/lib/conversion-strategy/types";
 
 function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");
@@ -296,7 +291,6 @@ function FaqSection({ section, model }: { section: BlueprintSection; model: V4Mo
 function TrustSection({ section, model }: { section: BlueprintSection; model: V4Model }) {
   const slots = premiumSlotsFromModel(model);
   const items = section.items.length ? section.items : section.body.map((item) => ({ text: item }));
-  const trustCards = slots.fulfillment.filter((item) => item.kind === "PAYMENT" || item.kind === "RETURNS");
   const covered = slots.fulfillment.map((item) => item.body.toLowerCase()).join("\n");
   const leftover = items
     .map((item) => publicItemText(item.text.text))
@@ -306,7 +300,7 @@ function TrustSection({ section, model }: { section: BlueprintSection; model: V4
     });
   return (
     <>
-      <FulfillmentCardGrid items={trustCards} />
+      <FulfillmentCardGrid items={slots.fulfillment} />
       {leftover.length ? (
         <ul className="ds-list">
           {leftover.map((text) => (
@@ -365,54 +359,14 @@ function LegalSection({ model, section }: { model: V4Model; section: BlueprintSe
   );
 }
 
-function templateBlueprintType(id: PresellStandardSectionId): SectionType | null {
-  if (id === "PREMIUM_HERO") return "hero";
-  if (id === "TRUST_INFORMATION") return "trust";
-  if (id === "PRODUCT_OVERVIEW") return "differentiators";
-  if (id === "HOW_IT_WORKS") return "how_it_works";
-  if (id === "INGREDIENTS_OR_MODULES") return "specifications";
-  if (id === "GUARANTEE") return "guarantee";
-  if (id === "PREMIUM_FAQ") return "faq";
-  if (id === "LEGAL_FOOTER") return "legal";
-  return null;
-}
-
 export function V4Page({ model }: { model: V4Model }) {
-  const template = mapPresellStandardV1(model);
-  const presentIds = new Set(template.sections.filter((item) => item.present).map((item) => item.id));
-  const byType = new Map(model.blueprint.sections.map((section) => [section.sectionType, section]));
-  const order: BlueprintSection[] = [];
-  const seen = new Set<string>();
-  for (const section of template.sections) {
-    if (!section.present) continue;
-    if (section.id === "SHIPPING_OR_ACCESS" || section.id === "ANNOUNCEMENT_BAR" || section.id === "COMMERCIAL_CTA" || section.id === "VERIFIED_TESTIMONIALS") {
-      continue;
-    }
-    const type = templateBlueprintType(section.id);
-    const match =
-      type === "differentiators"
-        ? byType.get("differentiators") ?? byType.get("benefits")
-        : type
-          ? byType.get(type)
-          : undefined;
-    if (!match || seen.has(match.sectionId) || !visible(model, match.sectionType)) continue;
-    seen.add(match.sectionId);
-    order.push(match);
-  }
-  for (const section of model.blueprint.sections) {
-    if (seen.has(section.sectionId) || !visible(model, section.sectionType)) continue;
-    if (section.sectionType === "offers" || section.sectionType === "demonstration" || section.sectionType === "cta_final") continue;
-    order.push(section);
-  }
+  const order = model.blueprint.sections.filter((section) => visible(model, section.sectionType));
   const patch = model.qualityPatch;
   const heroMode = v4HeroMode(model.commercialImage);
   const gallery = galleryPresentationOf({
     heroMode,
     galleryImages: model.galleryImages,
   });
-  const shippingCards = presentIds.has("SHIPPING_OR_ACCESS")
-    ? premiumSlotsFromModel(model).fulfillment.filter((item) => item.kind === "DISPATCH" || item.kind === "DELIVERY")
-    : [];
   return (
     <main
       data-v4="page"
@@ -423,9 +377,7 @@ export function V4Page({ model }: { model: V4Model }) {
       data-v4-gallery-state={gallery.render ? "visible" : "suppressed"}
       data-quality-fixes={patch?.applied.join(" ") || undefined}
       data-premium-engine="1"
-      data-presell-standard={PRESELL_STANDARD_ID}
     >
-      {template.announcement ? <AnnouncementBar message={template.announcement.message} /> : null}
       {order.map((section) => {
         if (section.sectionType === "hero") {
           return (
@@ -502,37 +454,22 @@ export function V4Page({ model }: { model: V4Model }) {
               ))}
             </div>
           );
-        const shippingAfterThis =
-          shippingCards.length > 0 &&
-          (section.sectionType === "guarantee" ||
-            (!order.some((item) => item.sectionType === "guarantee") && section.sectionType === "faq"));
         return (
-          <React.Fragment key={section.sectionId}>
-            <DsSection
-              id={section.sectionType === "offers" ? "offers" : section.sectionId}
-              tone={toneFor(section.sectionType)}
-              className="v4-band"
-              tight={model.density === "thin" || editorialHeroMode(Boolean(model.commercialImage)) === "EDITORIAL_NO_IMAGE"}
-            >
-              <DsContainer width={section.sectionType === "offers" || section.sectionType === "differentiators" ? "wide" : "content"}>
-                <div data-v4-section={section.sectionType} data-v4-purpose={section.commercialPurpose}>
-                  <h2 className="ds-h2">{publicSectionTitle(section.sectionType, section.headline.text, patch?.titles)}</h2>
-                  {inner}
-                  {section.sectionType === "guarantee" && model.hopSlot === "none" ? <PremiumCta slot="mid" /> : null}
-                </div>
-              </DsContainer>
-            </DsSection>
-            {shippingAfterThis ? (
-              <DsSection id="shipping-or-access" tone="alt" className="v4-band">
-                <DsContainer width="content">
-                  <div data-v4-section="trust" data-presell-section="SHIPPING_OR_ACCESS">
-                    <h2 className="ds-h2">{template.productFormat === "DIGITAL" ? "Access" : "Shipping"}</h2>
-                    <ShippingOrAccess items={shippingCards} />
-                  </div>
-                </DsContainer>
-              </DsSection>
-            ) : null}
-          </React.Fragment>
+          <DsSection
+            key={section.sectionId}
+            id={section.sectionType === "offers" ? "offers" : section.sectionId}
+            tone={toneFor(section.sectionType)}
+            className="v4-band"
+            tight={model.density === "thin" || editorialHeroMode(Boolean(model.commercialImage)) === "EDITORIAL_NO_IMAGE"}
+          >
+            <DsContainer width={section.sectionType === "offers" || section.sectionType === "differentiators" ? "wide" : "content"}>
+              <div data-v4-section={section.sectionType} data-v4-purpose={section.commercialPurpose}>
+                <h2 className="ds-h2">{publicSectionTitle(section.sectionType, section.headline.text, patch?.titles)}</h2>
+                {inner}
+                {section.sectionType === "guarantee" && model.hopSlot === "none" ? <PremiumCta slot="mid" /> : null}
+              </div>
+            </DsContainer>
+          </DsSection>
         );
       })}
       {model.sticky && model.hopHref && model.hopLabel ? (
