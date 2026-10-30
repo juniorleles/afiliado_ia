@@ -53,6 +53,16 @@ export function hydrateFaqSection(model: V4Model): V4Model {
   };
 }
 
+function copyWithoutApprovedExcerpts(copy: string, approved: string[]): string {
+  let next = copy;
+  for (const excerpt of [...approved].sort((left, right) => right.length - left.length)) {
+    const value = excerpt.replace(/\s+/g, " ").trim();
+    if (value.length < 3) continue;
+    next = next.split(value).join(" ");
+  }
+  return next;
+}
+
 export function evaluateContentSafety(input: {
   model: V4Model;
   markup: string;
@@ -60,8 +70,10 @@ export function evaluateContentSafety(input: {
   packshotAssetId: string | null;
   usedAssetIds: string[];
   botanicalAssetIds: string[];
+  approvedCommercialExcerpts?: string[];
 }): ContentSafetyReport {
   const copy = `${renderedCopyFromModel(input.model)}\n${input.markup}`;
+  const commercialCopy = copyWithoutApprovedExcerpts(copy, input.approvedCommercialExcerpts ?? []);
   const findings: ContentSafetyFinding[] = [];
   const blockedExcerpts = input.manifest.blockedClaims
     .map((item) => item.excerpt.replace(/\s+/g, " ").trim().slice(0, 80))
@@ -72,7 +84,7 @@ export function evaluateContentSafety(input: {
     }
   }
   if (MEDICAL.test(copy)) findings.push({ code: "MEDICAL_CLAIM", message: "Blocked medical or efficacy language appears in the page." });
-  if (INVENTED_COMMERCIAL.test(copy)) findings.push({ code: "INVENTED_COMMERCIAL", message: "Invented price, discount, or guaranteed shipping language appears." });
+  if (INVENTED_COMMERCIAL.test(commercialCopy)) findings.push({ code: "INVENTED_COMMERCIAL", message: "Invented price, discount, or guaranteed shipping language appears." });
   if (TESTIMONIAL.test(copy)) findings.push({ code: "FICTIONAL_TESTIMONIAL", message: "Testimonial or unverified social proof appears." });
   if (MANUFACTURER.test(copy)) findings.push({ code: "INVENTED_MANUFACTURER", message: "Manufacturer identity was invented." });
   if (SECURITY_OVERCLAIM.test(copy)) findings.push({ code: "SSL_OVERCLAIM", message: "Payment/SSL language was strengthened into a security guarantee." });

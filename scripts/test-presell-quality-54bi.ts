@@ -127,7 +127,7 @@ assert(
     resolveRendererCandidate({ requested: "54BF" }).id === EXPERIMENTAL_CANDIDATE_ID &&
     resolveRendererCandidate({ requested: "54BI" }).executionId === "54BI" &&
     resolveRendererCandidate({ requested: "54BJ" }).executionId === "54BJ" &&
-    resolveRendererCandidate({ requested: "54BL" }).executionId === CONTROLLED_IMPROVEMENT_EXECUTION_ID &&
+    resolveRendererCandidate({ requested: "54BL" }).executionId === "54BL" &&
     resolveRendererCandidate({}).id === BEST_KNOWN_CANDIDATE_ID,
   "11. renderer candidate switching remains explicit, including 54BI and prior aliases",
 );

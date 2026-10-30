@@ -21,6 +21,17 @@ export type VisionCompletion = {
   text: string;
   inputTokens: number;
   outputTokens: number;
+  observability?: {
+    model: string;
+    maxOutputTokens: number;
+    textFormat: "json_object" | "json_schema";
+    temperatureSent: false;
+    topPSent: false;
+    seedSent: false;
+    requestPayloadHash: string;
+    responsePayloadHash?: string;
+    imageLabels: string[];
+  };
 };
 
 export type MultimodalVisionClient = {

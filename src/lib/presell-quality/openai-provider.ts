@@ -4,6 +4,7 @@ import { paidAiAuthorization, paidProviderAllowed } from "@/lib/ai/paid-gate";
 import { providerFetch } from "@/lib/ai/resilience";
 import { MULTIMODAL_QUALITY_JSON_SCHEMA } from "@/lib/presell-quality/schema";
 import type { MultimodalVisionClient, VisionCompletion, VisionImage } from "@/lib/presell-quality/provider";
+import { hashVisionRequestPayload, hashVisionResponsePayload } from "@/lib/presell-quality/evaluator-observability";
 
 export const OPENAI_VISION_PROVIDER_ID = "openai" as const;
 export const OPENAI_VISION_MODEL = "gpt-4o-mini";
@@ -101,6 +102,7 @@ export function createOpenAiVisionClient(options?: {
         });
       }
 
+      const textFormat = options?.jsonObject ? ("json_object" as const) : ("json_schema" as const);
       const body = {
         model,
         instructions: input.system,
@@ -116,6 +118,16 @@ export function createOpenAiVisionClient(options?: {
                 strict: true,
               },
         },
+      };
+      const observability = {
+        model,
+        maxOutputTokens: 4096,
+        textFormat,
+        temperatureSent: false as const,
+        topPSent: false as const,
+        seedSent: false as const,
+        requestPayloadHash: hashVisionRequestPayload(body),
+        imageLabels: input.images.slice(0, 4).map((image) => image.label),
       };
 
       const response = await providerFetch(
@@ -153,6 +165,10 @@ export function createOpenAiVisionClient(options?: {
         text,
         inputTokens: data.usage?.input_tokens ?? 0,
         outputTokens: data.usage?.output_tokens ?? 0,
+        observability: {
+          ...observability,
+          responsePayloadHash: hashVisionResponsePayload(text),
+        },
       } satisfies VisionCompletion;
     },
   };

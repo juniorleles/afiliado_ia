@@ -22,7 +22,9 @@ import {
   MULTIMODAL_PROVIDER_ID,
   multimodalProviderStatus,
   type MultimodalVisionClient,
+  type VisionCompletion,
 } from "@/lib/presell-quality/provider";
+import { hashVisionResponsePayload } from "@/lib/presell-quality/evaluator-observability";
 import {
   createOpenAiVisionClient,
   estimateOpenAiVisionUsd,
@@ -149,7 +151,7 @@ export function createMultimodalPresellEvaluator(deps: MultimodalEvaluatorDeps =
         (preferOpenAi ? createOpenAiVisionClient({ env }) : createAnthropicVisionClient({ env }));
       const officialReference = readPremiumReferenceBytes();
       const prompt = buildMultimodalEvaluatorPrompt(input, { officialReferenceAttached: Boolean(officialReference) });
-      let completion: { text: string; inputTokens: number; outputTokens: number };
+      let completion: VisionCompletion;
       try {
         const desktop = readImage(input.screenshots.desktop!.path, reader);
         const mobile = readImage(input.screenshots.mobile!.path, reader);
@@ -238,7 +240,20 @@ export function createMultimodalPresellEvaluator(deps: MultimodalEvaluatorDeps =
           actualUsd: 0,
           evaluationCount: 1,
           cached: false,
-          notes: ["Host computed overallScore from weighted dimensions. Model overallScore/status ignored if present."],
+          notes: [
+            "Host computed overallScore from weighted dimensions. Model overallScore/status ignored if present.",
+            ...(completion.observability
+              ? [
+                  `requestPayloadHash:${completion.observability.requestPayloadHash}`,
+                  `responsePayloadHash:${completion.observability.responsePayloadHash ?? hashVisionResponsePayload(completion.text)}`,
+                  `model:${completion.observability.model}`,
+                  `textFormat:${completion.observability.textFormat}`,
+                  `temperatureSent:${completion.observability.temperatureSent}`,
+                  `topPSent:${completion.observability.topPSent}`,
+                  `seedSent:${completion.observability.seedSent}`,
+                ]
+              : []),
+          ],
         },
       };
 

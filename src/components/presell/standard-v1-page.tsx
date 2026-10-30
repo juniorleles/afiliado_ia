@@ -26,9 +26,12 @@ import { AnnouncementBar, ShippingOrAccess } from "@/components/presell";
 import { experimentalEvidenceChips, experimentalSectionTitle, presentVisitorCopy, premiumSlotsFromModel } from "@/lib/presell-quality/premium-slots";
 import {
   CONTROLLED_IMPROVEMENT_EXECUTION_ID,
+  PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID,
   PREMIUM_STRUCTURAL_COMPOSITION_ID,
+  usesPremiumProducerContent,
   usesPremiumStructuralComposition,
 } from "@/lib/presell-quality/renderer-candidate";
+import { readCommercialReuse, type CommercialReuseManifest } from "@/lib/presell-quality/commercial-reuse";
 import { mapPresellStandardV1 } from "@/lib/presell-template";
 import { PRESELL_STANDARD_ID } from "@/lib/presell-template/standard-v1";
 import type { PresellStandardSectionId } from "@/lib/presell-template/standard-v1";
@@ -76,7 +79,49 @@ function toneFor(type: BlueprintSection["sectionType"]): "plain" | "alt" | "soft
   return "plain";
 }
 
-function StructuralHero({ model, announcementMessage }: { model: V4Model; announcementMessage?: string | null }) {
+function SellerStatedOffers({ manifest }: { manifest: CommercialReuseManifest }) {
+  if (!manifest.approvedPackages.length) return null;
+  return (
+    <DsSection tone="soft" className="v4-band" id="seller-stated-packages" data-seller-stated-offers="1">
+      <DsContainer>
+        <DsKicker>Seller-stated offer</DsKicker>
+        <h2 className="ds-h2">Packages shown on the seller&apos;s order page</h2>
+        <p className="ds-body">{manifest.attribution}</p>
+        <div className="premium-grid premium-producer-packages" data-premium="packages" data-seller-stated-offers="1">
+          {manifest.approvedPackages.map((item) => (
+            <article key={item.id} className="premium-card" data-seller-package={item.id}>
+              <p className="ds-kicker">{item.label}</p>
+              <h3 className="ds-h3">
+                {item.quantity}
+                {item.duration ? ` · ${item.duration}` : ""}
+              </h3>
+              <p className="ds-display ds-display--package">{item.unitPrice}</p>
+              <p className="ds-meta">per bottle, seller-stated</p>
+              <p className="ds-body">
+                Current total {item.currentTotal}
+                {item.comparedTotal ? ` (listed comparison ${item.comparedTotal})` : ""}
+              </p>
+              {item.bonuses.length ? <p className="ds-body">{item.bonuses.join(" · ")}</p> : null}
+              <p className="ds-meta">{item.shippingTerm}</p>
+            </article>
+          ))}
+        </div>
+      </DsContainer>
+    </DsSection>
+  );
+}
+
+function StructuralHero({
+  model,
+  announcementMessage,
+  showAffiliateNote,
+  showPackageLink,
+}: {
+  model: V4Model;
+  announcementMessage?: string | null;
+  showAffiliateNote?: boolean;
+  showPackageLink?: boolean;
+}) {
   const image = model.commercialImage;
   const name = model.contract.identity.productName;
   const kind = model.contract.identity.productKind;
@@ -124,6 +169,16 @@ function StructuralHero({ model, announcementMessage }: { model: V4Model; announ
               <a className="ds-btn ds-btn--ghost" href="#offers" data-v4-cta="inpage">
                 See packages
               </a>
+            ) : null}
+            {showPackageLink ? (
+              <a className="ds-btn ds-btn--ghost" href="#seller-stated-packages" data-v4-cta="inpage">
+                See seller-stated packages
+              </a>
+            ) : null}
+            {showAffiliateNote ? (
+              <p className="ds-meta">
+                This page is an informational presentation. I may earn a commission if you purchase through the seller.
+              </p>
             ) : null}
           </div>
         </div>
@@ -441,13 +496,17 @@ function templateBlueprintType(id: PresellStandardSectionId): SectionType | null
 export function StandardV1Page({
   model,
   executionId,
+  campaignId,
 }: {
   model: V4Model;
   executionId?: string | null;
+  campaignId?: number;
 }) {
   const template = mapPresellStandardV1(model);
   const taggedExecution = executionId?.trim() || CONTROLLED_IMPROVEMENT_EXECUTION_ID;
   const structural = usesPremiumStructuralComposition(taggedExecution);
+  const producer = usesPremiumProducerContent(taggedExecution);
+  const commercial = producer && campaignId != null ? readCommercialReuse(campaignId) : null;
   const presentIds = new Set(template.sections.filter((item) => item.present).map((item) => item.id));
   const byType = new Map(model.blueprint.sections.map((section) => [section.sectionType, section]));
   const order: BlueprintSection[] = [];
@@ -495,7 +554,9 @@ export function StandardV1Page({
       data-presell-standard={PRESELL_STANDARD_ID}
       data-presell-candidate={PRESELL_STANDARD_ID}
       data-presell-execution={taggedExecution}
-      data-presell-composition={structural ? PREMIUM_STRUCTURAL_COMPOSITION_ID : undefined}
+      data-presell-composition={
+        producer ? PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID : structural ? PREMIUM_STRUCTURAL_COMPOSITION_ID : undefined
+      }
     >
       {template.announcement ? <AnnouncementBar message={template.announcement.message} /> : null}
       {order.map((section) => {
@@ -503,10 +564,16 @@ export function StandardV1Page({
           return (
             <div key={section.sectionId}>
               {structural ? (
-                <StructuralHero model={model} announcementMessage={template.announcement?.message ?? null} />
+                <StructuralHero
+                  model={model}
+                  announcementMessage={template.announcement?.message ?? null}
+                  showAffiliateNote={producer}
+                  showPackageLink={Boolean(commercial?.approvedPackages.length)}
+                />
               ) : (
                 <Hero model={model} announcementMessage={template.announcement?.message ?? null} />
               )}
+              {producer && commercial?.approvedPackages.length ? <SellerStatedOffers manifest={commercial} /> : null}
               {gallery.render && model.galleryImages?.length ? (
                 <DsSection tone="alt" className="v4-band" id="gallery">
                   <DsContainer width="wide">

@@ -22,6 +22,7 @@ import {
   methodologyThresholdsFrozen,
   BEST_KNOWN_CANDIDATE_ID,
   CONTROLLED_IMPROVEMENT_EXECUTION_ID,
+  STRUCTURAL_COMPOSITION_EXECUTION_ID,
   FROZEN_IMPROVEMENT_EXECUTION_ID,
   VISUAL_HIERARCHY_EXECUTION_ID,
   PREMIUM_STRUCTURAL_COMPOSITION_ID,
@@ -143,7 +144,8 @@ assert(
     biOfficial.finalDesktopVisualScore === 74 &&
     biOfficial.finalMobileVisualScore === 72 &&
     biOfficial.finalEditorialScore === 74 &&
-    CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BL" &&
+    STRUCTURAL_COMPOSITION_EXECUTION_ID === "54BL" &&
+    CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BN" &&
     FROZEN_IMPROVEMENT_EXECUTION_ID === "54BI" &&
     resolveRendererCandidate({ requested: "54BI" }).executionId === "54BI" &&
     resolveRendererCandidate({ requested: "54BL" }).executionId === "54BL",
@@ -391,7 +393,7 @@ assert(integrity.valid, "19. Product Contract remains valid");
 
 const lab = disableCommercialCta(buildV4Model("s1")!);
 const biHtml = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: FROZEN_IMPROVEMENT_EXECUTION_ID }));
-const blHtml = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: CONTROLLED_IMPROVEMENT_EXECUTION_ID }));
+const blHtml = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: STRUCTURAL_COMPOSITION_EXECUTION_ID }));
 assert(
   lab.hopSlot === "none" &&
     /data-v4-cta="preview-disabled"/.test(biHtml) &&
@@ -410,7 +412,8 @@ assert(
   "22. ads and human review remain blocked below 90/90/85",
 );
 
-const visualDiff = git(`git diff --name-only ${BL_COMMIT} -- ${VISUAL_PATHS.join(" ")}`);
+const BM_COMMIT = "0f1f76269638936361f79df248462617c9b2291d";
+const visualDiff = git(`git diff --name-only ${BL_COMMIT} ${BM_COMMIT} -- ${VISUAL_PATHS.join(" ")}`);
 const css = readFileSync(path.join(ROOT, "src/app/premium-design-engine.css"), "utf8");
 assert(
   visualDiff === "" &&

@@ -23,6 +23,7 @@ import {
   BEST_KNOWN_CANDIDATE_ID,
   EXPERIMENTAL_CANDIDATE_ID,
   CONTROLLED_IMPROVEMENT_EXECUTION_ID,
+  STRUCTURAL_COMPOSITION_EXECUTION_ID,
   FROZEN_IMPROVEMENT_EXECUTION_ID,
   VISUAL_HIERARCHY_EXECUTION_ID,
   experimentalExecutionIdOf,
@@ -140,7 +141,8 @@ const bjHtml = renderToStaticMarkup(createElement(V4Page, { model: lab, candidat
 const azHtml = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: BEST_KNOWN_CANDIDATE_ID }));
 assert(
   VISUAL_HIERARCHY_EXECUTION_ID === "54BJ" &&
-    CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BL" &&
+    STRUCTURAL_COMPOSITION_EXECUTION_ID === "54BL" &&
+    CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BN" &&
     FROZEN_IMPROVEMENT_EXECUTION_ID === "54BI" &&
     parseRendererCandidateId("54BJ") === EXPERIMENTAL_CANDIDATE_ID &&
     parseRendererCandidateId("54BI") === EXPERIMENTAL_CANDIDATE_ID &&

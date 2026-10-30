@@ -41,6 +41,7 @@ import {
   BEST_KNOWN_CANDIDATE_ID,
   EXPERIMENTAL_CANDIDATE_ID,
   CONTROLLED_IMPROVEMENT_EXECUTION_ID,
+  STRUCTURAL_COMPOSITION_EXECUTION_ID,
   FROZEN_IMPROVEMENT_EXECUTION_ID,
   VISUAL_HIERARCHY_EXECUTION_ID,
   experimentalExecutionIdOf,
@@ -81,7 +82,7 @@ function readJson(dir: string, file: string): Record<string, unknown> | null {
 const css = readFileSync(path.join(ROOT, "src/app/premium-design-engine.css"), "utf8");
 const v1Source = readFileSync(path.join(ROOT, "src/components/presell/standard-v1-page.tsx"), "utf8");
 const lab = disableCommercialCta(buildV4Model("s1")!);
-const bl = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: CONTROLLED_IMPROVEMENT_EXECUTION_ID }));
+const bl = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: STRUCTURAL_COMPOSITION_EXECUTION_ID }));
 const bi = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: FROZEN_IMPROVEMENT_EXECUTION_ID }));
 const bj = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: VISUAL_HIERARCHY_EXECUTION_ID }));
 const az = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: BEST_KNOWN_CANDIDATE_ID }));
@@ -98,7 +99,8 @@ assert(
   "2. 54BI checkpoint remains recoverable",
 );
 assert(
-  CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BL" &&
+  STRUCTURAL_COMPOSITION_EXECUTION_ID === "54BL" &&
+    CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BN" &&
     PREMIUM_STRUCTURAL_COMPOSITION_ID === "PREMIUM_STRUCTURAL_V2" &&
     FROZEN_IMPROVEMENT_EXECUTION_ID === "54BI" &&
     VISUAL_HIERARCHY_EXECUTION_ID === "54BJ" &&
@@ -321,7 +323,7 @@ assert(
 assert(lab.hopSlot === "none" && /data-v4-cta="preview-disabled"/.test(bl) && mapPresellStandardV1(lab).cta.enabled === false, "31. CTA stays blocked");
 assert(integrity.publicationReadiness === "BLOCKED" && blockedGate.publicationUnlocked === false, "32. publication stays blocked");
 assert(VISUAL_SCORE_TARGET === 90 && QUALITY_SCORE_TARGET === 85 && !canEnterHumanReviewQueue(blockedGate) && requestPresellHumanReview(blockedGate).ok === false, "33. ads and human review remain blocked below 90/90/85");
-assert(/data-presell-standard="PRESELL_STANDARD_V1"/.test(v1) && /data-presell-execution="54BL"/.test(v1), "4b. current experimental V1 tags 54BL");
+assert(/data-presell-standard="PRESELL_STANDARD_V1"/.test(v1) && /data-presell-execution="54BN"/.test(v1), "4b. current experimental V1 tags 54BN");
 assert(/data-presell-candidate="54AZ"/.test(az) && !/data-presell-standard="PRESELL_STANDARD_V1"/.test(az), "4c. 54AZ remains renderable without the V1 tag");
 assert(
   existsSync(path.join(ROOT, "data/presell-quality/237/design-checkpoints/54az-baseline-v2.json")) && DESIGN_CHECKPOINT_FILES.length === 4,
