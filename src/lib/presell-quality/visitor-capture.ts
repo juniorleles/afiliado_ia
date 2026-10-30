@@ -38,6 +38,9 @@ export type VisitorCaptureInspect = {
   checkoutRequest: boolean;
   missingFonts: number;
   clippedEssential: boolean;
+  packageCards: number;
+  packageCardsStraddlingFold: number;
+  packshotClippedOnFold: boolean;
 };
 
 export type VisitorCaptureShot = {
@@ -140,6 +143,18 @@ export async function captureVisitorVisuals(input: {
           previewCtaEnabled: Boolean(preview && preview.tagName === "A" && preview.getAttribute("href")),
           missingFonts: 0,
           clippedEssential: Boolean(root && root.getBoundingClientRect().width <= 0),
+          packageCards: [...document.querySelectorAll("[data-seller-package]")].length,
+          packageCardsStraddlingFold: [...document.querySelectorAll("[data-seller-package]")].filter((el) => {
+            const box = el.getBoundingClientRect();
+            return box.height > 0 && box.top < window.innerHeight - 8 && box.bottom > window.innerHeight + 8;
+          }).length,
+          packshotClippedOnFold: Boolean(
+            heroImg &&
+              (() => {
+                const box = heroImg.getBoundingClientRect();
+                return box.left < -4 || box.right > window.innerWidth + 4 || box.top < -4 || box.bottom > window.innerHeight + 4;
+              })(),
+          ),
         };
       }, ADMIN_CHROME_SELECTOR);
       inspect[viewport.name] = {

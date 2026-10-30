@@ -27,8 +27,10 @@ import { experimentalEvidenceChips, experimentalSectionTitle, presentVisitorCopy
 import {
   CONTROLLED_IMPROVEMENT_EXECUTION_ID,
   PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID,
+  PREMIUM_PRODUCER_CONTENT_V2_COMPOSITION_ID,
   PREMIUM_STRUCTURAL_COMPOSITION_ID,
   usesPremiumProducerContent,
+  usesPremiumProducerContentV2,
   usesPremiumStructuralComposition,
 } from "@/lib/presell-quality/renderer-candidate";
 import { readCommercialReuse, type CommercialReuseManifest } from "@/lib/presell-quality/commercial-reuse";
@@ -79,15 +81,26 @@ function toneFor(type: BlueprintSection["sectionType"]): "plain" | "alt" | "soft
   return "plain";
 }
 
-function SellerStatedOffers({ manifest }: { manifest: CommercialReuseManifest }) {
+function SellerStatedOffers({
+  manifest,
+  finalized,
+}: {
+  manifest: CommercialReuseManifest;
+  finalized?: boolean;
+}) {
   if (!manifest.approvedPackages.length) return null;
   return (
-    <DsSection tone="soft" className="v4-band" id="seller-stated-packages" data-seller-stated-offers="1">
+    <DsSection tone="soft" className={cx("v4-band", finalized && "premium-producer-offers")} id="seller-stated-packages">
       <DsContainer>
         <DsKicker>Seller-stated offer</DsKicker>
         <h2 className="ds-h2">Packages shown on the seller&apos;s order page</h2>
         <p className="ds-body">{manifest.attribution}</p>
-        <div className="premium-grid premium-producer-packages" data-premium="packages" data-seller-stated-offers="1">
+        <div
+          className="premium-grid premium-producer-packages"
+          data-premium="packages"
+          data-seller-stated-offers="1"
+          data-package-layout={finalized ? "below-hero" : "legacy"}
+        >
           {manifest.approvedPackages.map((item) => (
             <article key={item.id} className="premium-card" data-seller-package={item.id}>
               <p className="ds-kicker">{item.label}</p>
@@ -116,11 +129,13 @@ function StructuralHero({
   announcementMessage,
   showAffiliateNote,
   showPackageLink,
+  commercialSummary,
 }: {
   model: V4Model;
   announcementMessage?: string | null;
   showAffiliateNote?: boolean;
   showPackageLink?: boolean;
+  commercialSummary?: string | null;
 }) {
   const image = model.commercialImage;
   const name = model.contract.identity.productName;
@@ -169,6 +184,11 @@ function StructuralHero({
               <a className="ds-btn ds-btn--ghost" href="#offers" data-v4-cta="inpage">
                 See packages
               </a>
+            ) : null}
+            {commercialSummary ? (
+              <p className="ds-body" data-commercial-summary="1">
+                {commercialSummary}
+              </p>
             ) : null}
             {showPackageLink ? (
               <a className="ds-btn ds-btn--ghost" href="#seller-stated-packages" data-v4-cta="inpage">
@@ -506,7 +526,12 @@ export function StandardV1Page({
   const taggedExecution = executionId?.trim() || CONTROLLED_IMPROVEMENT_EXECUTION_ID;
   const structural = usesPremiumStructuralComposition(taggedExecution);
   const producer = usesPremiumProducerContent(taggedExecution);
+  const producerV2 = usesPremiumProducerContentV2(taggedExecution);
   const commercial = producer && campaignId != null ? readCommercialReuse(campaignId) : null;
+  const commercialSummary =
+    producerV2 && commercial?.approvedPackages.length
+      ? `Seller-stated packages: ${commercial.approvedPackages.map((item) => `${item.quantity} at ${item.unitPrice}`).join(", ")} per bottle.`
+      : null;
   const presentIds = new Set(template.sections.filter((item) => item.present).map((item) => item.id));
   const byType = new Map(model.blueprint.sections.map((section) => [section.sectionType, section]));
   const order: BlueprintSection[] = [];
@@ -555,7 +580,13 @@ export function StandardV1Page({
       data-presell-candidate={PRESELL_STANDARD_ID}
       data-presell-execution={taggedExecution}
       data-presell-composition={
-        producer ? PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID : structural ? PREMIUM_STRUCTURAL_COMPOSITION_ID : undefined
+        producerV2
+          ? PREMIUM_PRODUCER_CONTENT_V2_COMPOSITION_ID
+          : producer
+            ? PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID
+            : structural
+              ? PREMIUM_STRUCTURAL_COMPOSITION_ID
+              : undefined
       }
     >
       {template.announcement ? <AnnouncementBar message={template.announcement.message} /> : null}
@@ -569,11 +600,14 @@ export function StandardV1Page({
                   announcementMessage={template.announcement?.message ?? null}
                   showAffiliateNote={producer}
                   showPackageLink={Boolean(commercial?.approvedPackages.length)}
+                  commercialSummary={commercialSummary}
                 />
               ) : (
                 <Hero model={model} announcementMessage={template.announcement?.message ?? null} />
               )}
-              {producer && commercial?.approvedPackages.length ? <SellerStatedOffers manifest={commercial} /> : null}
+              {producer && commercial?.approvedPackages.length ? (
+                <SellerStatedOffers manifest={commercial} finalized={producerV2} />
+              ) : null}
               {gallery.render && model.galleryImages?.length ? (
                 <DsSection tone="alt" className="v4-band" id="gallery">
                   <DsContainer width="wide">

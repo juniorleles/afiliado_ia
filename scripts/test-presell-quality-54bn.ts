@@ -40,6 +40,7 @@ import {
   BEST_KNOWN_CANDIDATE_ID,
   EXPERIMENTAL_CANDIDATE_ID,
   CONTROLLED_IMPROVEMENT_EXECUTION_ID,
+  PRODUCER_CONTENT_EXECUTION_ID,
   STRUCTURAL_COMPOSITION_EXECUTION_ID,
   FROZEN_IMPROVEMENT_EXECUTION_ID,
   PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID,
@@ -47,6 +48,7 @@ import {
   experimentalExecutionIdOf,
   usesPremiumStructuralComposition,
   usesPremiumProducerContent,
+  usesPremiumProducerContentV2,
   parseRendererCandidateId,
   resolveRendererCandidate,
   readRendererCandidateSelection,
@@ -92,7 +94,7 @@ function readJson(dir: string, file: string): Record<string, unknown> | null {
 
 const css = readFileSync(path.join(ROOT, "src/app/premium-design-engine.css"), "utf8");
 const lab = disableCommercialCta(buildV4Model("s1")!);
-const bn = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: CONTROLLED_IMPROVEMENT_EXECUTION_ID }));
+const bn = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: PRODUCER_CONTENT_EXECUTION_ID }));
 const bl = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: STRUCTURAL_COMPOSITION_EXECUTION_ID }));
 const bi = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: FROZEN_IMPROVEMENT_EXECUTION_ID }));
 const v1 = renderToStaticMarkup(createElement(V4Page, { model: lab, candidate: EXPERIMENTAL_CANDIDATE_ID }));
@@ -109,7 +111,8 @@ assert(
 );
 
 assert(
-  CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BN" &&
+  PRODUCER_CONTENT_EXECUTION_ID === "54BN" &&
+    CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BO" &&
     STRUCTURAL_COMPOSITION_EXECUTION_ID === "54BL" &&
     FROZEN_IMPROVEMENT_EXECUTION_ID === "54BI" &&
     PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID === "PREMIUM_PRODUCER_CONTENT_V1" &&
@@ -123,6 +126,7 @@ assert(
     usesPremiumStructuralComposition("54BN") &&
     usesPremiumStructuralComposition("54BL") &&
     usesPremiumProducerContent("54BN") &&
+    !usesPremiumProducerContentV2("54BN") &&
     !usesPremiumProducerContent("54BL") &&
     !usesPremiumProducerContent("54BI"),
   "4. 54BN has a distinct experimental identity and PREMIUM_PRODUCER_CONTENT_V1 composition",
@@ -136,7 +140,7 @@ assert(
     /data-presell-composition="PREMIUM_STRUCTURAL_V2"/.test(bl) &&
     /data-presell-execution="54BI"/.test(bi) &&
     !/data-structural-hero="v2"/.test(bi) &&
-    /data-presell-execution="54BN"/.test(v1),
+    /data-presell-execution="54BO"/.test(v1),
   "5. renderer switching keeps 54BN, 54BL, and 54BI distinct",
 );
 

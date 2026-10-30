@@ -7,17 +7,20 @@ export const BEST_KNOWN_CANDIDATE_ID = "54AZ" as const;
 export const EXPERIMENTAL_CANDIDATE_ID = PRESELL_STANDARD_ID;
 export const PREMIUM_STRUCTURAL_COMPOSITION_ID = "PREMIUM_STRUCTURAL_V2" as const;
 export const PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID = "PREMIUM_PRODUCER_CONTENT_V1" as const;
+export const PREMIUM_PRODUCER_CONTENT_V2_COMPOSITION_ID = "PREMIUM_PRODUCER_CONTENT_V2" as const;
 export const PRIOR_CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BH" as const;
 export const FROZEN_IMPROVEMENT_EXECUTION_ID = "54BI" as const;
 export const RECENT_CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BI" as const;
 export const VISUAL_HIERARCHY_EXECUTION_ID = "54BJ" as const;
 export const STRUCTURAL_COMPOSITION_EXECUTION_ID = "54BL" as const;
-export const CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BN" as const;
+export const PRODUCER_CONTENT_EXECUTION_ID = "54BN" as const;
+export const CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BO" as const;
 export const LEGACY_CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BF" as const;
 export const RENDERER_CANDIDATE_IDS = [BEST_KNOWN_CANDIDATE_ID, EXPERIMENTAL_CANDIDATE_ID] as const;
 export type RendererCandidateId = (typeof RENDERER_CANDIDATE_IDS)[number];
 export type ExperimentalExecutionId =
   | typeof CONTROLLED_IMPROVEMENT_EXECUTION_ID
+  | typeof PRODUCER_CONTENT_EXECUTION_ID
   | typeof STRUCTURAL_COMPOSITION_EXECUTION_ID
   | typeof FROZEN_IMPROVEMENT_EXECUTION_ID
   | typeof RECENT_CONTROLLED_IMPROVEMENT_EXECUTION_ID
@@ -57,13 +60,17 @@ export function experimentalExecutionIdOf(
   if (normalized === STRUCTURAL_COMPOSITION_EXECUTION_ID || normalized === PREMIUM_STRUCTURAL_COMPOSITION_ID) {
     return STRUCTURAL_COMPOSITION_EXECUTION_ID;
   }
-  if (normalized === CONTROLLED_IMPROVEMENT_EXECUTION_ID || normalized === PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID) {
+  if (normalized === PRODUCER_CONTENT_EXECUTION_ID || normalized === PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID) {
+    return PRODUCER_CONTENT_EXECUTION_ID;
+  }
+  if (normalized === CONTROLLED_IMPROVEMENT_EXECUTION_ID || normalized === PREMIUM_PRODUCER_CONTENT_V2_COMPOSITION_ID) {
     return CONTROLLED_IMPROVEMENT_EXECUTION_ID;
   }
   if (
     !normalized &&
     (stored === FROZEN_IMPROVEMENT_EXECUTION_ID ||
       stored === CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
+      stored === PRODUCER_CONTENT_EXECUTION_ID ||
       stored === STRUCTURAL_COMPOSITION_EXECUTION_ID ||
       stored === VISUAL_HIERARCHY_EXECUTION_ID)
   ) {
@@ -85,11 +92,24 @@ export function usesPremiumStructuralComposition(executionId?: string | null): b
     return false;
   }
   const resolved = experimentalExecutionIdOf(normalized);
-  return resolved === STRUCTURAL_COMPOSITION_EXECUTION_ID || resolved === CONTROLLED_IMPROVEMENT_EXECUTION_ID;
+  return (
+    resolved === STRUCTURAL_COMPOSITION_EXECUTION_ID ||
+    resolved === PRODUCER_CONTENT_EXECUTION_ID ||
+    resolved === CONTROLLED_IMPROVEMENT_EXECUTION_ID
+  );
 }
 
 export function usesPremiumProducerContent(executionId?: string | null): boolean {
-  return experimentalExecutionIdOf(executionId) === CONTROLLED_IMPROVEMENT_EXECUTION_ID && executionId?.trim() !== STRUCTURAL_COMPOSITION_EXECUTION_ID && executionId?.trim() !== PREMIUM_STRUCTURAL_COMPOSITION_ID;
+  const resolved = experimentalExecutionIdOf(executionId);
+  return resolved === PRODUCER_CONTENT_EXECUTION_ID || resolved === CONTROLLED_IMPROVEMENT_EXECUTION_ID;
+}
+
+export function usesPremiumProducerContentV2(executionId?: string | null): boolean {
+  return (
+    experimentalExecutionIdOf(executionId) === CONTROLLED_IMPROVEMENT_EXECUTION_ID &&
+    executionId?.trim() !== PRODUCER_CONTENT_EXECUTION_ID &&
+    executionId?.trim() !== PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID
+  );
 }
 
 export function parseRendererCandidateId(value: string | null | undefined): RendererCandidateId | null {
@@ -100,7 +120,9 @@ export function parseRendererCandidateId(value: string | null | undefined): Rend
     normalized === "PRESELL_STANDARD_V1" ||
     normalized === PREMIUM_STRUCTURAL_COMPOSITION_ID ||
     normalized === PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID ||
+    normalized === PREMIUM_PRODUCER_CONTENT_V2_COMPOSITION_ID ||
     normalized === CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
+    normalized === PRODUCER_CONTENT_EXECUTION_ID ||
     normalized === STRUCTURAL_COMPOSITION_EXECUTION_ID ||
     normalized === FROZEN_IMPROVEMENT_EXECUTION_ID ||
     normalized === RECENT_CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
