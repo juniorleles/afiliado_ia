@@ -110,7 +110,7 @@ assert(
 );
 
 assert(
-  CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BQ" &&
+  CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BR" &&
     VISUAL_OPTIMIZATION_EXECUTION_ID === "54BP" &&
     PRODUCER_CONTENT_V2_EXECUTION_ID === "54BO" &&
     PRODUCER_CONTENT_EXECUTION_ID === "54BN" &&
@@ -150,7 +150,7 @@ assert(
     /data-presell-composition="PREMIUM_PRODUCER_CONTENT_V1"/.test(bn) &&
     /data-presell-execution="54BL"/.test(bl) &&
     /data-presell-execution="54BI"/.test(bi) &&
-    /data-presell-execution="54BQ"/.test(v1),
+    /data-presell-execution="54BR"/.test(v1),
   "5. renderer switching keeps 54BP, 54BO, 54BN, 54BL, and 54BI distinct",
 );
 

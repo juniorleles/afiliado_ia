@@ -29,6 +29,10 @@ export const SOURCE_CANDIDATE_COMPOSITION: VisualComposition = {
     productPresentation: "none",
     sectionJourney: "source",
     offerCompare: false,
+    mergeFulfillment: false,
+    typographyScale: "source",
+    ingredientLayout: "plain",
+    faqMode: "collapsed",
   },
 };
 
@@ -52,6 +56,10 @@ export const IMPROVED_SEED_COMPOSITION: VisualComposition = {
     productPresentation: "none",
     sectionJourney: "source",
     offerCompare: false,
+    mergeFulfillment: false,
+    typographyScale: "source",
+    ingredientLayout: "plain",
+    faqMode: "collapsed",
   },
 };
 
@@ -66,6 +74,31 @@ export const CONVERSION_SEED_COMPOSITION: VisualComposition = {
     productPresentation: "editorial",
     sectionJourney: "packages-first",
     offerCompare: true,
+    mergeFulfillment: false,
+    typographyScale: "source",
+    ingredientLayout: "plain",
+    faqMode: "collapsed",
+  },
+};
+
+export const EDITORIAL_SEED_COMPOSITION: VisualComposition = {
+  ...CONVERSION_SEED_COMPOSITION,
+  executionId: "54BR",
+  iteration: 1,
+  hero: {
+    ...CONVERSION_SEED_COMPOSITION.hero,
+    packagesInFold: false,
+  },
+  conversion: {
+    sandboxPlacement: "admin",
+    hideHeroChips: true,
+    productPresentation: "none",
+    sectionJourney: "packages-first",
+    offerCompare: true,
+    mergeFulfillment: true,
+    typographyScale: "readable",
+    ingredientLayout: "distinct",
+    faqMode: "interactive",
   },
 };
 
@@ -76,17 +109,24 @@ function compositionFile(campaignId: number): string {
 function withConversionDefaults(composition: VisualComposition): VisualComposition {
   return {
     ...composition,
-    conversion: composition.conversion ?? {
-      sandboxPlacement: composition.copy.compliancePlacement === "aside" ? "aside" : "inline",
-      hideHeroChips: false,
-      productPresentation: "none",
-      sectionJourney: "source",
-      offerCompare: composition.packages.density === "featured",
+    conversion: {
+      sandboxPlacement: composition.conversion?.sandboxPlacement ?? (composition.copy.compliancePlacement === "aside" ? "aside" : "inline"),
+      hideHeroChips: composition.conversion?.hideHeroChips ?? false,
+      productPresentation: composition.conversion?.productPresentation ?? "none",
+      sectionJourney: composition.conversion?.sectionJourney ?? "source",
+      offerCompare: composition.conversion?.offerCompare ?? composition.packages.density === "featured",
+      mergeFulfillment: composition.conversion?.mergeFulfillment ?? false,
+      typographyScale: composition.conversion?.typographyScale ?? "source",
+      ingredientLayout: composition.conversion?.ingredientLayout ?? "plain",
+      faqMode: composition.conversion?.faqMode ?? "collapsed",
     },
   };
 }
 
 export function defaultVisualComposition(executionId: string, iteration = 1): VisualComposition {
+  if (executionId === "54BR") {
+    return { ...EDITORIAL_SEED_COMPOSITION, executionId, iteration };
+  }
   if (executionId === "54BQ") {
     return { ...CONVERSION_SEED_COMPOSITION, executionId, iteration };
   }
@@ -133,6 +173,9 @@ const VALUE_MAP: Record<string, readonly string[]> = {
   SET_SANDBOX_PLACEMENT: ["admin", "aside", "inline"],
   SET_PRODUCT_PRESENTATION: ["editorial", "none"],
   SET_SECTION_JOURNEY: ["packages-first", "source"],
+  SET_TYPOGRAPHY_SCALE: ["source", "readable"],
+  SET_INGREDIENT_LAYOUT: ["plain", "distinct"],
+  SET_FAQ_MODE: ["collapsed", "interactive"],
 };
 
 function applyOne(composition: VisualComposition, change: LayoutChange | CopyChange): AppliedChange {
@@ -145,6 +188,10 @@ function applyOne(composition: VisualComposition, change: LayoutChange | CopyCha
       productPresentation: "none",
       sectionJourney: "source",
       offerCompare: false,
+      mergeFulfillment: false,
+      typographyScale: "source",
+      ingredientLayout: "plain",
+      faqMode: "collapsed",
     };
   }
   if (isForbiddenAgentTarget(op)) {
@@ -174,8 +221,38 @@ function applyOne(composition: VisualComposition, change: LayoutChange | CopyCha
       composition.packages.highlight = composition.packages.highlight === "none" ? "best-value" : composition.packages.highlight;
       return { op, value: composition.conversion.offerCompare, applied: true, reason: "Offer comparison presentation enabled." };
     }
-    if (op === "SET_HEADLINE" || op === "SET_SUBHEADLINE" || op === "SET_HERO_BODY" || op === "SET_CTA_LABEL") {
+    if (op === "SET_HEADLINE" || op === "SET_SUBHEADLINE" || op === "SET_HERO_BODY" || op === "SET_CTA_LABEL" || op === "REWRITE_HEADLINE" || op === "REWRITE_SUBHEADLINE") {
       return { op, value: String(value ?? ""), applied: false, reason: "Copy text is applied through the commercial copy state, not the layout schema." };
+    }
+    if (op === "MERGE_DUPLICATE_SECTIONS") {
+      composition.conversion.mergeFulfillment = value !== false && value !== "false";
+      return { op, value: composition.conversion.mergeFulfillment, applied: true, reason: "Fulfillment topics are merged into one section." };
+    }
+    if (op === "REMOVE_EMPTY_SECTION") {
+      composition.conversion.productPresentation = "none";
+      return { op, value: "none", applied: true, reason: "Redundant empty product section is removed." };
+    }
+    if (op === "REORDER_SECTIONS") {
+      composition.conversion.sectionJourney = "packages-first";
+      return { op, value: "packages-first", applied: true, reason: "Section journey stays packages-first." };
+    }
+    if (op === "ADJUST_TYPOGRAPHY") {
+      composition.conversion.typographyScale = "readable";
+      return { op, value: "readable", applied: true, reason: "Readable typography scale enabled." };
+    }
+    if (op === "REFINE_INGREDIENT_LAYOUT") {
+      composition.conversion.ingredientLayout = "distinct";
+      return { op, value: "distinct", applied: true, reason: "Ingredient cards use a distinct layout." };
+    }
+    if (op === "IMPROVE_OFFER_HIERARCHY") {
+      composition.conversion.offerCompare = true;
+      composition.packages.density = "featured";
+      if (composition.packages.highlight === "none") composition.packages.highlight = "best-value";
+      return { op, value: true, applied: true, reason: "Offer hierarchy is emphasized." };
+    }
+    if (op === "COMPLETE_GROUNDED_FAQ") {
+      composition.conversion.faqMode = "interactive";
+      return { op, value: "interactive", applied: true, reason: "FAQ is interactive with grounded answers." };
     }
   }
   if (!isAllowedLayoutOp(op)) {
@@ -184,6 +261,10 @@ function applyOne(composition: VisualComposition, change: LayoutChange | CopyCha
   if (op === "SET_PACKAGES_IN_FOLD") {
     composition.hero.packagesInFold = value === true || value === "true";
     return { op, value: composition.hero.packagesInFold, applied: true, reason: "Package placement updated." };
+  }
+  if (op === "SET_MERGE_FULFILLMENT") {
+    composition.conversion.mergeFulfillment = value !== false && value !== "false";
+    return { op, value: composition.conversion.mergeFulfillment, applied: true, reason: "Fulfillment topics are merged into one section." };
   }
   if (op === "SET_HIDE_HERO_CHIPS") {
     composition.conversion.hideHeroChips = value !== false && value !== "false";
@@ -215,6 +296,9 @@ function applyOne(composition: VisualComposition, change: LayoutChange | CopyCha
   if (op === "SET_SANDBOX_PLACEMENT") composition.conversion.sandboxPlacement = text as VisualComposition["conversion"]["sandboxPlacement"];
   if (op === "SET_PRODUCT_PRESENTATION") composition.conversion.productPresentation = text as VisualComposition["conversion"]["productPresentation"];
   if (op === "SET_SECTION_JOURNEY") composition.conversion.sectionJourney = text as VisualComposition["conversion"]["sectionJourney"];
+  if (op === "SET_TYPOGRAPHY_SCALE") composition.conversion.typographyScale = text as VisualComposition["conversion"]["typographyScale"];
+  if (op === "SET_INGREDIENT_LAYOUT") composition.conversion.ingredientLayout = text as VisualComposition["conversion"]["ingredientLayout"];
+  if (op === "SET_FAQ_MODE") composition.conversion.faqMode = text as VisualComposition["conversion"]["faqMode"];
   return { op, value: text, applied: true, reason: "Applied through the structured composition." };
 }
 
@@ -273,5 +357,9 @@ export function compositionDataAttributes(composition: VisualComposition): Recor
     "data-product-presentation": composition.conversion.productPresentation,
     "data-section-journey": composition.conversion.sectionJourney,
     "data-offer-compare": composition.conversion.offerCompare ? "1" : "0",
+    "data-merge-fulfillment": composition.conversion.mergeFulfillment ? "1" : "0",
+    "data-typography-scale": composition.conversion.typographyScale,
+    "data-ingredient-layout": composition.conversion.ingredientLayout,
+    "data-faq-mode": composition.conversion.faqMode,
   };
 }

@@ -100,7 +100,7 @@ assert(
 );
 assert(
   STRUCTURAL_COMPOSITION_EXECUTION_ID === "54BL" &&
-    CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BQ" &&
+    CONTROLLED_IMPROVEMENT_EXECUTION_ID === "54BR" &&
     PREMIUM_STRUCTURAL_COMPOSITION_ID === "PREMIUM_STRUCTURAL_V2" &&
     FROZEN_IMPROVEMENT_EXECUTION_ID === "54BI" &&
     VISUAL_HIERARCHY_EXECUTION_ID === "54BJ" &&
@@ -323,7 +323,7 @@ assert(
 assert(lab.hopSlot === "none" && /data-v4-cta="preview-disabled"/.test(bl) && mapPresellStandardV1(lab).cta.enabled === false, "31. CTA stays blocked");
 assert(integrity.publicationReadiness === "BLOCKED" && blockedGate.publicationUnlocked === false, "32. publication stays blocked");
 assert(VISUAL_SCORE_TARGET === 90 && QUALITY_SCORE_TARGET === 85 && !canEnterHumanReviewQueue(blockedGate) && requestPresellHumanReview(blockedGate).ok === false, "33. ads and human review remain blocked below 90/90/85");
-assert(/data-presell-standard="PRESELL_STANDARD_V1"/.test(v1) && /data-presell-execution="54BQ"/.test(v1), "4b. current experimental V1 tags 54BQ");
+assert(/data-presell-standard="PRESELL_STANDARD_V1"/.test(v1) && /data-presell-execution="54BR"/.test(v1), "4b. current experimental V1 tags 54BR");
 assert(/data-presell-candidate="54AZ"/.test(az) && !/data-presell-standard="PRESELL_STANDARD_V1"/.test(az), "4c. 54AZ remains renderable without the V1 tag");
 assert(
   existsSync(path.join(ROOT, "data/presell-quality/237/design-checkpoints/54az-baseline-v2.json")) && DESIGN_CHECKPOINT_FILES.length === 4,

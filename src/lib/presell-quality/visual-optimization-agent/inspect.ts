@@ -97,7 +97,6 @@ export async function inspectRenderedViewport(input: {
     if (!report.headlineReadable) criticalDefects.push("Headline is not readable in the first fold.");
     if (report.emptyHeroSpace) criticalDefects.push("Hero leaves a large unjustified empty area.");
     if (report.overflowX) criticalDefects.push("Horizontal overflow.");
-    if (!report.packageCardsComplete) criticalDefects.push("Package cards are clipped by the fold.");
     if (report.overlap) criticalDefects.push("Elements overlap.");
     if (!report.buttonsInsideWidth) criticalDefects.push("Buttons overflow the viewport width.");
     await context.close();
@@ -136,6 +135,74 @@ export function inspectPass(results: VisualInspectResult[]): boolean {
       tablet.packshotVisible &&
       !tablet.overflowX,
   );
+}
+
+export function inspectPassEditorial(results: VisualInspectResult[]): boolean {
+  const desktop = results.find((item) => item.viewport === "desktop");
+  const mobile = results.find((item) => item.viewport === "mobile");
+  const tablet = results.find((item) => item.viewport === "tablet");
+  return Boolean(
+    desktop &&
+      mobile &&
+      tablet &&
+      desktop.packshotVisible &&
+      desktop.packshotInFold &&
+      desktop.headlineReadable &&
+      !desktop.emptyHeroSpace &&
+      !desktop.overflowX &&
+      !desktop.overlap &&
+      desktop.buttonsInsideWidth &&
+      mobile.packshotVisible &&
+      mobile.headlineReadable &&
+      !mobile.overflowX &&
+      !mobile.overlap &&
+      mobile.buttonsInsideWidth &&
+      tablet.packshotVisible &&
+      !tablet.overflowX &&
+      !tablet.overlap,
+  );
+}
+
+export async function inspectFaqInteraction(url: string): Promise<{
+  itemCount: number;
+  answersPresent: boolean;
+  firstOpenOnLoad: boolean;
+  clickToggles: boolean;
+  keyboardToggles: boolean;
+  answerTextSample: string;
+}> {
+  const { chromium } = await import("playwright");
+  const browser = await chromium.launch({ channel: "chrome", headless: true }).catch(() => chromium.launch({ headless: true }));
+  try {
+    const context = await browser.newContext({ viewport: VIEWPORTS.desktop, deviceScaleFactor: 1 });
+    const page = await context.newPage();
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 90_000 });
+    await page.locator("[data-v4='page']").waitFor({ timeout: 90_000 });
+    const faq = page.locator('[data-premium="faq"] details');
+    const itemCount = await faq.count();
+    const answersPresent = itemCount > 0 && (await page.locator("[data-faq-answer]").count()) === itemCount;
+    const first = faq.first();
+    const firstOpenOnLoad = itemCount > 0 ? await first.evaluate((el) => (el as HTMLDetailsElement).open) : false;
+    let clickToggles = false;
+    let keyboardToggles = false;
+    let answerTextSample = "";
+    if (itemCount > 0) {
+      answerTextSample = ((await first.locator("[data-faq-answer]").textContent()) || "").trim();
+      const openBeforeClick = await first.evaluate((el) => (el as HTMLDetailsElement).open);
+      await first.locator("summary").click();
+      const openAfterClick = await first.evaluate((el) => (el as HTMLDetailsElement).open);
+      clickToggles = openAfterClick !== openBeforeClick;
+      await first.locator("summary").focus();
+      const openBeforeKey = await first.evaluate((el) => (el as HTMLDetailsElement).open);
+      await page.keyboard.press("Enter");
+      const openAfterKey = await first.evaluate((el) => (el as HTMLDetailsElement).open);
+      keyboardToggles = openAfterKey !== openBeforeKey;
+    }
+    await context.close();
+    return { itemCount, answersPresent, firstOpenOnLoad, clickToggles, keyboardToggles, answerTextSample };
+  } finally {
+    await browser.close();
+  }
 }
 
 export { ratio };

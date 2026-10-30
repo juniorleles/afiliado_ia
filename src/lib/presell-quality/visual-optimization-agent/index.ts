@@ -7,6 +7,11 @@ export {
   FORBIDDEN_AGENT_TARGETS,
   CONVERSION_OPTIMIZATION_AGENT_ID,
   CONVERSION_OPTIMIZATION_PROMPT_VERSION,
+  EDITORIAL_QUALITY_GATE_ID,
+  EDITORIAL_QUALITY_PROMPT_VERSION,
+  EDITORIAL_HEADLINE_MAX_WORDS,
+  EDITORIAL_SUBHEADLINE_MAX_WORDS,
+  EDITORIAL_ISSUE_CODES,
 } from "./types.ts";
 export type {
   VisualComposition,
@@ -29,6 +34,7 @@ export {
   SOURCE_CANDIDATE_COMPOSITION,
   IMPROVED_SEED_COMPOSITION,
   CONVERSION_SEED_COMPOSITION,
+  EDITORIAL_SEED_COMPOSITION,
   defaultVisualComposition,
   readVisualComposition,
   writeVisualComposition,
@@ -58,6 +64,18 @@ export {
   copyChangeIsGrounded,
   inventoryFromPage,
 } from "./commercial.ts";
-export { inspectRenderedViewport, inspectRenderedPage, inspectPass } from "./inspect.ts";
+export { buildEditorialCopy, confirmedEditorialPlan } from "./editorial.ts";
+export {
+  runEditorialQualityGate,
+  isFactDumpHeadline,
+  wordCount,
+  detectDuplicateSectionTitles,
+  detectEmptySections,
+  detectFaqWithoutAnswer,
+  editorialHeadlineAcceptable,
+  editorialOperationsFromIssues,
+} from "./editorial-gate.ts";
+export { inspectRenderedViewport, inspectRenderedPage, inspectPass, inspectPassEditorial, inspectFaqInteraction } from "./inspect.ts";
 export { analyzeVisualComposition, mergeConfirmedDefects, visualAnalysisUserText, VISUAL_ANALYSIS_SYSTEM } from "./analyze.ts";
 export { analyzeCommercialConversion, conversionAnalysisUserText, CONVERSION_ANALYSIS_SYSTEM } from "./commercial-analyze.ts";
+export { analyzeEditorialQuality, editorialAnalysisUserText, EDITORIAL_ANALYSIS_SYSTEM } from "./editorial-analyze.ts";

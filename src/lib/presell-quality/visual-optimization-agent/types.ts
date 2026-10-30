@@ -3,6 +3,10 @@ export const VISUAL_OPTIMIZATION_PROMPT_VERSION = "1" as const;
 export const VISUAL_OPTIMIZATION_MAX_ITERATIONS = 3 as const;
 export const CONVERSION_OPTIMIZATION_AGENT_ID = "PRESELL_CONVERSION_OPTIMIZATION_AGENT_V1" as const;
 export const CONVERSION_OPTIMIZATION_PROMPT_VERSION = "1" as const;
+export const EDITORIAL_QUALITY_GATE_ID = "PRESELL_EDITORIAL_QUALITY_GATE_V1" as const;
+export const EDITORIAL_QUALITY_PROMPT_VERSION = "1" as const;
+export const EDITORIAL_HEADLINE_MAX_WORDS = 8 as const;
+export const EDITORIAL_SUBHEADLINE_MAX_WORDS = 25 as const;
 
 export const VISUAL_OPTIMIZATION_OPS = [
   "SET_HERO_DENSITY",
@@ -23,6 +27,10 @@ export const VISUAL_OPTIMIZATION_OPS = [
   "SET_PRODUCT_PRESENTATION",
   "SET_SECTION_JOURNEY",
   "SET_OFFER_COMPARE",
+  "SET_TYPOGRAPHY_SCALE",
+  "SET_INGREDIENT_LAYOUT",
+  "SET_FAQ_MODE",
+  "SET_MERGE_FULFILLMENT",
 ] as const;
 export type VisualOptimizationOp = (typeof VISUAL_OPTIMIZATION_OPS)[number];
 
@@ -38,8 +46,29 @@ export const ALLOWED_COPY_OPS = [
   "SET_PRODUCT_PRESENTATION",
   "SET_SECTION_JOURNEY",
   "SET_OFFER_COMPARE",
+  "REWRITE_HEADLINE",
+  "REWRITE_SUBHEADLINE",
+  "MERGE_DUPLICATE_SECTIONS",
+  "REMOVE_EMPTY_SECTION",
+  "REORDER_SECTIONS",
+  "ADJUST_TYPOGRAPHY",
+  "REFINE_INGREDIENT_LAYOUT",
+  "IMPROVE_OFFER_HIERARCHY",
+  "COMPLETE_GROUNDED_FAQ",
 ] as const;
 export type AllowedCopyOp = (typeof ALLOWED_COPY_OPS)[number];
+
+export const EDITORIAL_ISSUE_CODES = [
+  "HEADLINE_TOO_LONG",
+  "HEADLINE_FACT_DUMP",
+  "DUPLICATED_SECTION",
+  "EMPTY_SECTION",
+  "LOW_INFORMATION_DENSITY",
+  "EXCESSIVE_REPETITION",
+  "UNSUPPORTED_COPY",
+  "FAQ_WITHOUT_ANSWER",
+] as const;
+export type EditorialIssueCode = (typeof EDITORIAL_ISSUE_CODES)[number];
 
 export const FORBIDDEN_AGENT_TARGETS = [
   "QUALITY_GATE",
@@ -67,6 +96,9 @@ export type RadiusToken = "soft" | "crisp";
 export type SandboxPlacement = "admin" | "aside" | "inline";
 export type ProductPresentation = "editorial" | "none";
 export type SectionJourney = "packages-first" | "source";
+export type TypographyScale = "source" | "readable";
+export type IngredientLayout = "plain" | "distinct";
+export type FaqMode = "collapsed" | "interactive";
 
 export type ConversionComposition = {
   sandboxPlacement: SandboxPlacement;
@@ -74,6 +106,21 @@ export type ConversionComposition = {
   productPresentation: ProductPresentation;
   sectionJourney: SectionJourney;
   offerCompare: boolean;
+  mergeFulfillment: boolean;
+  typographyScale: TypographyScale;
+  ingredientLayout: IngredientLayout;
+  faqMode: FaqMode;
+};
+
+export type EditorialIssue = {
+  issue: EditorialIssueCode;
+  component: string;
+  severity: "HIGH" | "MEDIUM" | "LOW";
+  operation: string;
+  proposed_value: string;
+  supporting_fact_ids: string[];
+  requires_content_approval: boolean;
+  evidence: string;
 };
 
 export type VisualComposition = {

@@ -31,14 +31,17 @@ import {
   PREMIUM_STRUCTURAL_COMPOSITION_ID,
   PREMIUM_VISUAL_OPTIMIZATION_COMPOSITION_ID,
   PREMIUM_CONVERSION_OPTIMIZATION_COMPOSITION_ID,
+  PREMIUM_EDITORIAL_CORRECTION_COMPOSITION_ID,
   usesPremiumProducerContent,
   usesPremiumProducerContentV2,
   usesPremiumStructuralComposition,
   usesPremiumVisualOptimization,
   usesPremiumConversionOptimization,
+  usesPremiumEditorialCorrection,
 } from "@/lib/presell-quality/renderer-candidate";
 import { readCommercialReuse, type CommercialReuseManifest } from "@/lib/presell-quality/commercial-reuse";
 import {
+  buildEditorialCopy,
   buildSeedCommercialCopy,
   compositionDataAttributes,
   complianceLines,
@@ -411,7 +414,13 @@ function BenefitSection({ section }: { section: BlueprintSection }) {
   );
 }
 
-function SpecSection({ section }: { section: BlueprintSection }) {
+function SpecSection({
+  section,
+  ingredientLayout = "plain",
+}: {
+  section: BlueprintSection;
+  ingredientLayout?: "plain" | "distinct";
+}) {
   const rows = section.items.length ? section.items : section.body.map((item) => ({ text: item }));
   const labeled: Array<{ name: string; value: string }> = [];
   const notes: string[] = [];
@@ -444,7 +453,9 @@ function SpecSection({ section }: { section: BlueprintSection }) {
           </article>
         ))
       )}
-      {notes.length ? <IngredientCardGrid items={notes.map((note) => ({ name: note, detail: null }))} /> : null}
+      {notes.length ? (
+        <IngredientCardGrid items={notes.map((note) => ({ name: note, detail: null }))} layout={ingredientLayout} />
+      ) : null}
     </div>
   );
 }
@@ -484,22 +495,46 @@ function OfferSection({ model, section }: { model: V4Model; section: BlueprintSe
   );
 }
 
-function FaqSection({ section, model }: { section: BlueprintSection; model: V4Model }) {
+function FaqSection({
+  section,
+  model,
+  openFirst = false,
+}: {
+  section: BlueprintSection;
+  model: V4Model;
+  openFirst?: boolean;
+}) {
   const slots = premiumSlotsFromModel(model);
-  if (slots.faq.length) return <PremiumFaq items={slots.faq} />;
+  if (slots.faq.length) return <PremiumFaq items={slots.faq} openFirst={openFirst} />;
   const entries = section.items
     .map((item) => ({
       question: item.title?.text ?? item.text.text,
       answer: item.title ? item.text.text : "",
     }))
     .filter((item) => item.question.trim() && item.answer.trim());
-  return <PremiumFaq items={entries} />;
+  return <PremiumFaq items={entries} openFirst={openFirst} />;
 }
 
-function TrustSection({ section, model }: { section: BlueprintSection; model: V4Model }) {
+function TrustSection({
+  section,
+  model,
+  merged = false,
+}: {
+  section: BlueprintSection;
+  model: V4Model;
+  merged?: boolean;
+}) {
   const slots = premiumSlotsFromModel(model);
   const items = section.items.length ? section.items : section.body.map((item) => ({ text: item }));
-  const trustCards = slots.fulfillment.filter((item) => item.kind === "PAYMENT" || item.kind === "RETURNS");
+  const mergedTitles = {
+    DISPATCH: "Shipping",
+    DELIVERY: "Delivery",
+    RETURNS: "Returns",
+    PAYMENT: "Payment",
+  } as const;
+  const trustCards = merged
+    ? slots.fulfillment.map((item) => ({ ...item, title: mergedTitles[item.kind] }))
+    : slots.fulfillment.filter((item) => item.kind === "PAYMENT" || item.kind === "RETURNS");
   const covered = slots.fulfillment.map((item) => item.body.toLowerCase()).join("\n");
   const leftover = items
     .map((item) => publicItemText(item.text.text))
@@ -596,44 +631,33 @@ export function StandardV1Page({
   const producerV2 = usesPremiumProducerContentV2(taggedExecution);
   const visualOpt = usesPremiumVisualOptimization(taggedExecution);
   const conversion = usesPremiumConversionOptimization(taggedExecution);
+  const editorial = usesPremiumEditorialCorrection(taggedExecution);
   const storedComposition = campaignId != null ? readVisualComposition(campaignId) : null;
   const composition = visualOpt
     ? storedComposition && storedComposition.executionId === taggedExecution
       ? storedComposition
-      : defaultVisualComposition(conversion ? "54BQ" : "54BP")
+      : defaultVisualComposition(editorial ? "54BR" : conversion ? "54BQ" : "54BP")
     : null;
   const commercial = producer && campaignId != null ? readCommercialReuse(campaignId) : null;
   const slots = premiumSlotsFromModel(model);
+  const copyInventory = inventoryFromPage({
+    productName: model.contract.identity.productName,
+    productKind: model.contract.identity.productKind ?? null,
+    ingredients: slots.ingredients.map((item) => item.name),
+    description: model.copy.introduction.text,
+    usage: slots.usage.join(" "),
+    guarantee: slots.guarantee.statements.join(" "),
+    guaranteeDays: slots.guarantee.days,
+    packages: commercial?.approvedPackages ?? [],
+  });
+  const storedCopy = campaignId != null ? readCommercialCopy(campaignId) : null;
   const commercialCopy =
     conversion
-      ? campaignId != null
-        ? readCommercialCopy(campaignId) ??
-          buildSeedCommercialCopy({
-            ...inventoryFromPage({
-              productName: model.contract.identity.productName,
-              productKind: model.contract.identity.productKind ?? null,
-              ingredients: slots.ingredients.map((item) => item.name),
-              description: model.copy.introduction.text,
-              usage: slots.usage.join(" "),
-              guarantee: slots.guarantee.statements.join(" "),
-              guaranteeDays: slots.guarantee.days,
-              packages: commercial?.approvedPackages ?? [],
-            }),
-            executionId: "54BQ",
-          })
-        : buildSeedCommercialCopy({
-            ...inventoryFromPage({
-              productName: model.contract.identity.productName,
-              productKind: model.contract.identity.productKind ?? null,
-              ingredients: slots.ingredients.map((item) => item.name),
-              description: model.copy.introduction.text,
-              usage: slots.usage.join(" "),
-              guarantee: slots.guarantee.statements.join(" "),
-              guaranteeDays: slots.guarantee.days,
-              packages: [],
-            }),
-            executionId: "54BQ",
-          })
+      ? storedCopy && storedCopy.executionId === taggedExecution
+        ? storedCopy
+        : editorial
+          ? buildEditorialCopy({ ...copyInventory, executionId: "54BR" })
+          : buildSeedCommercialCopy({ ...copyInventory, executionId: "54BQ" })
       : null;
   const commercialSummary =
     (conversion || visualOpt) && commercial?.approvedPackages.length
@@ -713,17 +737,19 @@ export function StandardV1Page({
       data-presell-candidate={PRESELL_STANDARD_ID}
       data-presell-execution={taggedExecution}
       data-presell-composition={
-        conversion
-          ? PREMIUM_CONVERSION_OPTIMIZATION_COMPOSITION_ID
-          : visualOpt
-            ? PREMIUM_VISUAL_OPTIMIZATION_COMPOSITION_ID
-            : producerV2
-              ? PREMIUM_PRODUCER_CONTENT_V2_COMPOSITION_ID
-              : producer
-                ? PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID
-                : structural
-                  ? PREMIUM_STRUCTURAL_COMPOSITION_ID
-                  : undefined
+        editorial
+          ? PREMIUM_EDITORIAL_CORRECTION_COMPOSITION_ID
+          : conversion
+            ? PREMIUM_CONVERSION_OPTIMIZATION_COMPOSITION_ID
+            : visualOpt
+              ? PREMIUM_VISUAL_OPTIMIZATION_COMPOSITION_ID
+              : producerV2
+                ? PREMIUM_PRODUCER_CONTENT_V2_COMPOSITION_ID
+                : producer
+                  ? PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID
+                  : structural
+                    ? PREMIUM_STRUCTURAL_COMPOSITION_ID
+                    : undefined
       }
       {...compositionAttrs}
     >
@@ -827,11 +853,11 @@ export function StandardV1Page({
           ) : section.sectionType === "benefits" ? (
             <BenefitSection section={section} />
           ) : section.sectionType === "specifications" ? (
-            <SpecSection section={section} />
+            <SpecSection section={section} ingredientLayout={composition?.conversion.ingredientLayout} />
           ) : section.sectionType === "offers" ? (
             <OfferSection model={model} section={section} />
           ) : section.sectionType === "faq" ? (
-            <FaqSection model={model} section={section} />
+            <FaqSection model={model} section={section} openFirst={composition?.conversion.faqMode === "interactive"} />
           ) : section.sectionType === "how_it_works" ? (
             premiumSlotsFromModel(model).usage.length ? (
               <UsageSteps items={premiumSlotsFromModel(model).usage} />
@@ -839,7 +865,7 @@ export function StandardV1Page({
               <FeatureSection section={section} numbered />
             )
           ) : section.sectionType === "trust" ? (
-            <TrustSection section={section} model={model} />
+            <TrustSection section={section} model={model} merged={composition?.conversion.mergeFulfillment} />
           ) : section.sectionType === "guarantee" ? (
             <GuaranteeSection model={model} section={section} attributed={Boolean(patch?.sellerAttribution)} />
           ) : section.sectionType === "demonstration" ? (
@@ -860,6 +886,7 @@ export function StandardV1Page({
           );
         const shippingAfterThis =
           shippingCards.length > 0 &&
+          !(composition?.conversion.mergeFulfillment && order.some((item) => item.sectionType === "trust")) &&
           (section.sectionType === "guarantee" ||
             (!order.some((item) => item.sectionType === "guarantee") && section.sectionType === "faq"));
         return (

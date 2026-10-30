@@ -14,6 +14,10 @@ import type {
 } from "./types.ts";
 import { applyVisualPlan } from "./composition.ts";
 import { isForbiddenAgentTarget } from "./schema.ts";
+import { EDITORIAL_HEADLINE_MAX_WORDS, EDITORIAL_SUBHEADLINE_MAX_WORDS } from "./types.ts";
+import { isFactDumpHeadline, wordCount } from "./editorial-rules.ts";
+
+const COPY_TEXT_OPS = ["SET_HEADLINE", "SET_SUBHEADLINE", "SET_HERO_BODY", "SET_CTA_LABEL", "REWRITE_HEADLINE", "REWRITE_SUBHEADLINE"];
 
 const MEDICAL =
   /\b(blood sugar|fat[- ]burn(?:ing)?|clinically proven|scientifically proven|cures?|treats?|prevents?|brain[- ]fog|energy crashes?|drop pounds|diabetes|fda[- ]approved|guaranteed results)\b/i;
@@ -180,7 +184,15 @@ function applyCopyOp(
     return { op, value: String(change.value ?? ""), applied: false, reason: "Forbidden target (gate, contract, publication, or ads)." };
   }
   const field =
-    op === "SET_HEADLINE" ? "headline" : op === "SET_SUBHEADLINE" ? "subheadline" : op === "SET_HERO_BODY" ? "heroBody" : op === "SET_CTA_LABEL" ? "ctaLabel" : null;
+    op === "SET_HEADLINE" || op === "REWRITE_HEADLINE"
+      ? "headline"
+      : op === "SET_SUBHEADLINE" || op === "REWRITE_SUBHEADLINE"
+        ? "subheadline"
+        : op === "SET_HERO_BODY"
+          ? "heroBody"
+          : op === "SET_CTA_LABEL"
+            ? "ctaLabel"
+            : null;
   if (!field) {
     return { op, value: String(change.value ?? ""), applied: false, reason: "Copy operation is handled by the composition schema." };
   }
@@ -205,6 +217,17 @@ function applyCopyOp(
               : ["identity.productName"];
   const check = copyChangeIsGrounded(proposed, supporting, inventory, field);
   if (!check.ok) return { op, value: proposed, applied: false, reason: check.reason };
+  if (op === "REWRITE_HEADLINE") {
+    if (wordCount(proposed) > EDITORIAL_HEADLINE_MAX_WORDS) {
+      return { op, value: proposed, applied: false, reason: "HEADLINE_TOO_LONG" };
+    }
+    if (isFactDumpHeadline(proposed)) {
+      return { op, value: proposed, applied: false, reason: "HEADLINE_FACT_DUMP" };
+    }
+  }
+  if (op === "REWRITE_SUBHEADLINE" && wordCount(proposed) > EDITORIAL_SUBHEADLINE_MAX_WORDS) {
+    return { op, value: proposed, applied: false, reason: "Subheadline exceeds the editorial word limit." };
+  }
   if (field === "headline") copy.headline = { text: proposed, supportingFactIds: supporting };
   if (field === "subheadline") copy.subheadline = { text: proposed, supportingFactIds: supporting };
   if (field === "heroBody") copy.heroBody = { text: proposed, supportingFactIds: supporting };
@@ -223,7 +246,7 @@ export function applyCommercialPlan(input: {
 }): { composition: VisualComposition; copy: CommercialCopyState; applied: AppliedChange[]; factMapping: FactMappingRow[] } {
   const visual = applyVisualPlan(input.composition, {
     layout_changes: input.layout_changes,
-    copy_changes: input.copy_changes.filter((item) => !["SET_HEADLINE", "SET_SUBHEADLINE", "SET_HERO_BODY", "SET_CTA_LABEL"].includes(item.op)),
+    copy_changes: input.copy_changes.filter((item) => !COPY_TEXT_OPS.includes(item.op)),
     iteration: input.iteration,
     executionId: input.executionId,
   });
@@ -232,7 +255,7 @@ export function applyCommercialPlan(input: {
   copy.iteration = input.iteration;
   const applied = [...visual.applied];
   for (const change of input.copy_changes) {
-    if (["SET_HEADLINE", "SET_SUBHEADLINE", "SET_HERO_BODY", "SET_CTA_LABEL"].includes(change.op)) {
+    if (COPY_TEXT_OPS.includes(change.op)) {
       applied.push(applyCopyOp(copy, change, input.inventory));
     }
   }

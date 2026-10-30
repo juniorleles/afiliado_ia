@@ -88,14 +88,33 @@ export function PremiumCta({
   );
 }
 
-export function IngredientCardGrid({ items }: { items: IngredientCardModel[] }) {
+const INGREDIENT_ICONS: PremiumIconName[] = ["leaf", "package", "clock", "shield"];
+
+export function IngredientCardGrid({
+  items,
+  layout = "plain",
+}: {
+  items: IngredientCardModel[];
+  layout?: "plain" | "distinct";
+}) {
   if (!items.length) return null;
   return (
-    <div className="premium-grid" data-premium="ingredients" data-count={String(Math.min(items.length, 4))}>
-      {items.map((item) => (
-        <article className="premium-card" key={item.name} data-premium-card="ingredient">
+    <div
+      className="premium-grid"
+      data-premium="ingredients"
+      data-ingredient-layout={layout}
+      data-count={String(Math.min(items.length, 4))}
+    >
+      {items.map((item, index) => (
+        <article
+          className="premium-card"
+          key={item.name}
+          data-premium-card="ingredient"
+          data-ingredient-index={String(index)}
+          data-ingredient-accent={layout === "distinct" ? String((index % 4) + 1) : undefined}
+        >
           <span className="premium-card__icon">
-            <PremiumIcon name="leaf" />
+            <PremiumIcon name={layout === "distinct" ? INGREDIENT_ICONS[index % INGREDIENT_ICONS.length]! : "leaf"} />
           </span>
           <h3 className="ds-h3">{item.name}</h3>
           {item.detail ? <p className="ds-body">{item.detail}</p> : null}
@@ -195,17 +214,19 @@ export function GuaranteeBand({ view }: { view: GuaranteeView }) {
   );
 }
 
-export function PremiumFaq({ items }: { items: FaqView[] }) {
+export function PremiumFaq({ items, openFirst = false }: { items: FaqView[]; openFirst?: boolean }) {
   if (!items.length) return null;
   return (
-    <div className="ds-faq premium-faq" data-premium="faq">
-      {items.map((item) => (
-        <details className="ds-faq__item premium-faq__item" key={item.question}>
+    <div className="ds-faq premium-faq" data-premium="faq" data-faq-mode={openFirst ? "interactive" : "collapsed"}>
+      {items.map((item, index) => (
+        <details className="ds-faq__item premium-faq__item" key={item.question} open={openFirst && index === 0 || undefined}>
           <summary>
             <PremiumIcon name="help" />
             <span>{item.question}</span>
           </summary>
-          <p className="ds-body">{item.answer}</p>
+          <p className="ds-body" data-faq-answer="1">
+            {item.answer}
+          </p>
         </details>
       ))}
     </div>
