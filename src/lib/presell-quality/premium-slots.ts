@@ -1,4 +1,5 @@
-import { publicItemText } from "@/lib/product-showcase/v4/presentation";
+import { publicItemText, publicSectionTitle } from "@/lib/product-showcase/v4/presentation";
+import type { SectionType } from "@/lib/conversion-strategy/types";
 import type { V4Model } from "@/lib/product-showcase/v4/model";
 import {
   PREMIUM_CTA_CAPTION,
@@ -180,6 +181,28 @@ function fulfillmentTitle(kind: FulfillmentCardModel["kind"]): string {
   if (kind === "DELIVERY") return "Delivery window";
   if (kind === "PAYMENT") return "Payment";
   return "Returns";
+}
+
+export function uniqueGuaranteeStatements(statements: string[]): string[] {
+  const cleaned = unique(statements.map((item) => clean(item)).filter(Boolean));
+  return cleaned.filter(
+    (item, index) =>
+      !cleaned.some((other, otherIndex) => otherIndex !== index && other.toLowerCase().includes(item.toLowerCase()) && other.length > item.length),
+  );
+}
+
+export function premiumSectionTitle(input: {
+  sectionType: SectionType;
+  headline: string;
+  titles?: Partial<Record<SectionType, string>>;
+  fulfillmentCount?: number;
+  leftoverTrustCount?: number;
+}): string {
+  if (input.titles?.[input.sectionType]) return input.titles[input.sectionType]!;
+  if (input.sectionType === "trust" && (input.fulfillmentCount ?? 0) > 0) {
+    return (input.leftoverTrustCount ?? 0) > 0 ? "Shipping, returns, and cautions" : "Shipping, returns, and payment";
+  }
+  return publicSectionTitle(input.sectionType, input.headline, input.titles);
 }
 
 function fulfillmentIcon(kind: FulfillmentCardModel["kind"]): PremiumIconName {

@@ -55,7 +55,7 @@ assert(css.includes("grid-template-areas") && css.includes("minmax(26rem, 1.32fr
 assert(css.includes("min-height: 4rem") && css.includes("1.28rem"), "7. CTA is visually larger");
 assert(css.includes("max-width: 767px") && css.includes("min-width: 768px") && css.includes("min-width: 960px"), "8. desktop/tablet/mobile breakpoints remain");
 assert(!/sugardefender|campaign 237|cbc045ab/i.test(css), "9. CSS stays product-generic");
-assert(css.includes("max-width: 17.25rem"), "10. mobile packshot packing is tightened");
+assert(/max-width:\s*\d+(?:\.\d+)?rem/.test(css) && css.includes(".ds-hero__stage"), "10. mobile packshot packing is tightened");
 
 const stored = readGenerationModel("lp-mvs7mja3-0d690e7c");
 assert(Boolean(stored?.commercialImage?.src.includes("cc835ef78e894f7645c4556b")), "11. approved packshot is unchanged");

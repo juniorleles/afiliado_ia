@@ -123,6 +123,39 @@ export function officialEditorialRecord(assessment: PresellQualityAssessment): O
   };
 }
 
+export type DimensionStability = "STABLE" | "UNSTABLE" | "NOT_ESTABLISHED";
+
+export function dimensionPairStability(
+  first: number | null | undefined,
+  second: number | null | undefined,
+  limit = EVALUATOR_VARIATION_LIMIT,
+): DimensionStability {
+  if (first == null || second == null || !Number.isFinite(first) || !Number.isFinite(second)) return "NOT_ESTABLISHED";
+  return Math.abs(first - second) > limit ? "UNSTABLE" : "STABLE";
+}
+
+export function officialPerDimensionStability(input: {
+  desktop: [number | null | undefined, number | null | undefined];
+  mobile: [number | null | undefined, number | null | undefined];
+  editorial: [number | null | undefined, number | null | undefined];
+}): {
+  desktop: DimensionStability;
+  mobile: DimensionStability;
+  editorial: DimensionStability;
+  combined: DimensionStability;
+} {
+  const desktop = dimensionPairStability(input.desktop[0], input.desktop[1]);
+  const mobile = dimensionPairStability(input.mobile[0], input.mobile[1]);
+  const editorial = dimensionPairStability(input.editorial[0], input.editorial[1]);
+  const parts = [desktop, mobile, editorial];
+  const combined: DimensionStability = parts.includes("NOT_ESTABLISHED")
+    ? "NOT_ESTABLISHED"
+    : parts.includes("UNSTABLE")
+      ? "UNSTABLE"
+      : "STABLE";
+  return { desktop, mobile, editorial, combined };
+}
+
 export function officialEvaluatorStability(input: {
   firstVisual: VisualEvaluationIdentity | null;
   secondVisual: VisualEvaluationIdentity | null;
