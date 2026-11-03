@@ -323,6 +323,18 @@ export const EXECUTION_54BR_BUDGET = {
   provider: "openai" as const,
 } as const;
 
+export const EXECUTION_54BS_MAX_AI_COST_USD = 0.2;
+
+export const EXECUTION_54BS_BUDGET = {
+  maxUsd: EXECUTION_54BS_MAX_AI_COST_USD,
+  maxPaidGenerations: 0,
+  maxCampaignEvals: 6,
+  maxCorrectionRounds: 0,
+  reserveUsdPerEvaluation: 0.05,
+  reserveUsdPerGeneration: 0,
+  provider: "openai" as const,
+} as const;
+
 export type QualityBudgetLedger = {
   scope: string;
   provider: "openai";
