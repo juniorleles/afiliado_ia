@@ -20,3 +20,5 @@ design-references/product-showcase-reference.png
 
 # Isolated quality-gate work copies (Execution 50D)
 scripts/fixtures/quality-gate/work/
+
+/public/lab-previews/
