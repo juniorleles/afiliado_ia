@@ -12,6 +12,7 @@ export const PREMIUM_VISUAL_OPTIMIZATION_COMPOSITION_ID = "PREMIUM_VISUAL_OPTIMI
 export const PREMIUM_CONVERSION_OPTIMIZATION_COMPOSITION_ID = "PREMIUM_CONVERSION_OPTIMIZATION_V1" as const;
 export const PREMIUM_EDITORIAL_CORRECTION_COMPOSITION_ID = "PREMIUM_EDITORIAL_CORRECTION_V1" as const;
 export const PREMIUM_FINAL_VISUAL_COMPOSITION_ID = "PREMIUM_FINAL_VISUAL_V1" as const;
+export const PREMIUM_OFFER_CARDS_COMPOSITION_ID = "PREMIUM_OFFER_CARDS_V1" as const;
 export const PRIOR_CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BH" as const;
 export const FROZEN_IMPROVEMENT_EXECUTION_ID = "54BI" as const;
 export const RECENT_CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BI" as const;
@@ -23,10 +24,12 @@ export const VISUAL_OPTIMIZATION_EXECUTION_ID = "54BP" as const;
 export const CONVERSION_OPTIMIZATION_EXECUTION_ID = "54BQ" as const;
 export const CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BR" as const;
 export const FINAL_VISUAL_EXECUTION_ID = "54BU" as const;
+export const OFFER_CARDS_EXECUTION_ID = "54BW" as const;
 export const LEGACY_CONTROLLED_IMPROVEMENT_EXECUTION_ID = "54BF" as const;
 export const RENDERER_CANDIDATE_IDS = [BEST_KNOWN_CANDIDATE_ID, EXPERIMENTAL_CANDIDATE_ID] as const;
 export type RendererCandidateId = (typeof RENDERER_CANDIDATE_IDS)[number];
 export type ExperimentalExecutionId =
+  | typeof OFFER_CARDS_EXECUTION_ID
   | typeof FINAL_VISUAL_EXECUTION_ID
   | typeof CONTROLLED_IMPROVEMENT_EXECUTION_ID
   | typeof CONVERSION_OPTIMIZATION_EXECUTION_ID
@@ -90,9 +93,13 @@ export function experimentalExecutionIdOf(
   if (normalized === FINAL_VISUAL_EXECUTION_ID || normalized === PREMIUM_FINAL_VISUAL_COMPOSITION_ID) {
     return FINAL_VISUAL_EXECUTION_ID;
   }
+  if (normalized === OFFER_CARDS_EXECUTION_ID || normalized === PREMIUM_OFFER_CARDS_COMPOSITION_ID) {
+    return OFFER_CARDS_EXECUTION_ID;
+  }
   if (
     !normalized &&
     (stored === FROZEN_IMPROVEMENT_EXECUTION_ID ||
+      stored === OFFER_CARDS_EXECUTION_ID ||
       stored === FINAL_VISUAL_EXECUTION_ID ||
       stored === CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
       stored === CONVERSION_OPTIMIZATION_EXECUTION_ID ||
@@ -127,7 +134,8 @@ export function usesPremiumStructuralComposition(executionId?: string | null): b
     resolved === VISUAL_OPTIMIZATION_EXECUTION_ID ||
     resolved === CONVERSION_OPTIMIZATION_EXECUTION_ID ||
     resolved === CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
-    resolved === FINAL_VISUAL_EXECUTION_ID
+    resolved === FINAL_VISUAL_EXECUTION_ID ||
+    resolved === OFFER_CARDS_EXECUTION_ID
   );
 }
 
@@ -139,7 +147,8 @@ export function usesPremiumProducerContent(executionId?: string | null): boolean
     resolved === VISUAL_OPTIMIZATION_EXECUTION_ID ||
     resolved === CONVERSION_OPTIMIZATION_EXECUTION_ID ||
     resolved === CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
-    resolved === FINAL_VISUAL_EXECUTION_ID
+    resolved === FINAL_VISUAL_EXECUTION_ID ||
+    resolved === OFFER_CARDS_EXECUTION_ID
   );
 }
 
@@ -159,6 +168,7 @@ export function usesPremiumVisualOptimization(executionId?: string | null): bool
     return false;
   }
   return (
+    resolved === OFFER_CARDS_EXECUTION_ID ||
     resolved === FINAL_VISUAL_EXECUTION_ID ||
     resolved === CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
     resolved === CONVERSION_OPTIMIZATION_EXECUTION_ID ||
@@ -180,6 +190,7 @@ export function usesPremiumConversionOptimization(executionId?: string | null): 
   }
   const resolved = experimentalExecutionIdOf(executionId);
   return (
+    resolved === OFFER_CARDS_EXECUTION_ID ||
     resolved === FINAL_VISUAL_EXECUTION_ID ||
     resolved === CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
     resolved === CONVERSION_OPTIMIZATION_EXECUTION_ID
@@ -201,12 +212,18 @@ export function usesPremiumEditorialCorrection(executionId?: string | null): boo
     return false;
   }
   const resolved = experimentalExecutionIdOf(executionId);
-  return resolved === CONTROLLED_IMPROVEMENT_EXECUTION_ID || resolved === FINAL_VISUAL_EXECUTION_ID;
+  return (
+    resolved === CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
+    resolved === FINAL_VISUAL_EXECUTION_ID ||
+    resolved === OFFER_CARDS_EXECUTION_ID
+  );
 }
 
 export function usesPremiumFinalVisual(executionId?: string | null): boolean {
   const raw = executionId?.trim();
   if (
+    raw === OFFER_CARDS_EXECUTION_ID ||
+    raw === PREMIUM_OFFER_CARDS_COMPOSITION_ID ||
     raw === CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
     raw === PREMIUM_EDITORIAL_CORRECTION_COMPOSITION_ID ||
     raw === CONVERSION_OPTIMIZATION_EXECUTION_ID ||
@@ -223,6 +240,27 @@ export function usesPremiumFinalVisual(executionId?: string | null): boolean {
   return experimentalExecutionIdOf(executionId) === FINAL_VISUAL_EXECUTION_ID;
 }
 
+export function usesPremiumOfferCards(executionId?: string | null): boolean {
+  const raw = executionId?.trim();
+  if (
+    raw === FINAL_VISUAL_EXECUTION_ID ||
+    raw === PREMIUM_FINAL_VISUAL_COMPOSITION_ID ||
+    raw === CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
+    raw === PREMIUM_EDITORIAL_CORRECTION_COMPOSITION_ID ||
+    raw === CONVERSION_OPTIMIZATION_EXECUTION_ID ||
+    raw === PREMIUM_CONVERSION_OPTIMIZATION_COMPOSITION_ID ||
+    raw === VISUAL_OPTIMIZATION_EXECUTION_ID ||
+    raw === PREMIUM_VISUAL_OPTIMIZATION_COMPOSITION_ID ||
+    raw === PRODUCER_CONTENT_V2_EXECUTION_ID ||
+    raw === PREMIUM_PRODUCER_CONTENT_V2_COMPOSITION_ID ||
+    raw === PRODUCER_CONTENT_EXECUTION_ID ||
+    raw === PREMIUM_PRODUCER_CONTENT_COMPOSITION_ID
+  ) {
+    return false;
+  }
+  return experimentalExecutionIdOf(executionId) === OFFER_CARDS_EXECUTION_ID;
+}
+
 export function parseRendererCandidateId(value: string | null | undefined): RendererCandidateId | null {
   const normalized = value?.trim();
   if (normalized === BEST_KNOWN_CANDIDATE_ID) return BEST_KNOWN_CANDIDATE_ID;
@@ -236,8 +274,10 @@ export function parseRendererCandidateId(value: string | null | undefined): Rend
     normalized === PREMIUM_CONVERSION_OPTIMIZATION_COMPOSITION_ID ||
     normalized === PREMIUM_EDITORIAL_CORRECTION_COMPOSITION_ID ||
     normalized === PREMIUM_FINAL_VISUAL_COMPOSITION_ID ||
+    normalized === PREMIUM_OFFER_CARDS_COMPOSITION_ID ||
     normalized === CONTROLLED_IMPROVEMENT_EXECUTION_ID ||
     normalized === FINAL_VISUAL_EXECUTION_ID ||
+    normalized === OFFER_CARDS_EXECUTION_ID ||
     normalized === CONVERSION_OPTIMIZATION_EXECUTION_ID ||
     normalized === VISUAL_OPTIMIZATION_EXECUTION_ID ||
     normalized === PRODUCER_CONTENT_V2_EXECUTION_ID ||

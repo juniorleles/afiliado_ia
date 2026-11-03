@@ -33,6 +33,7 @@ import {
   PREMIUM_CONVERSION_OPTIMIZATION_COMPOSITION_ID,
   PREMIUM_EDITORIAL_CORRECTION_COMPOSITION_ID,
   PREMIUM_FINAL_VISUAL_COMPOSITION_ID,
+  PREMIUM_OFFER_CARDS_COMPOSITION_ID,
   usesPremiumProducerContent,
   usesPremiumProducerContentV2,
   usesPremiumStructuralComposition,
@@ -40,8 +41,14 @@ import {
   usesPremiumConversionOptimization,
   usesPremiumEditorialCorrection,
   usesPremiumFinalVisual,
+  usesPremiumOfferCards,
 } from "@/lib/presell-quality/renderer-candidate";
 import { readCommercialReuse, type CommercialReuseManifest } from "@/lib/presell-quality/commercial-reuse";
+import { approvedOffersFromManifest } from "@/lib/presell-quality/approved-offers";
+import { PremiumOfferCards } from "@/components/presell/premium-offer-cards";
+import { selectApprovedPackshot } from "@/lib/presell-quality/approved-packshot";
+import { readUserAssetDeclaration } from "@/lib/presell-quality/user-asset-declaration";
+import { snapshotProductResearch } from "@/lib/product-research/run";
 import {
   buildEditorialCopy,
   buildSeedCommercialCopy,
@@ -109,12 +116,33 @@ function SellerStatedOffers({
   manifest,
   finalized,
   composition,
+  offerCards,
+  packshot,
+  productName,
 }: {
   manifest: CommercialReuseManifest;
   finalized?: boolean;
   composition?: VisualComposition | null;
+  offerCards?: boolean;
+  packshot?: { assetId: string | null; src: string | null };
+  productName?: string;
 }) {
   if (!manifest.approvedPackages.length) return null;
+  if (offerCards) {
+    return (
+      <PremiumOfferCards
+        offers={approvedOffersFromManifest({
+          manifest,
+          image: {
+            assetId: packshot?.assetId ?? null,
+            src: packshot?.src ?? null,
+            productName: productName || "Product",
+          },
+          navigationAllowed: false,
+        })}
+      />
+    );
+  }
   const optimized = Boolean(composition);
   const highlight = composition?.packages.highlight ?? "none";
   const compare = Boolean(composition?.conversion.offerCompare);
@@ -635,15 +663,26 @@ export function StandardV1Page({
   const conversion = usesPremiumConversionOptimization(taggedExecution);
   const editorial = usesPremiumEditorialCorrection(taggedExecution);
   const finalVisual = usesPremiumFinalVisual(taggedExecution);
+  const offerCards = usesPremiumOfferCards(taggedExecution);
+  const inheritFinalVisual = finalVisual || offerCards;
   const storedComposition = campaignId != null ? readVisualComposition(campaignId) : null;
   const composition = visualOpt
     ? storedComposition &&
       (storedComposition.executionId === taggedExecution ||
-        (finalVisual && storedComposition.executionId === CONTROLLED_IMPROVEMENT_EXECUTION_ID))
+        (inheritFinalVisual && storedComposition.executionId === CONTROLLED_IMPROVEMENT_EXECUTION_ID))
       ? storedComposition
-      : defaultVisualComposition(finalVisual ? "54BU" : editorial ? "54BR" : conversion ? "54BQ" : "54BP")
+      : defaultVisualComposition(
+          offerCards ? "54BW" : finalVisual ? "54BU" : editorial ? "54BR" : conversion ? "54BQ" : "54BP",
+        )
     : null;
   const commercial = producer && campaignId != null ? readCommercialReuse(campaignId) : null;
+  const packshotAssetId =
+    offerCards && campaignId != null
+      ? selectApprovedPackshot({
+          assets: snapshotProductResearch(campaignId).latest?.discoveredAssets,
+          declaration: readUserAssetDeclaration(campaignId),
+        })?.assetId ?? null
+      : null;
   const slots = premiumSlotsFromModel(model);
   const copyInventory = inventoryFromPage({
     productName: model.contract.identity.productName,
@@ -660,10 +699,10 @@ export function StandardV1Page({
     conversion
       ? storedCopy &&
         (storedCopy.executionId === taggedExecution ||
-          (finalVisual && storedCopy.executionId === CONTROLLED_IMPROVEMENT_EXECUTION_ID))
+          (inheritFinalVisual && storedCopy.executionId === CONTROLLED_IMPROVEMENT_EXECUTION_ID))
         ? storedCopy
         : editorial
-          ? buildEditorialCopy({ ...copyInventory, executionId: finalVisual ? "54BU" : "54BR" })
+          ? buildEditorialCopy({ ...copyInventory, executionId: offerCards ? "54BW" : finalVisual ? "54BU" : "54BR" })
           : buildSeedCommercialCopy({ ...copyInventory, executionId: "54BQ" })
       : null;
   const commercialSummary =
@@ -744,8 +783,11 @@ export function StandardV1Page({
       data-presell-candidate={PRESELL_STANDARD_ID}
       data-presell-execution={taggedExecution}
       data-final-visual={finalVisual ? "1" : undefined}
+      data-offer-cards={offerCards ? "1" : undefined}
       data-presell-composition={
-        finalVisual
+        offerCards
+          ? PREMIUM_OFFER_CARDS_COMPOSITION_ID
+          : finalVisual
           ? PREMIUM_FINAL_VISUAL_COMPOSITION_ID
           : editorial
           ? PREMIUM_EDITORIAL_CORRECTION_COMPOSITION_ID
@@ -783,7 +825,17 @@ export function StandardV1Page({
                 <Hero model={model} announcementMessage={template.announcement?.message ?? null} />
               )}
               {producer && commercial?.approvedPackages.length ? (
-                <SellerStatedOffers manifest={commercial} finalized={producerV2} composition={composition} />
+                <SellerStatedOffers
+                  manifest={commercial}
+                  finalized={producerV2}
+                  composition={composition}
+                  offerCards={offerCards}
+                  packshot={{
+                    assetId: packshotAssetId,
+                    src: model.commercialImage?.src ?? null,
+                  }}
+                  productName={model.contract.identity.productName}
+                />
               ) : null}
               {conversion && composition?.conversion.productPresentation === "editorial" && model.commercialImage ? (
                 <DsSection tone="alt" className="v4-band" id="product-presentation">
