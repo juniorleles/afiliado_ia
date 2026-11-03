@@ -32,12 +32,14 @@ import {
   PREMIUM_VISUAL_OPTIMIZATION_COMPOSITION_ID,
   PREMIUM_CONVERSION_OPTIMIZATION_COMPOSITION_ID,
   PREMIUM_EDITORIAL_CORRECTION_COMPOSITION_ID,
+  PREMIUM_FINAL_VISUAL_COMPOSITION_ID,
   usesPremiumProducerContent,
   usesPremiumProducerContentV2,
   usesPremiumStructuralComposition,
   usesPremiumVisualOptimization,
   usesPremiumConversionOptimization,
   usesPremiumEditorialCorrection,
+  usesPremiumFinalVisual,
 } from "@/lib/presell-quality/renderer-candidate";
 import { readCommercialReuse, type CommercialReuseManifest } from "@/lib/presell-quality/commercial-reuse";
 import {
@@ -632,11 +634,14 @@ export function StandardV1Page({
   const visualOpt = usesPremiumVisualOptimization(taggedExecution);
   const conversion = usesPremiumConversionOptimization(taggedExecution);
   const editorial = usesPremiumEditorialCorrection(taggedExecution);
+  const finalVisual = usesPremiumFinalVisual(taggedExecution);
   const storedComposition = campaignId != null ? readVisualComposition(campaignId) : null;
   const composition = visualOpt
-    ? storedComposition && storedComposition.executionId === taggedExecution
+    ? storedComposition &&
+      (storedComposition.executionId === taggedExecution ||
+        (finalVisual && storedComposition.executionId === CONTROLLED_IMPROVEMENT_EXECUTION_ID))
       ? storedComposition
-      : defaultVisualComposition(editorial ? "54BR" : conversion ? "54BQ" : "54BP")
+      : defaultVisualComposition(finalVisual ? "54BU" : editorial ? "54BR" : conversion ? "54BQ" : "54BP")
     : null;
   const commercial = producer && campaignId != null ? readCommercialReuse(campaignId) : null;
   const slots = premiumSlotsFromModel(model);
@@ -653,10 +658,12 @@ export function StandardV1Page({
   const storedCopy = campaignId != null ? readCommercialCopy(campaignId) : null;
   const commercialCopy =
     conversion
-      ? storedCopy && storedCopy.executionId === taggedExecution
+      ? storedCopy &&
+        (storedCopy.executionId === taggedExecution ||
+          (finalVisual && storedCopy.executionId === CONTROLLED_IMPROVEMENT_EXECUTION_ID))
         ? storedCopy
         : editorial
-          ? buildEditorialCopy({ ...copyInventory, executionId: "54BR" })
+          ? buildEditorialCopy({ ...copyInventory, executionId: finalVisual ? "54BU" : "54BR" })
           : buildSeedCommercialCopy({ ...copyInventory, executionId: "54BQ" })
       : null;
   const commercialSummary =
@@ -736,8 +743,11 @@ export function StandardV1Page({
       data-presell-standard={PRESELL_STANDARD_ID}
       data-presell-candidate={PRESELL_STANDARD_ID}
       data-presell-execution={taggedExecution}
+      data-final-visual={finalVisual ? "1" : undefined}
       data-presell-composition={
-        editorial
+        finalVisual
+          ? PREMIUM_FINAL_VISUAL_COMPOSITION_ID
+          : editorial
           ? PREMIUM_EDITORIAL_CORRECTION_COMPOSITION_ID
           : conversion
             ? PREMIUM_CONVERSION_OPTIMIZATION_COMPOSITION_ID

@@ -35,6 +35,7 @@ export {
   IMPROVED_SEED_COMPOSITION,
   CONVERSION_SEED_COMPOSITION,
   EDITORIAL_SEED_COMPOSITION,
+  FINAL_VISUAL_SEED_COMPOSITION,
   defaultVisualComposition,
   readVisualComposition,
   writeVisualComposition,
