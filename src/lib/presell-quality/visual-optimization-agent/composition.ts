@@ -114,6 +114,12 @@ export const OFFER_CARDS_SEED_COMPOSITION: VisualComposition = {
   iteration: 1,
 };
 
+export const OFFER_IMAGES_SEED_COMPOSITION: VisualComposition = {
+  ...OFFER_CARDS_SEED_COMPOSITION,
+  executionId: "54BX",
+  iteration: 1,
+};
+
 function compositionFile(campaignId: number): string {
   return path.join(qualityAssessmentRoot(), String(campaignId), "visual-optimization.json");
 }
@@ -136,6 +142,9 @@ function withConversionDefaults(composition: VisualComposition): VisualCompositi
 }
 
 export function defaultVisualComposition(executionId: string, iteration = 1): VisualComposition {
+  if (executionId === "54BX") {
+    return { ...OFFER_IMAGES_SEED_COMPOSITION, executionId, iteration };
+  }
   if (executionId === "54BW") {
     return { ...OFFER_CARDS_SEED_COMPOSITION, executionId, iteration };
   }

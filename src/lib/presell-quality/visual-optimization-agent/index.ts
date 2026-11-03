@@ -37,6 +37,7 @@ export {
   EDITORIAL_SEED_COMPOSITION,
   FINAL_VISUAL_SEED_COMPOSITION,
   OFFER_CARDS_SEED_COMPOSITION,
+  OFFER_IMAGES_SEED_COMPOSITION,
   defaultVisualComposition,
   readVisualComposition,
   writeVisualComposition,

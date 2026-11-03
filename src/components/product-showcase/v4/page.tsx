@@ -492,14 +492,23 @@ export function V4Page({
   model,
   candidate,
   campaignId,
+  localPreviewGenerationId,
 }: {
   model: V4Model;
   candidate?: string | null;
   campaignId?: number;
+  localPreviewGenerationId?: string | null;
 }) {
   const resolved = resolveRendererCandidate({ requested: candidate, campaignId });
   if (resolved.id === EXPERIMENTAL_CANDIDATE_ID) {
-    return <StandardV1Page model={model} executionId={resolved.executionId} campaignId={campaignId} />;
+    return (
+      <StandardV1Page
+        model={model}
+        executionId={resolved.executionId}
+        campaignId={campaignId}
+        localPreviewGenerationId={localPreviewGenerationId}
+      />
+    );
   }
   return <BestKnownPage model={model} />;
 }

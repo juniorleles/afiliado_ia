@@ -34,6 +34,7 @@ import {
   PREMIUM_EDITORIAL_CORRECTION_COMPOSITION_ID,
   PREMIUM_FINAL_VISUAL_COMPOSITION_ID,
   PREMIUM_OFFER_CARDS_COMPOSITION_ID,
+  PREMIUM_OFFER_IMAGES_COMPOSITION_ID,
   usesPremiumProducerContent,
   usesPremiumProducerContentV2,
   usesPremiumStructuralComposition,
@@ -42,11 +43,13 @@ import {
   usesPremiumEditorialCorrection,
   usesPremiumFinalVisual,
   usesPremiumOfferCards,
+  usesPremiumOfferImages,
 } from "@/lib/presell-quality/renderer-candidate";
 import { readCommercialReuse, type CommercialReuseManifest } from "@/lib/presell-quality/commercial-reuse";
 import { approvedOffersFromManifest } from "@/lib/presell-quality/approved-offers";
 import { PremiumOfferCards } from "@/components/presell/premium-offer-cards";
 import { selectApprovedPackshot } from "@/lib/presell-quality/approved-packshot";
+import { OFFER_IMAGE_LOCAL_PREVIEW_ONLY, readOfferImageInventory } from "@/lib/presell-quality/offer-images";
 import { readUserAssetDeclaration } from "@/lib/presell-quality/user-asset-declaration";
 import { snapshotProductResearch } from "@/lib/product-research/run";
 import {
@@ -119,6 +122,8 @@ function SellerStatedOffers({
   offerCards,
   packshot,
   productName,
+  offerImages,
+  localPreviewGenerationId,
 }: {
   manifest: CommercialReuseManifest;
   finalized?: boolean;
@@ -126,6 +131,8 @@ function SellerStatedOffers({
   offerCards?: boolean;
   packshot?: { assetId: string | null; src: string | null };
   productName?: string;
+  offerImages?: ReturnType<typeof readOfferImageInventory>;
+  localPreviewGenerationId?: string | null;
 }) {
   if (!manifest.approvedPackages.length) return null;
   if (offerCards) {
@@ -139,6 +146,9 @@ function SellerStatedOffers({
             productName: productName || "Product",
           },
           navigationAllowed: false,
+          offerImages,
+          mode: localPreviewGenerationId ? OFFER_IMAGE_LOCAL_PREVIEW_ONLY : "PUBLISH",
+          previewGenerationId: localPreviewGenerationId,
         })}
       />
     );
@@ -649,10 +659,13 @@ export function StandardV1Page({
   model,
   executionId,
   campaignId,
+  localPreviewGenerationId,
 }: {
   model: V4Model;
   executionId?: string | null;
   campaignId?: number;
+  /** Admin lab preview only. Never set on public routes. */
+  localPreviewGenerationId?: string | null;
 }) {
   const template = mapPresellStandardV1(model);
   const taggedExecution = executionId?.trim() || CONTROLLED_IMPROVEMENT_EXECUTION_ID;
@@ -664,6 +677,7 @@ export function StandardV1Page({
   const editorial = usesPremiumEditorialCorrection(taggedExecution);
   const finalVisual = usesPremiumFinalVisual(taggedExecution);
   const offerCards = usesPremiumOfferCards(taggedExecution);
+  const offerImages = usesPremiumOfferImages(taggedExecution);
   const inheritFinalVisual = finalVisual || offerCards;
   const storedComposition = campaignId != null ? readVisualComposition(campaignId) : null;
   const composition = visualOpt
@@ -672,7 +686,7 @@ export function StandardV1Page({
         (inheritFinalVisual && storedComposition.executionId === CONTROLLED_IMPROVEMENT_EXECUTION_ID))
       ? storedComposition
       : defaultVisualComposition(
-          offerCards ? "54BW" : finalVisual ? "54BU" : editorial ? "54BR" : conversion ? "54BQ" : "54BP",
+          offerImages ? "54BX" : offerCards ? "54BW" : finalVisual ? "54BU" : editorial ? "54BR" : conversion ? "54BQ" : "54BP",
         )
     : null;
   const commercial = producer && campaignId != null ? readCommercialReuse(campaignId) : null;
@@ -702,7 +716,7 @@ export function StandardV1Page({
           (inheritFinalVisual && storedCopy.executionId === CONTROLLED_IMPROVEMENT_EXECUTION_ID))
         ? storedCopy
         : editorial
-          ? buildEditorialCopy({ ...copyInventory, executionId: offerCards ? "54BW" : finalVisual ? "54BU" : "54BR" })
+          ? buildEditorialCopy({ ...copyInventory, executionId: offerImages ? "54BX" : offerCards ? "54BW" : finalVisual ? "54BU" : "54BR" })
           : buildSeedCommercialCopy({ ...copyInventory, executionId: "54BQ" })
       : null;
   const commercialSummary =
@@ -784,8 +798,12 @@ export function StandardV1Page({
       data-presell-execution={taggedExecution}
       data-final-visual={finalVisual ? "1" : undefined}
       data-offer-cards={offerCards ? "1" : undefined}
+      data-offer-images={offerImages ? "1" : undefined}
+      data-offer-image-mode={offerImages && localPreviewGenerationId ? OFFER_IMAGE_LOCAL_PREVIEW_ONLY : undefined}
       data-presell-composition={
-        offerCards
+        offerImages
+          ? PREMIUM_OFFER_IMAGES_COMPOSITION_ID
+          : offerCards
           ? PREMIUM_OFFER_CARDS_COMPOSITION_ID
           : finalVisual
           ? PREMIUM_FINAL_VISUAL_COMPOSITION_ID
@@ -835,6 +853,8 @@ export function StandardV1Page({
                     src: model.commercialImage?.src ?? null,
                   }}
                   productName={model.contract.identity.productName}
+                  offerImages={offerImages && campaignId != null ? readOfferImageInventory(campaignId) : null}
+                  localPreviewGenerationId={localPreviewGenerationId}
                 />
               ) : null}
               {conversion && composition?.conversion.productPresentation === "editorial" && model.commercialImage ? (

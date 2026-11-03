@@ -1,5 +1,13 @@
 import type { CommercialReuseManifest, SellerStatedPackage } from "@/lib/presell-quality/commercial-reuse";
 import { presentPackageShipping } from "@/lib/presell-quality/visual-optimization-agent/copy";
+import {
+  OFFER_IMAGE_LOCAL_PREVIEW_ONLY,
+  offerImageAdminFilePath,
+  offerImagePublicSrc,
+  selectLocalPreviewOfferImage,
+  selectRenderableOfferImage,
+  type OfferImageInventory,
+} from "@/lib/presell-quality/offer-images";
 
 export const PREMIUM_OFFER_CARDS_ID = "PREMIUM_OFFER_CARDS" as const;
 
@@ -157,10 +165,59 @@ export function auditAffiliateOfferDestination(manifest: CommercialReuseManifest
   };
 }
 
+function isPublicMediaSrc(value: string | null): boolean {
+  if (!value) return false;
+  return value.startsWith("/media/") || /^https:\/\//i.test(value);
+}
+
+export function bindOfferCardImage(input: {
+  bottleCount: number;
+  fallback: OfferImageInput;
+  inventory?: OfferImageInventory | null;
+  mode?: "PUBLISH" | typeof OFFER_IMAGE_LOCAL_PREVIEW_ONLY;
+  previewGenerationId?: string | null;
+}): { image: OfferImageInput; imageRole: OfferImageRole; imageRepresentsBottleCount: boolean } {
+  if (input.mode === OFFER_IMAGE_LOCAL_PREVIEW_ONLY && input.previewGenerationId) {
+    const preview = selectLocalPreviewOfferImage({ inventory: input.inventory, bottleCount: input.bottleCount });
+    if (preview) {
+      return {
+        image: {
+          assetId: preview.assetId,
+          src: offerImageAdminFilePath(input.previewGenerationId, preview.assetId),
+          productName: input.fallback.productName,
+        },
+        imageRole: "PACKAGE_QUANTITY",
+        imageRepresentsBottleCount: true,
+      };
+    }
+  }
+  const approved = selectRenderableOfferImage({ inventory: input.inventory, bottleCount: input.bottleCount });
+  const src = approved ? offerImagePublicSrc(approved) : null;
+  if (approved && src && isPublicMediaSrc(src)) {
+    return {
+      image: {
+        assetId: approved.assetId,
+        src,
+        productName: input.fallback.productName,
+      },
+      imageRole: "PACKAGE_QUANTITY",
+      imageRepresentsBottleCount: true,
+    };
+  }
+  return {
+    image: input.fallback,
+    imageRole: "PRODUCT_ILLUSTRATION",
+    imageRepresentsBottleCount: false,
+  };
+}
+
 export function approvedOffersFromManifest(input: {
   manifest: CommercialReuseManifest;
   image: OfferImageInput;
   navigationAllowed?: boolean;
+  offerImages?: OfferImageInventory | null;
+  mode?: "PUBLISH" | typeof OFFER_IMAGE_LOCAL_PREVIEW_ONLY;
+  previewGenerationId?: string | null;
 }): ApprovedOffer[] {
   const packages = input.manifest.approvedPackages.filter((item) => parseBottleCount(item.quantity) != null);
   const lowest = packages.reduce(
@@ -174,14 +231,26 @@ export function approvedOffersFromManifest(input: {
   const audit = auditAffiliateOfferDestination(input.manifest);
   const destinationStatus: AffiliateDestinationStatus = audit.commercialDestinationApproved ? "APPROVED" : audit.affiliateLinkVerified ? "PENDING" : "REJECTED";
   const navigationAllowed = input.navigationAllowed === true && destinationStatus === "APPROVED";
-  return packages.map((item) => offerFromApprovedPackage({
-    item,
-    image: input.image,
-    featured: item.id === lowest.id,
-    affiliateDestination: audit.packageSpecificLinksAvailable ? null : audit.registeredDestination,
-    affiliateDestinationStatus: destinationStatus,
-    commercialNavigationEnabled: navigationAllowed,
-  }));
+  return packages.map((item) => {
+    const bottleCount = parseBottleCount(item.quantity) ?? 0;
+    const bound = bindOfferCardImage({
+      bottleCount,
+      fallback: input.image,
+      inventory: input.offerImages,
+      mode: input.mode,
+      previewGenerationId: input.previewGenerationId,
+    });
+    return offerFromApprovedPackage({
+      item,
+      image: bound.image,
+      imageRole: bound.imageRole,
+      imageRepresentsBottleCount: bound.imageRepresentsBottleCount,
+      featured: item.id === lowest.id,
+      affiliateDestination: audit.packageSpecificLinksAvailable ? null : audit.registeredDestination,
+      affiliateDestinationStatus: destinationStatus,
+      commercialNavigationEnabled: navigationAllowed,
+    });
+  });
 }
 
 export function offerFromApprovedPackage(input: {
@@ -191,10 +260,13 @@ export function offerFromApprovedPackage(input: {
   affiliateDestination: string | null;
   affiliateDestinationStatus: AffiliateDestinationStatus;
   commercialNavigationEnabled: boolean;
+  imageRole?: OfferImageRole;
+  imageRepresentsBottleCount?: boolean;
 }): ApprovedOffer {
   const bottleCount = parseBottleCount(input.item.quantity) ?? 0;
   const supplyDays = parseSupplyDays(input.item.duration);
   const imageSrc = input.image.src?.trim() || null;
+  const packageImage = input.imageRole === "PACKAGE_QUANTITY" && input.imageRepresentsBottleCount === true;
   return {
     id: input.item.id,
     bottleCount,
@@ -210,9 +282,11 @@ export function offerFromApprovedPackage(input: {
     bonuses: input.item.bonuses.map(presentOfferBonus).filter(Boolean),
     productImageAssetId: input.image.assetId,
     productImageSrc: imageSrc,
-    productImageAlt: `${input.image.productName} product image. ${quantityDisplayLabel(bottleCount)}.`,
-    imageRole: "PRODUCT_ILLUSTRATION",
-    imageRepresentsBottleCount: false,
+    productImageAlt: packageImage
+      ? `${input.image.productName}. ${quantityDisplayLabel(bottleCount)}.`
+      : `${input.image.productName} product image. ${quantityDisplayLabel(bottleCount)}.`,
+    imageRole: input.imageRole ?? "PRODUCT_ILLUSTRATION",
+    imageRepresentsBottleCount: input.imageRepresentsBottleCount === true,
     affiliateDestination: input.commercialNavigationEnabled ? input.affiliateDestination : null,
     affiliateDestinationStatus: input.affiliateDestinationStatus,
     featuredReason: input.featured ? "LOWEST_UNIT_PRICE" : null,

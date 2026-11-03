@@ -1,0 +1,328 @@
+/* Isolated offer-image review. Never imported by a public route. */
+.oir-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: grid;
+  gap: 0.85rem;
+  margin: 1.25rem 0 1.5rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--ds-line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ds-bg) 88%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.oir-toolbar__filters,
+.oir-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1rem;
+}
+
+.oir-field {
+  display: grid;
+  gap: 0.3rem;
+  min-width: min(100%, 11rem);
+}
+
+.oir-field--grow {
+  flex: 1 1 16rem;
+  min-width: min(100%, 16rem);
+}
+
+.oir-field label {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ds-muted);
+}
+
+.oir-field select,
+.oir-field textarea,
+.oir-field input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--ds-line);
+  border-radius: 10px;
+  background: var(--ds-surface);
+  color: var(--ds-ink);
+  font: inherit;
+}
+
+.oir-field textarea {
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+.oir-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.oir-stats li {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--ds-line);
+  border-radius: 999px;
+  background: var(--ds-surface);
+  font-size: 0.85rem;
+}
+
+.oir-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.oir-badge::before {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.oir-badge--success {
+  background: color-mix(in srgb, #0b6b42 16%, var(--ds-surface));
+  color: #0b6b42;
+}
+
+.oir-badge--warning {
+  background: color-mix(in srgb, #b45309 16%, var(--ds-surface));
+  color: #9a3412;
+}
+
+.oir-badge--danger {
+  background: color-mix(in srgb, #b42318 16%, var(--ds-surface));
+  color: #b42318;
+}
+
+.oir-badge--info {
+  background: color-mix(in srgb, var(--ds-accent) 16%, var(--ds-surface));
+  color: var(--ds-accent-text);
+}
+
+.oir-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--ds-line);
+  border-radius: 14px;
+  background: var(--ds-surface);
+}
+
+.oir-table {
+  width: 100%;
+  min-width: 72rem;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.oir-table th,
+.oir-table td {
+  padding: 0.7rem 0.8rem;
+  border-bottom: 1px solid var(--ds-line);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.oir-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--ds-surface);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ds-muted);
+  white-space: nowrap;
+}
+
+.oir-table col.oir-col-check { width: 3.5rem; }
+.oir-table col.oir-col-thumb { width: 6.2rem; }
+.oir-table col.oir-col-product { width: 12rem; }
+.oir-table col.oir-col-qty { width: 7.5rem; }
+.oir-table col.oir-col-origin { width: 13rem; }
+.oir-table col.oir-col-status { width: 8.5rem; }
+.oir-table col.oir-col-review { width: 12rem; }
+.oir-table col.oir-col-actions { width: 12rem; }
+
+.oir-thumb {
+  display: block;
+  width: 4.5rem;
+  height: 4.5rem;
+  overflow: hidden;
+  border: 0;
+  padding: 0;
+  border-radius: 10px;
+  background: #4b5563;
+  cursor: zoom-in;
+}
+
+.oir-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.oir-origin {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.oir-origin code {
+  display: block;
+  overflow: hidden;
+  max-width: 100%;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.oir-muted {
+  color: var(--ds-muted);
+  font-size: 0.8rem;
+}
+
+.oir-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.ds-btn--danger {
+  background: #b42318;
+  color: #fff;
+}
+
+.ds-btn--danger:hover {
+  filter: brightness(0.95);
+}
+
+.oir-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.oir-card {
+  display: grid;
+  gap: 0.7rem;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0.9rem;
+  border: 1px solid var(--ds-line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ds-ink) 4%, var(--ds-bg));
+}
+
+.oir-card[data-usage="APPROVED"] {
+  border-color: color-mix(in srgb, #0b6b42 45%, var(--ds-line));
+}
+
+.oir-card[data-usage="REJECTED"] {
+  opacity: 0.82;
+}
+
+.oir-card__top {
+  display: grid;
+  grid-template-columns: auto 4.5rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.oir-card__meta {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.oir-history {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.8rem;
+  color: var(--ds-muted);
+}
+
+.oir-empty {
+  padding: 1.25rem;
+  border: 1px dashed var(--ds-line);
+  border-radius: 14px;
+}
+
+.oir-preview:not([open]) .oir-lightbox {
+  display: none;
+}
+
+.oir-preview > summary {
+  list-style: none;
+}
+
+.oir-preview > summary::-webkit-details-marker {
+  display: none;
+}
+
+.oir-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(16 24 40 / 0.72);
+}
+
+.oir-lightbox-inner {
+  width: min(96vw, 1100px);
+  max-height: 92vh;
+  overflow: auto;
+  padding: 1rem;
+  border-radius: 16px;
+  background: var(--ds-bg);
+  color: var(--ds-ink);
+}
+
+.oir-lightbox-inner img {
+  max-height: 72vh;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.oir-flash {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid var(--ds-line);
+}
+
+.oir-flash[data-tone="ok"] {
+  background: color-mix(in srgb, #0b6b42 12%, var(--ds-surface));
+}
+
+.oir-flash[data-tone="error"] {
+  background: color-mix(in srgb, #b42318 12%, var(--ds-surface));
+}
+
+@media (max-width: 900px) {
+  .oir-toolbar__actions .ds-btn {
+    width: 100%;
+  }
+
+  .oir-card__top {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+}
