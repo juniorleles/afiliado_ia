@@ -109,6 +109,7 @@ export {
   selectRenderableOfferImage,
   selectLocalPreviewOfferImage,
   offerImageLocalPreviewEligible,
+  reopenRejectedOfferImagesForLocalPreview,
   OFFER_IMAGE_LOCAL_PREVIEW_ONLY,
   resolveOfferImageAuthorization,
   diagnoseMissingOfferImages,

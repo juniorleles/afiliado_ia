@@ -2963,4 +2963,113 @@
   }
 }
 
+/* 54BX — readability + footer contrast (visual refine) */
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .premium-offer-card > .ds-meta,
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .premium-offer-card [data-offer-comparison],
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .premium-offer-card [data-offer-shipping] {
+  font-size: 0.98rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--ds-ink) 86%, #000);
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .premium-offer-card__total {
+  font-size: 1.16rem;
+  line-height: 1.35;
+  color: var(--ds-ink);
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .premium-offer-card .ds-display--package + .ds-meta {
+  margin-top: 0.15rem;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--ds-ink) 90%, #000);
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .premium-offer-card__caption {
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--ds-ink) 82%, #000);
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .premium-offer-card__bonus {
+  font-size: 1.02rem;
+  line-height: 1.4;
+  color: color-mix(in srgb, var(--ds-ink) 88%, #000);
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .premium-compliance-band .ds-meta,
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .premium-compliance-band .ds-caption {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--ds-ink) 86%, #000);
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .premium-guarantee .ds-body,
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .premium-guarantee .ds-caption {
+  font-size: 1.02rem;
+  line-height: 1.55;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .premium-faq__item .ds-body,
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .ds-faq__item .ds-body {
+  font-size: 1.02rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--ds-ink) 90%, #000);
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .ds-faq__item summary,
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .premium-faq__item summary {
+  font-size: 1.05rem;
+  line-height: 1.4;
+  color: var(--ds-ink);
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .ds-footer {
+  padding-block: 1.6rem 1.85rem;
+  color: #f4f1ea;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .ds-footer .ds-caption {
+  font-size: 0.98rem;
+  line-height: 1.55;
+  color: #f4f1ea;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .ds-footer a {
+  color: #ffe8c2;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .ds-footer a:hover {
+  color: #fff6e8;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .ds-footer a:focus-visible {
+  outline: 3px solid #ffe8c2;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .ds-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.15rem;
+  margin-top: 0.85rem;
+}
+
+@media (max-width: 767px) {
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .ds-footer .ds-caption {
+    font-size: 0.95rem;
+  }
+
+  .ds-root[data-ds-engine="premium"] [data-presell-execution="54BX"] .ds-footer a {
+    font-size: 0.98rem;
+    min-height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
 

@@ -17,6 +17,7 @@ import {
   resolveOfferImageAuthorization,
   selectLocalPreviewOfferImage,
   selectRenderableOfferImage,
+  reopenRejectedOfferImagesForLocalPreview,
   OFFER_IMAGE_LOCAL_PREVIEW_ONLY,
   OFFER_PACKAGE_IMAGE,
 } from "../src/lib/presell-quality/index.ts";
@@ -122,6 +123,45 @@ assert(
     operatorOnly.inventory.assets[0]?.rightsHolderLicenseStatus === "UNPROVEN",
   "OPERATOR_APPROVED is distinct from usage APPROVED and rights-holder PROVEN",
 );
+{
+  const incomplete = fakeAsset({
+    assetId: "asset-incomplete",
+    evidenceStatus: "INSUFFICIENT",
+    bottleCount: null,
+    sha256: null,
+    localFile: null,
+    operatorAttestation: "NONE",
+  });
+  const admin = recordOperatorOfferImageAttestation({
+    inventory: inventoryOf([incomplete]),
+    assetIds: ["asset-incomplete"],
+    actor: "system-owner",
+    declarationText: "Administrative approval independent of technical integrity for incomplete asset.",
+    mode: "ADMINISTRATIVE",
+    now,
+  });
+  assert(admin.attested.join(",") === "asset-incomplete", "ADMINISTRATIVE mode can approve incomplete assets");
+  assert(
+    admin.inventory.assets[0]?.operatorAttestation === "OPERATOR_APPROVED" &&
+      admin.inventory.assets[0]?.evidenceStatus === "INSUFFICIENT" &&
+      admin.inventory.assets[0]?.bottleCount == null &&
+      admin.inventory.assets[0]?.sha256 == null &&
+      admin.inventory.assets[0]?.localFile == null &&
+      admin.inventory.assets[0]?.rightsHolderLicenseStatus === "UNPROVEN" &&
+      admin.promoted.length === 0 &&
+      !offerImageIsPublishable(admin.inventory.assets[0]!),
+    "ADMINISTRATIVE approval preserves technical fields and never publishes",
+  );
+  const again = recordOperatorOfferImageAttestation({
+    inventory: admin.inventory,
+    assetIds: ["asset-incomplete"],
+    actor: "system-owner",
+    declarationText: "Administrative approval independent of technical integrity for incomplete asset.",
+    mode: "ADMINISTRATIVE",
+    now,
+  });
+  assert(again.attested.length === 0 && again.skipped[0]?.reasons.includes("already-operator-approved"), "ADMINISTRATIVE approval is idempotent");
+}
 assert(operatorOnly.inventory.affiliateProgramAudit?.permittedBannerFiles.includes("person3.jpg"), "affiliate program restrictions are preserved on the inventory");
 assert(
   !offerImageIsPublishable(operatorOnly.inventory.assets[0]!) &&
@@ -392,6 +432,30 @@ assert(CSS.includes("overflow-x: auto") && CSS.includes("table-layout: fixed") &
 assert(markup.includes("oir-lightbox"), "enlarged image preview is available");
 assert(markup.includes("data-publication-blockers") && markup.includes("data-operator-attestation"), "admin review shows operator attestation and publication blockers");
 assert(markup.includes("rights-holder-license-unproven") || markup.includes("titular"), "admin review names the missing rights-holder license");
+
+{
+  const rejectedSample = fakeAsset({
+    assetId: "asset-reopen",
+    bottleCount: 2,
+    usageAuthorization: "REJECTED",
+    reviewStatus: "REJECTED",
+    operatorAttestation: "OPERATOR_APPROVED",
+    rightsHolderLicenseStatus: "UNPROVEN",
+  });
+  const reopened = reopenRejectedOfferImagesForLocalPreview({
+    inventory: inventoryOf([rejectedSample]),
+    assetIds: ["asset-reopen"],
+    justification: "Restore local preview after erroneous reject without publication approval.",
+  });
+  assert(reopened.reopened.join(",") === "asset-reopen", "REOPEN_PENDING restores a rejected package image");
+  assert(
+    reopened.inventory.assets[0]?.usageAuthorization === "PENDING" &&
+      reopened.inventory.assets[0]?.reviewStatus === "REQUIRES_HUMAN_REVIEW" &&
+      reopened.inventory.assets[0]?.publicSrc == null &&
+      !offerImageIsPublishable(reopened.inventory.assets[0]!),
+    "REOPEN_PENDING does not publish or prove rights-holder license",
+  );
+}
 
 const live = readOfferImageInventory(237);
 assert(Boolean(live?.assets.length), "campaign 237 inventory is available for eligibility reporting");

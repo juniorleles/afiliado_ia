@@ -50,7 +50,16 @@ export type OfferImageAssociation = {
 };
 
 export type OfferImageDecisionAction = "APPROVE" | "REJECT";
-export type OfferImageHistoryAction = OfferImageDecisionAction | "OPERATOR_ATTEST" | "RIGHTS_HOLDER_LICENSE" | "AUTO_PUBLISH_READY";
+export type OfferImageHistoryAction =
+  | OfferImageDecisionAction
+  | "OPERATOR_ATTEST"
+  | "ADMINISTRATIVE_OPERATOR_APPROVAL"
+  | "RIGHTS_HOLDER_LICENSE"
+  | "AUTO_PUBLISH_READY"
+  | "REOPEN_PENDING";
+
+/** TECHNICAL: requires integrity gates and may promote when license is PROVEN. ADMINISTRATIVE: records OPERATOR_APPROVED only. */
+export type OfferImageOperatorAttestationMode = "TECHNICAL" | "ADMINISTRATIVE";
 export type OfferImageOperatorAttestation = "NONE" | "OPERATOR_APPROVED" | "OPERATOR_REJECTED";
 export type OfferImageRightsHolderLicenseStatus = "UNPROVEN" | "PROVEN" | "DENIED";
 
@@ -763,6 +772,8 @@ export function recordOperatorOfferImageAttestation(input: {
   declarationText: string;
   evidenceNote?: string | null;
   now?: string;
+  /** TECHNICAL (default): integrity gates + optional publish promotion. ADMINISTRATIVE: OPERATOR_APPROVED only. */
+  mode?: OfferImageOperatorAttestationMode;
   affiliateProgramAudit?: OfferImageAffiliateProgramAudit | null;
   materialize?: (asset: OfferImageAsset) => { publicSrc: string } | { error: string };
 }): {
@@ -776,6 +787,7 @@ export function recordOperatorOfferImageAttestation(input: {
   if (!justified.ok) {
     return { inventory: input.inventory, attested: [], promoted: [], skipped: [], error: justified.error };
   }
+  const mode: OfferImageOperatorAttestationMode = input.mode === "ADMINISTRATIVE" ? "ADMINISTRATIVE" : "TECHNICAL";
   const actor = offerImageDecisionActor(input.actor);
   const at = input.now ?? new Date().toISOString();
   const evidenceNote = normalizeJustification(input.evidenceNote ?? "") || null;
@@ -787,6 +799,29 @@ export function recordOperatorOfferImageAttestation(input: {
     if (!input.assetIds.includes(raw.assetId) || seen.has(raw.assetId)) return raw;
     const asset = withOfferImageAuthDefaults(raw);
     seen.add(asset.assetId);
+    if (mode === "ADMINISTRATIVE") {
+      if (asset.operatorAttestation === "OPERATOR_APPROVED") {
+        skipped.push({ assetId: asset.assetId, reasons: ["already-operator-approved"] });
+        return asset;
+      }
+      const event: OfferImageAuthorizationEvent = {
+        at,
+        actor,
+        action: "ADMINISTRATIVE_OPERATOR_APPROVAL",
+        justification: justified.justification,
+        evidenceNote,
+      };
+      attested.push(asset.assetId);
+      // Administrative approval never promotes publication and never mutates technical evidence fields.
+      return {
+        ...asset,
+        operatorAttestation: "OPERATOR_APPROVED" as const,
+        operatorAttestedBy: actor,
+        operatorAttestedAt: at,
+        operatorAttestationNote: justified.justification,
+        authorizationHistory: [...(asset.authorizationHistory ?? []), event],
+      };
+    }
     const eligibility = offerImageOperatorAttestationEligibility(asset);
     if (!eligibility.ok) {
       skipped.push({ assetId: asset.assetId, reasons: eligibility.reasons });
@@ -1133,6 +1168,63 @@ export function selectLocalPreviewOfferImage(input: {
     (item) => item.bottleCount === input.bottleCount && offerImageLocalPreviewEligible(item),
   );
   return matches.sort((a, b) => b.associationConfidence - a.associationConfidence)[0] ?? null;
+}
+
+/**
+ * Restores REJECTED → PENDING for admin LOCAL_PREVIEW_ONLY eligibility.
+ * Does not approve publication, prove rights-holder license, or set publicSrc.
+ */
+export function reopenRejectedOfferImagesForLocalPreview(input: {
+  inventory: OfferImageInventory;
+  assetIds: string[];
+  actor?: string;
+  justification: string;
+  evidenceNote?: string;
+  now?: string;
+}): { inventory: OfferImageInventory; reopened: string[]; skipped: Array<{ assetId: string; reasons: string[] }> } {
+  const actor = offerImageDecisionActor(input.actor);
+  const justified = validateOfferImageJustification(input.justification);
+  if (!justified.ok) return { inventory: input.inventory, reopened: [], skipped: input.assetIds.map((assetId) => ({ assetId, reasons: [justified.error] })) };
+  const at = input.now ?? new Date().toISOString();
+  const evidenceNote = normalizeJustification(input.evidenceNote ?? "") || null;
+  const reopened: string[] = [];
+  const skipped: Array<{ assetId: string; reasons: string[] }> = [];
+  const seen = new Set<string>();
+  const assets = input.inventory.assets.map((raw) => {
+    if (!input.assetIds.includes(raw.assetId) || seen.has(raw.assetId)) return raw;
+    seen.add(raw.assetId);
+    const current = withOfferImageAuthDefaults(raw);
+    const reasons: string[] = [];
+    if (current.usageAuthorization !== "REJECTED" && current.reviewStatus !== "REJECTED") reasons.push("not-rejected");
+    if (current.operatorAttestation !== "OPERATOR_APPROVED") reasons.push("operator-attestation-required");
+    if (current.rightsHolderLicenseStatus === "DENIED") reasons.push("rights-holder-denied");
+    if (current.evidenceStatus !== "VERIFIED") reasons.push("evidence-not-verified");
+    if (current.classification !== OFFER_PACKAGE_IMAGE) reasons.push("not-package-image");
+    if (reasons.length) {
+      skipped.push({ assetId: current.assetId, reasons });
+      return current;
+    }
+    const event: OfferImageAuthorizationEvent = {
+      at,
+      actor,
+      action: "REOPEN_PENDING",
+      justification: justified.justification,
+      evidenceNote,
+    };
+    reopened.push(current.assetId);
+    return {
+      ...current,
+      usageAuthorization: "PENDING" as const,
+      reviewStatus: "REQUIRES_HUMAN_REVIEW" as const,
+      publicSrc: null,
+      authorizedBy: actor,
+      authorizedAt: at,
+      authorizationJustification: justified.justification,
+      authorizationEvidenceNote: evidenceNote,
+      authorizationHistory: [...(current.authorizationHistory ?? []), event],
+    };
+  });
+  return { inventory: { ...input.inventory, assets }, reopened, skipped };
 }
 
 export function diagnoseMissingOfferImages(input: {
